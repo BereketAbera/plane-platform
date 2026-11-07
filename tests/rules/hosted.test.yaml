@@ -512,14 +512,19 @@ tests:
           - exp_labels: { probe: cloudgarden, severity: warning, component: cloudgarden }
             exp_annotations: { summary: "The probe of https://devops.bereket.dev is not running, so CloudgardenDown cannot fire" }
       - { eval_time: 16m, alertname: RillmarkDown, exp_alerts: [] }
-  - name: a backup older than 26 hours fires, in either namespace, and other CronJobs do not count
+  - name: a backup older than 26 hours fires, in each of the three namespaces, and other CronJobs do not count
     interval: 1h
     input_series:
       - series: 'kube_cronjob_status_last_successful_time{namespace="plane-prod",cronjob="plane-backup"}'
         values: '0x30'
       - series: 'kube_cronjob_status_last_successful_time{namespace="infisical",cronjob="plane-backup"}'
         values: '0x30'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="frameflow",cronjob="plane-backup"}'
+        values: '0x30'
       - series: 'kube_cronjob_status_last_successful_time{namespace="plane-prod",cronjob="something-else"}'
+        values: '0x30'
+      # Frameflow's other CronJobs succeed hourly or more often, and a stale one of them is not a backup.
+      - series: 'kube_cronjob_status_last_successful_time{namespace="frameflow",cronjob="frameflow-cleanup"}'
         values: '0x30'
     alert_rule_test:
       - { eval_time: 26h, alertname: BackupTooOld, exp_alerts: [] }
@@ -530,14 +535,18 @@ tests:
             exp_annotations: { summary: "plane-prod/plane-backup last succeeded 1d 3h 0m 0s ago" }
           - exp_labels: { namespace: infisical, cronjob: plane-backup, severity: critical, component: backup }
             exp_annotations: { summary: "infisical/plane-backup last succeeded 1d 3h 0m 0s ago" }
+          - exp_labels: { namespace: frameflow, cronjob: plane-backup, severity: critical, component: backup }
+            exp_annotations: { summary: "frameflow/plane-backup last succeeded 1d 3h 0m 0s ago" }
       - { eval_time: 27h, alertname: BackupNeverSucceeded, exp_alerts: [] }
   - name: a backup that has never succeeded fires after 26 hours, once for each namespace
     interval: 5m
     input_series:
       - series: 'up{job="kube-state-metrics"}'
         values: '1x400'
-      # This namespace's has worked, so only the other fires.
+      # These two have worked, so only the third fires.
       - series: 'kube_cronjob_status_last_successful_time{namespace="plane-prod",cronjob="plane-backup"}'
+        values: '0x400'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="frameflow",cronjob="plane-backup"}'
         values: '0x400'
     alert_rule_test:
       - { eval_time: 25h, alertname: BackupNeverSucceeded, exp_alerts: [] }
@@ -546,10 +555,74 @@ tests:
         exp_alerts:
           - exp_labels: { namespace: infisical, cronjob: plane-backup, severity: critical, component: backup }
             exp_annotations: { summary: "No backup in infisical has succeeded, or its CronJob is gone" }
-  - name: with no CronJob reporting at all, both namespaces fire
+  # Frameflow's night succeeds with nothing to back up until its API makes a database, so once the API's volume is there its CronJob
+  # reports a success like the others. Only a night that never once runs to the end leaves it absent.
+  - name: Frameflow's backup that has never succeeded fires 26 hours after the API's volume appears, and the other two stay quiet
     interval: 5m
     input_series:
       - series: 'up{job="kube-state-metrics"}'
+        values: '1x400'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="plane-prod",cronjob="plane-backup"}'
+        values: '0x400'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="infisical",cronjob="plane-backup"}'
+        values: '0x400'
+      # Another CronJob in frameflow succeeding says nothing about its backup.
+      - series: 'kube_cronjob_status_last_successful_time{namespace="frameflow",cronjob="frameflow-reconcile"}'
+        values: '0x400'
+      # Frameflow's second release, an hour in.
+      - series: 'kube_persistentvolumeclaim_info{namespace="frameflow",persistentvolumeclaim="frameflow-data",storageclass="local-path-retain",volumename="pvc-1"}'
+        values: '_x12 1x400'
+    alert_rule_test:
+      - { eval_time: 26h, alertname: BackupNeverSucceeded, exp_alerts: [] }
+      - eval_time: 28h
+        alertname: BackupNeverSucceeded
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, cronjob: plane-backup, severity: critical, component: backup }
+            exp_annotations: { summary: "No backup in frameflow has succeeded, or its CronJob is gone" }
+  # Release A: Hatchet's Postgres has its volume, and the API's is not there yet, so the backup's pod cannot start, and no night here is
+  # missed. A volume of that name in another namespace is not Frameflow's.
+  - name: before Frameflow's second release brings its database's volume, its backup that has never succeeded stays quiet however long
+    interval: 5m
+    input_series:
+      - series: 'up{job="kube-state-metrics"}'
+        values: '1x600'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="plane-prod",cronjob="plane-backup"}'
+        values: '0x600'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="infisical",cronjob="plane-backup"}'
+        values: '0x600'
+      - series: 'kube_persistentvolumeclaim_info{namespace="frameflow",persistentvolumeclaim="data-hatchet-postgres-0",storageclass="local-path-retain",volumename="pvc-2"}'
+        values: '1x600'
+      - series: 'kube_persistentvolumeclaim_info{namespace="plane-prod",persistentvolumeclaim="frameflow-data",storageclass="local-path-retain",volumename="pvc-3"}'
+        values: '1x600'
+    alert_rule_test:
+      - { eval_time: 27h, alertname: BackupNeverSucceeded, exp_alerts: [] }
+      - { eval_time: 49h, alertname: BackupNeverSucceeded, exp_alerts: [] }
+  # kube-state-metrics restarting leaves a gap in every series it exports, longer than the 5 minutes an instant read looks back. The
+  # volume's is read over 15 minutes, so a gap of ten does not start the 26 hours again.
+  - name: a gap of ten minutes in kube-state-metrics does not restart the clock of Frameflow's backup that has never succeeded
+    interval: 5m
+    input_series:
+      - series: 'up{job="kube-state-metrics"}'
+        values: '1x400'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="plane-prod",cronjob="plane-backup"}'
+        values: '0x400'
+      - series: 'kube_cronjob_status_last_successful_time{namespace="infisical",cronjob="plane-backup"}'
+        values: '0x400'
+      - series: 'kube_persistentvolumeclaim_info{namespace="frameflow",persistentvolumeclaim="frameflow-data",storageclass="local-path-retain",volumename="pvc-1"}'
+        values: '1x143 _ 1x250'
+    alert_rule_test:
+      - { eval_time: 25h, alertname: BackupNeverSucceeded, exp_alerts: [] }
+      - eval_time: 27h
+        alertname: BackupNeverSucceeded
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, cronjob: plane-backup, severity: critical, component: backup }
+            exp_annotations: { summary: "No backup in frameflow has succeeded, or its CronJob is gone" }
+  - name: with no CronJob reporting at all, all three namespaces fire, Frameflow's once its database's volume is there
+    interval: 5m
+    input_series:
+      - series: 'up{job="kube-state-metrics"}'
+        values: '1x400'
+      - series: 'kube_persistentvolumeclaim_info{namespace="frameflow",persistentvolumeclaim="frameflow-data",storageclass="local-path-retain",volumename="pvc-1"}'
         values: '1x400'
     alert_rule_test:
       - eval_time: 27h
@@ -559,6 +632,27 @@ tests:
             exp_annotations: { summary: "No backup in infisical has succeeded, or its CronJob is gone" }
           - exp_labels: { namespace: plane-prod, cronjob: plane-backup, severity: critical, component: backup }
             exp_annotations: { summary: "No backup in plane-prod has succeeded, or its CronJob is gone" }
+          - exp_labels: { namespace: frameflow, cronjob: plane-backup, severity: critical, component: backup }
+            exp_annotations: { summary: "No backup in frameflow has succeeded, or its CronJob is gone" }
+  - name: a failed backup Job warns at once in each namespace that runs one, Frameflow's too, and no other failed Job counts
+    interval: 1m
+    input_series:
+      - series: 'kube_job_status_failed{namespace="frameflow",job_name="plane-backup-29362027"}'
+        values: '0 1x10'
+      - series: 'kube_job_status_failed{namespace="infisical",job_name="plane-backup-manual-20261107014700"}'
+        values: '0x10'
+      # Frameflow's maintenance Jobs, and a Job of the same name in a namespace with no backup, are not backups that failed.
+      - series: 'kube_job_status_failed{namespace="frameflow",job_name="frameflow-cleanup-29362020"}'
+        values: '1x10'
+      - series: 'kube_job_status_failed{namespace="rillmark",job_name="plane-backup-29362027"}'
+        values: '1x10'
+    alert_rule_test:
+      - { eval_time: 0m, alertname: PlaneBackupFailed, exp_alerts: [] }
+      - eval_time: 1m
+        alertname: PlaneBackupFailed
+        exp_alerts:
+          - exp_labels: { namespace: frameflow, job_name: plane-backup-29362027, severity: warning, component: backup }
+            exp_annotations: { summary: "plane-backup-29362027 failed in frameflow" }
   - name: a connection that policy should refuse succeeding fires at once, and refused is quiet
     interval: 30s
     input_series:

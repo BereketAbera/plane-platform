@@ -188,7 +188,7 @@ remote-test: remote-guard ## Hosted: outside scan, matrix, routes, PSA, Secrets,
 remote-netpol: remote-guard ## Hosted: the NetworkPolicy sentinel and matrix alone, which start probe pods: make remote-netpol TARGET=plane-prod CONFIRM=plane-prod [FROM_NS=plane-prod]
 	@WAYLINE_TARGET=plane-prod ./scripts/test-netpol.sh
 
-remote-backup: remote-guard ## Hosted: run tonight's backups now: make remote-backup TARGET=plane-prod CONFIRM=plane-prod [ONLY=plane-prod|infisical]
+remote-backup: remote-guard ## Hosted: run tonight's backups now: make remote-backup TARGET=plane-prod CONFIRM=plane-prod [ONLY=plane-prod|infisical|frameflow]
 	@./scripts/hosted/backup.sh
 
 .PHONY: remote-restart-check
@@ -204,7 +204,7 @@ remote-pull-backups: remote-guard ## Hosted: pull the encrypted backups to this 
 remote-backup-dest: remote-guard ## Hosted: copies off the VPS: make remote-backup-dest TARGET=plane-prod VERB=verify|push|status
 	@./scripts/hosted/backup-dest.sh "$(VERB)"
 
-remote-restore-test: remote-guard ## Hosted: restore the newest backup into an isolated namespace, prove it, remove it: make remote-restore-test TARGET=plane-prod CONFIRM=plane-prod, or RESTORE_ON=kind for this machine's copy in the local cluster. [ONLY=plane-prod|infisical] [KEEP=yes]
+remote-restore-test: remote-guard ## Hosted: restore the newest backup into an isolated namespace, prove it, remove it: make remote-restore-test TARGET=plane-prod CONFIRM=plane-prod, or RESTORE_ON=kind for this machine's copy in the local cluster. [ONLY=plane-prod|infisical|frameflow] [KEEP=yes]
 	@./scripts/hosted/restore-test.sh
 
 remote-alerts: remote-guard ## Hosted: render alert delivery from the owner's files: make remote-alerts TARGET=plane-prod CONFIRM=plane-prod [VERB=state]

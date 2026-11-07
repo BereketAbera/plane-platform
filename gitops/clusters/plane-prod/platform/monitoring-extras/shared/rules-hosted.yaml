@@ -180,7 +180,7 @@ spec:
       interval: 30s
       rules:
         - alert: BackupTooOld
-          expr: time() - kube_cronjob_status_last_successful_time{namespace=~"plane-prod|infisical",cronjob="plane-backup"} > 26 * 3600
+          expr: time() - kube_cronjob_status_last_successful_time{namespace=~"plane-prod|infisical|frameflow",cronjob="plane-backup"} > 26 * 3600
           labels: { severity: critical, component: backup }
           annotations:
             summary: "{{ $labels.namespace }}/{{ $labels.cronjob }} last succeeded {{ $value | humanizeDuration }} ago"
@@ -197,6 +197,18 @@ spec:
           labels: { severity: critical, component: backup, namespace: infisical }
           annotations:
             summary: No backup in infisical has succeeded, or its CronJob is gone
+        # Frameflow's pod mounts the API's volume, which comes with Frameflow's second release, so no night of it can run before that,
+        # and this waits for the volume. It reads the volume over 15 minutes, as wayline:plane_application:present reads Argo CD, so a
+        # kube-state-metrics restart does not start the 26 hours again. From then its night succeeds with nothing to back up until the
+        # API makes its database, so this needs no other gate.
+        - alert: BackupNeverSucceeded
+          expr: |
+            absent(kube_cronjob_status_last_successful_time{namespace="frameflow",cronjob="plane-backup"})
+              and on() max_over_time(kube_persistentvolumeclaim_info{namespace="frameflow",persistentvolumeclaim="frameflow-data"}[15m])
+          for: 26h
+          labels: { severity: critical, component: backup, namespace: frameflow }
+          annotations:
+            summary: No backup in frameflow has succeeded, or its CronJob is gone
     - name: hosted.network
       interval: 30s
       rules:

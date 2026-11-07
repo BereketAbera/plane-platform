@@ -1266,7 +1266,10 @@ backups() {
   section "Backups"
   if cluster_or_blocked "the nightly backups"; then
     local namespace last age
-    for namespace in infisical plane-prod; do
+    # Frameflow's cannot run before its second release brings the API's volume, so until then it reads none, and after that it succeeds
+    # with nothing to back up until the API has made a database. So a success here says only that the night ran: make remote-backup says
+    # which.
+    for namespace in infisical plane-prod frameflow; do
       last="$(kc -n "$namespace" get cronjob plane-backup -o jsonpath='{.status.lastSuccessfulTime}' 2>/dev/null || true)"
       if [[ -z "$last" ]]; then
         row INCOMPLETE "$namespace: a nightly backup in the last 26 h" "none has succeeded yet. To run one: make remote-backup TARGET=plane-prod CONFIRM=plane-prod"

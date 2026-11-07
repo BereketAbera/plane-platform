@@ -1,0 +1,417 @@
+# Nightly backup of Frameflow: its SQLite database, Hatchet's Postgres and the media bucket, sealed with restic as host frameflow. An
+# hour after Infisical's and half an hour after Plane's, so no two of them read the disk at once. plane-prod.yaml says what these Jobs
+# share, and why.
+#
+# What differs here, and why:
+# - SQLite is read with the platform's own Python, alert-sink's image, and its sqlite3 module. Not with Frameflow's backend image, which
+#   has SQLite too: an app's images are named in platform/<app>/ alone, because scripts/ci/promote-app.sh moves them there and refuses
+#   an image named anywhere else. VACUUM INTO writes a consistent copy through a read-only connection while the API goes on writing, and
+#   integrity_check and each table's count read that copy, never the live file.
+# - That container runs as the app's uid and gid, 1000, and every other one as 70, which owns the host folder, because hostPath ignores
+#   fsGroup. fsGroup 70 gives /work to group 70, set-group-id, and adds group 70 to every container, that one too. So what it writes,
+#   under umask 007, the containers after it can read and add to, and it can read the host folder to see whether a repository is there.
+# - Hatchet's database is dumped as Infisical's is: its tables are partitioned by day, so the scratch restore runs without
+#   --single-transaction, and each table is counted on its own. A dump is useless without Hatchet's master keyset, which stays in
+#   Infisical project frameflow-prod and the owner's files. Only a truncated hash of it goes in the manifest.
+# - The bucket is read with the backup user's keys, which may list and read frameflow-media and nothing else.
+#
+# The pod mounts frameflow-data, the API's volume, which comes with the API in Frameflow's second release (platform/frameflow's
+# kustomization.yaml). Until then no pod of this can start, so a night between the two releases fails at its deadline and
+# PlaneBackupFailed says so: the second release belongs on the day of the first. BackupNeverSucceeded waits for that volume. Once it is
+# there and the API has not yet made its database, the run says there is nothing to back up yet and succeeds. Once a repository exists,
+# the same absence is a failure, as in plane-prod.yaml.
+#
+# ignore-healthcheck: as in plane-prod.yaml, a failed night must not hold root's sync at its first wave.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: plane-backup
+  namespace: frameflow
+  labels:
+    app.kubernetes.io/name: plane-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/ignore-healthcheck: "true"
+spec:
+  schedule: "47 2 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  # A node that was down at 02:47 still runs tonight's when it returns.
+  startingDeadlineSeconds: 21600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: plane-backup
+        app.kubernetes.io/component: backup
+        app.kubernetes.io/part-of: frameflow
+    spec:
+      backoffLimit: 0 # never retry into a half-written folder
+      activeDeadlineSeconds: 14400
+      # A failed Job's metric is what PlaneBackupFailed reads. Long enough to outlast the next night, and no longer.
+      ttlSecondsAfterFinished: 129600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: plane-backup
+            app.kubernetes.io/component: backup
+            app.kubernetes.io/part-of: frameflow
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 70
+            runAsGroup: 70
+            fsGroup: 70
+            seccompProfile: {type: RuntimeDefault}
+          volumes:
+            - name: backups
+              persistentVolumeClaim: {claimName: backups}
+            - name: restic-password
+              secret: {secretName: restic-password, defaultMode: 0440}
+            - name: data
+              persistentVolumeClaim: {claimName: frameflow-data}
+            # A full copy of the bucket each night, whose quota is 12GiB, and the dumps beside it. Fills up, and the pod is evicted,
+            # and the failure alerts, rather than the node filling.
+            - name: work
+              emptyDir: {sizeLimit: 20Gi}
+            - name: tmp
+              emptyDir: {sizeLimit: 64Mi}
+          initContainers:
+            - name: sqlite
+              image: docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8
+              imagePullPolicy: IfNotPresent
+              # SQLite in WAL mode writes beside the database even to read it, and leaves a -shm and a -wal there when the API had none
+              # open. As the app's own uid and gid, so the API can still write them.
+              securityContext: {runAsUser: 1000, runAsGroup: 1000, allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+              env:
+                - {name: HOME, value: /tmp}
+                # SQLite sorts here to build the copy's indexes. On /work, which has room for the copy anyway, and not the small /tmp.
+                - {name: TMPDIR, value: /work/tmp}
+              resources:
+                requests: {cpu: 25m, memory: 32Mi}
+                limits: {cpu: 500m, memory: 256Mi}
+              volumeMounts:
+                - {name: data, mountPath: /data}
+                - {name: backups, mountPath: /backups, readOnly: true}
+                - {name: work, mountPath: /work}
+                - {name: tmp, mountPath: /tmp}
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  set -eu
+                  # Group read and write: the containers after this one run as 70, and add to what it makes.
+                  umask 007
+                  BACKUP_ID="$(date -u +%Y%m%dT%H%M%SZ)"
+                  printf '%s' "$BACKUP_ID" > /work/backup-id
+                  D=/work/backup
+
+                  # The API makes its database the first time it starts, and only then is there anything here to keep. This asks for
+                  # restic's folder, and not for its config as plane-prod.yaml does, because this container reads /backups through group
+                  # 70 alone, and the folder needs only the mode bootstrap gives /backups.
+                  if [ ! -e /data/app.db ]; then
+                    if [ -e /backups/restic ]; then
+                      echo "sqlite: Frameflow's database is not here, and a repository says it was. Refusing to read that as nothing to do." >&2
+                      exit 1
+                    fi
+                    echo "sqlite: Frameflow's API has not made its database here yet and no backup exists, so there is nothing to back up yet"
+                    : > /work/skip
+                    exit 0
+                  fi
+                  mkdir "$D" "$D/sqlite" /work/tmp
+
+                  # The copy leaves WAL mode, so it is one file that opens anywhere, read-only too. The API puts its database back in
+                  # WAL mode when it opens one. Each table's count, and the objects the rows say exist, come from the copy too.
+                  python3 -I - /data/app.db "$D/sqlite" <<'PY'
+                  import sqlite3
+                  import sys
+
+                  live, folder = sys.argv[1:3]
+
+
+                  def write(name, lines):
+                      with open(f"{folder}/{name}", "w") as out:
+                          out.writelines(f"{line}\n" for line in lines)
+
+
+                  def count(table):
+                      quoted = '"' + table.replace('"', '""') + '"'
+                      return copy.execute(f"SELECT count(*) FROM {quoted}").fetchone()[0]
+
+
+                  # mode=ro, so nothing here can write the live database. The timeout waits out a lock the API holds for a moment.
+                  source = sqlite3.connect(f"file:{live}?mode=ro", uri=True, timeout=30, isolation_level=None)
+                  source.execute("VACUUM INTO ?", (f"{folder}/app.db",))
+                  source.close()
+                  copy = sqlite3.connect(f"{folder}/app.db", isolation_level=None)
+                  copy.execute("PRAGMA journal_mode = DELETE")
+                  integrity = [row[0] for row in copy.execute("PRAGMA integrity_check")]
+                  write("integrity.txt", integrity)
+                  if integrity != ["ok"]:
+                      sys.exit("sqlite: integrity_check of the copy: " + "; ".join(integrity[:5]))
+                  tables = [row[0] for row in copy.execute(
+                      "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite\\_%' ESCAPE '\\' ORDER BY name")]
+                  write("rowcounts.tsv", [f"{table}\t{count(table)}" for table in tables])
+                  write("sqlite_version.txt", [sqlite3.sqlite_version])
+                  try:
+                      version = copy.execute("SELECT max(version) FROM schema_migrations").fetchone()[0]
+                  except sqlite3.Error:
+                      version = None
+                  write("schema_version.txt", ["" if version is None else version])
+                  # A record, as Plane's GATE2 is. If the query fails on a later schema, this backup records no result: better that
+                  # than no backup.
+                  try:
+                      keys = [row[0] for row in copy.execute(
+                          "SELECT source_object_key FROM videos WHERE upload_status = 'uploaded' AND source_object_key IS NOT NULL"
+                          " UNION SELECT master_playlist_object_key FROM videos"
+                          " WHERE status = 'completed' AND master_playlist_object_key IS NOT NULL ORDER BY 1")]
+                  except sqlite3.Error as error:
+                      print(f"sqlite: could not list the objects the rows name, so this backup records no result for them: {error}",
+                            file=sys.stderr)
+                  else:
+                      write("object-keys.txt", keys)
+                  copy.close()
+                  PY
+                  echo "sqlite: $BACKUP_ID, $(wc -l < "$D/sqlite/rowcounts.tsv") tables counted from a copy that passed integrity_check"
+            - name: hatchet-postgres
+              # The server's own version, from platform/frameflow: pg_dump refuses a newer server.
+              image: docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+              imagePullPolicy: IfNotPresent
+              securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+              env:
+                - {name: PGHOST, value: hatchet-postgres}
+                - {name: PGUSER, valueFrom: {secretKeyRef: {name: hatchet-db, key: POSTGRES_USER, optional: true}}}
+                - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: hatchet-db, key: POSTGRES_PASSWORD, optional: true}}}
+                - {name: POSTGRES_DB, valueFrom: {secretKeyRef: {name: hatchet-db, key: POSTGRES_DB, optional: true}}}
+              resources:
+                requests: {cpu: 50m, memory: 64Mi}
+                limits: {cpu: "1", memory: 256Mi}
+              volumeMounts:
+                - {name: work, mountPath: /work}
+                - {name: tmp, mountPath: /tmp}
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  set -eu
+                  umask 077
+                  if [ -f /work/skip ]; then exit 0; fi
+                  BACKUP_ID="$(cat /work/backup-id)"
+                  D=/work/backup
+                  TAB="$(printf '\t')"
+                  # A database with no Hatchet beside it has runs nothing could follow, so a backup without Hatchet's is not one.
+                  if [ -z "${PGPASSWORD:-}" ]; then
+                    echo "hatchet-postgres: Secret hatchet-db is not here, and Frameflow's database is, so this backup would hold no Hatchet" >&2
+                    exit 1
+                  fi
+                  # kube-router admits a new pod a second or two after it starts, and until then refuses its connections just as a
+                  # closed port does: see plane-prod.yaml. So wait for an answer, and if a minute brings none, psql below fails the run.
+                  TRIES=0
+                  until pg_isready -q -t 10 || [ "$TRIES" -ge 30 ]; do
+                    TRIES=$((TRIES + 1))
+                    sleep 2
+                  done
+                  mkdir "$D/postgres"
+                  # A run killed before its trap below leaves its scratch copy in the live server, a full plaintext copy with nothing
+                  # to remove it. Only this Job makes them, one at a time, so any found here is left over.
+                  psql -XAt -d "$POSTGRES_DB" -c "SELECT datname FROM pg_database WHERE datname LIKE 'scratch\_%'" | while read -r OLD; do
+                    echo "hatchet-postgres: dropping $OLD, which an earlier run left"
+                    dropdb --if-exists --force "$OLD" || echo "hatchet-postgres: could not drop $OLD" >&2
+                  done
+                  pg_dump -Fc -Z 0 -f "$D/postgres/hatchet.dump" "$POSTGRES_DB"
+                  pg_restore -l "$D/postgres/hatchet.dump" > "$D/postgres/hatchet.toc.txt"
+                  # One statement per table, as for Infisical, because a UNION over every partition can run out of shared memory.
+                  cat > "$D/postgres/rowcounts.sql" <<'SQL'
+                  SELECT format('SELECT %L AS t, count(*) AS c FROM public.%I', tablename, tablename) FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename \gexec
+                  SQL
+                  # Prove the dump restores, and count from it rather than from a database Hatchet keeps writing. local-path enforces no
+                  # size, so the copy takes the node's disk and not the claim's.
+                  V="scratch_$(printf '%s' "$BACKUP_ID" | tr '[:upper:]' '[:lower:]')"
+                  trap 'dropdb --if-exists --force "$V" || true' EXIT
+                  createdb "$V"
+                  # Never --single-transaction: a partition's indexes each take a lock, and one transaction holding them all can run
+                  # out of the server's lock table.
+                  pg_restore --no-owner --no-privileges --exit-on-error -d "$V" "$D/postgres/hatchet.dump"
+                  psql -XAt -F "$TAB" -v ON_ERROR_STOP=1 -d "$V" -f "$D/postgres/rowcounts.sql" > "$D/postgres/rowcounts.tsv"
+                  psql -XAt -d "$POSTGRES_DB" -c 'SHOW server_version' > "$D/postgres/server_version.txt"
+                  pg_dump --version > "$D/postgres/pg_dump_version.txt"
+                  # No live read of the running image is possible here, so the database says which of Hatchet's migrations it last ran.
+                  psql -XAt -d "$POSTGRES_DB" -c 'SELECT max(version_id) FROM goose_db_version WHERE is_applied' > "$D/postgres/hatchet_version.txt" 2>/dev/null || : > "$D/postgres/hatchet_version.txt"
+                  echo "hatchet-postgres: $(wc -l < "$D/postgres/rowcounts.tsv") tables counted from a scratch restore"
+            # After the database, so every object its rows name is there. Extra objects are harmless.
+            - name: objects
+              image: docker.io/rclone/rclone:1.75.2@sha256:2687085f718d3c628f7fdfb77c52a1d344332aed543110bb88088f2c70d43eb5
+              imagePullPolicy: IfNotPresent
+              securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+              env:
+                - {name: HOME, value: /tmp}
+                - {name: RCLONE_CONFIG, value: /tmp/rclone.conf}
+                - {name: RCLONE_CONFIG_SRC_TYPE, value: s3}
+                - {name: RCLONE_CONFIG_SRC_PROVIDER, value: Minio}
+                - {name: RCLONE_CONFIG_SRC_ENDPOINT, value: "http://frameflow-silo:9000"}
+                - {name: RCLONE_CONFIG_SRC_ACCESS_KEY_ID, valueFrom: {secretKeyRef: {name: frameflow-silo-backup, key: S3_BACKUP_ACCESS_KEY_ID, optional: true}}}
+                - {name: RCLONE_CONFIG_SRC_SECRET_ACCESS_KEY, valueFrom: {secretKeyRef: {name: frameflow-silo-backup, key: S3_BACKUP_SECRET_ACCESS_KEY, optional: true}}}
+                - {name: BUCKET, value: frameflow-media}
+              resources:
+                requests: {cpu: 25m, memory: 32Mi}
+                limits: {cpu: 500m, memory: 192Mi}
+              volumeMounts:
+                - {name: work, mountPath: /work}
+                - {name: tmp, mountPath: /tmp}
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  set -eu
+                  umask 077
+                  if [ -f /work/skip ]; then exit 0; fi
+                  D=/work/backup
+                  if [ -z "${RCLONE_CONFIG_SRC_ACCESS_KEY_ID:-}" ]; then
+                    echo "objects: Secret frameflow-silo-backup is not here, and Frameflow's database is, so this backup would hold no media" >&2
+                    exit 1
+                  fi
+                  mkdir -p "$D/objects"
+                  # Staging holds a run's renditions until publication copies them and deletes it, so a copy taken while a video
+                  # processes would race that delete, and a restore has no run to finish with them. Everything else is kept. The API
+                  # serves each stream file with a type of its own, so Content-Type, which lsjson keeps, needs no replaying.
+                  rclone copy "src:$BUCKET" "$D/objects" --exclude 'videos/*/staging/**' --checksum --transfers 4 --stats 0
+                  rclone check "src:$BUCKET" "$D/objects" --exclude 'videos/*/staging/**' --one-way --download --combined "$D/objects.check"
+                  rclone lsjson -R --metadata --exclude 'videos/*/staging/**' "src:$BUCKET" > "$D/objects.lsjson"
+                  echo "objects: $(wc -l < "$D/objects.check") checked"
+                  # As Plane's GATE2: the objects the copied rows name, against the objects in this backup. A record and not a failure,
+                  # because a backup with one dangling row still holds everything else. If the comparison cannot run, this backup
+                  # records no result, and that does not cost the backup.
+                  if [ -f "$D/sqlite/object-keys.txt" ]; then
+                    if rclone lsf -R --files-only "$D/objects" > "$D/.objects.list" \
+                      && LC_ALL=C sort "$D/.objects.list" > "$D/.objects.sorted" \
+                      && LC_ALL=C sort "$D/sqlite/object-keys.txt" > "$D/.keys.sorted" \
+                      && LC_ALL=C comm -23 "$D/.keys.sorted" "$D/.objects.sorted" > "$D/.objects.missing"; then
+                      mv "$D/.objects.missing" "$D/sqlite/object-keys-missing.txt"
+                      echo "objects: the rows name $(wc -l < "$D/sqlite/object-keys.txt"), and $(wc -l < "$D/sqlite/object-keys-missing.txt") of those are not in this backup"
+                    else
+                      echo "objects: could not compare the objects the rows name with those copied, so this backup records no result for them" >&2
+                    fi
+                    rm -f "$D/.objects.list" "$D/.objects.sorted" "$D/.keys.sorted" "$D/.objects.missing"
+                  fi
+            - name: manifest
+              image: docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+              imagePullPolicy: IfNotPresent
+              securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+              env:
+                # Hashed below and unset at once. The keyset itself never reaches the backup.
+                - {name: HATCHET_MASTER_KEYSET, valueFrom: {secretKeyRef: {name: hatchet-server, key: SERVER_ENCRYPTION_MASTER_KEYSET, optional: true}}}
+              resources:
+                requests: {cpu: 25m, memory: 32Mi}
+                # Hashing a full bucket twice, so more CPU than Plane's.
+                limits: {cpu: 500m, memory: 64Mi}
+              volumeMounts:
+                - {name: work, mountPath: /work}
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  set -eu
+                  umask 077
+                  if [ -f /work/skip ]; then exit 0; fi
+                  BACKUP_ID="$(cat /work/backup-id)"
+                  cd /work/backup
+                  # A truncated hash of a high-entropy key is safe beside the dump. The key is not. The JWT keysets are encrypted
+                  # under this one, so it says which keysets this dump pairs with. An empty value is not hashed, because the hash of
+                  # nothing would read as a fingerprint.
+                  FP=""
+                  if [ -n "${HATCHET_MASTER_KEYSET:-}" ]; then
+                    FP="$(printf %s "$HATCHET_MASTER_KEYSET" | sha256sum | cut -c1-16)"
+                  else
+                    echo "manifest: Secret hatchet-server holds no SERVER_ENCRYPTION_MASTER_KEYSET here, so this backup records no fingerprint, and a restore test reads that as a mismatch" >&2
+                  fi
+                  unset HATCHET_MASTER_KEYSET
+                  entry() { printf '{"path":"%s","bytes":%s,"sha256":"%s"}' "$1" "$(wc -c < "$1" | tr -d ' ')" "$(sha256sum "$1" | cut -d' ' -f1)"; }
+                  FILES=""
+                  for f in sqlite/app.db sqlite/integrity.txt sqlite/rowcounts.tsv postgres/hatchet.dump postgres/hatchet.toc.txt postgres/rowcounts.tsv objects.lsjson; do
+                    FILES="$FILES${FILES:+,}$(entry "$f")"
+                  done
+                  OBJECTS="$(find objects -type f | wc -l | tr -d ' ')"
+                  OBJECT_BYTES="$(find objects -type f -exec stat -c %s {} + | awk '{s += $1} END {print s + 0}')"
+                  if [ -f sqlite/object-keys-missing.txt ]; then
+                    NAMED="{\"rows\": $(wc -l < sqlite/object-keys.txt | tr -d ' '), \"missing\": $(wc -l < sqlite/object-keys-missing.txt | tr -d ' ')}"
+                  else
+                    NAMED=null
+                  fi
+                  cat > manifest.json <<JSON
+                  {
+                    "schema": 1,
+                    "kind": "frameflow",
+                    "env": "prod",
+                    "id": "$BACKUP_ID",
+                    "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+                    "frameflow_schema_version": "$(cat sqlite/schema_version.txt)",
+                    "sqlite_version": "$(cat sqlite/sqlite_version.txt)",
+                    "pg_server_version": "$(cat postgres/server_version.txt)",
+                    "pg_dump_version": "$(cat postgres/pg_dump_version.txt)",
+                    "hatchet_schema_version": "$(cat postgres/hatchet_version.txt)",
+                    "hatchet_master_keyset_fp": "$FP",
+                    "excluded_objects": ["videos/*/staging/**"],
+                    "objects": {"count": $OBJECTS, "bytes": $OBJECT_BYTES},
+                    "named_objects": $NAMED,
+                    "files": [$FILES]
+                  }
+                  JSON
+                  find . -type f ! -name SHA256SUMS -print0 | xargs -0 sha256sum > SHA256SUMS
+                  sha256sum -c SHA256SUMS > /dev/null
+                  echo "manifest: $BACKUP_ID complete"
+          containers:
+            - name: seal
+              image: docker.io/restic/restic:0.19.1@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
+              imagePullPolicy: IfNotPresent
+              securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+              env:
+                - {name: RESTIC_REPOSITORY, value: /backups/restic}
+                - {name: RESTIC_PASSWORD_FILE, value: /run/restic/password}
+                - {name: RESTIC_CACHE_DIR, value: /work/cache}
+                - {name: TMPDIR, value: /work/tmp}
+                - {name: HOME, value: /tmp}
+                - {name: BACKUP_HOST, value: frameflow}
+              resources:
+                requests: {cpu: 50m, memory: 128Mi}
+                limits: {cpu: "1", memory: 1Gi}
+              volumeMounts:
+                - {name: backups, mountPath: /backups}
+                - {name: restic-password, mountPath: /run/restic, readOnly: true}
+                - {name: work, mountPath: /work}
+                - {name: tmp, mountPath: /tmp}
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  set -eu
+                  # Not 077: new folders in the repository must stay enterable by the read-only pull user's group. restic sets
+                  # its files' modes itself, read-only, from the group bits of the repository's config.
+                  umask 027
+                  if [ -f /work/skip ]; then
+                    echo "seal: nothing to seal"
+                    exit 0
+                  fi
+                  mkdir -p /work/tmp /work/cache
+                  rc=0
+                  restic cat config > /dev/null 2>&1 || rc=$?
+                  case "$rc" in
+                    0) ;;
+                    10) restic init ;;
+                    *)
+                      echo "seal: cannot read the repository at $RESTIC_REPOSITORY, restic exit $rc" >&2
+                      exit 1
+                      ;;
+                  esac
+                  # Group read on config is restic's hint to create everything after it group-readable.
+                  chmod -R g+rX "$RESTIC_REPOSITORY"
+                  # A fixed path and --group-by, so retention groups these and the next run finds its parent.
+                  restic backup --retry-lock 10m --host "$BACKUP_HOST" --tag wayline --group-by host,tags /work/backup
+                  restic forget --retry-lock 10m --host "$BACKUP_HOST" --tag wayline --group-by host,tags \
+                    --keep-daily 7 --keep-weekly 4 --keep-monthly 3 --prune
+                  restic check --retry-lock 10m --read-data-subset=5%
+                  # Sunday: a quarter of the data, so a month reads all of it.
+                  if [ "$(date -u +%u)" = 7 ]; then
+                    restic check --retry-lock 10m --read-data-subset="$(date -u +%U | awk '{print ($1 % 4) + 1}')/4"
+                  fi
+                  chmod -R g+rX "$RESTIC_REPOSITORY"
+                  restic snapshots --host "$BACKUP_HOST" --tag wayline --latest 1 --compact
+                  echo "seal: complete"
