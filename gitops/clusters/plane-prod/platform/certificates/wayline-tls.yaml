@@ -1,5 +1,5 @@
-# The only certificate on this cluster, and cert-manager its only owner: the Plane chart's createIssuer and generateCerts stay off,
-# and Traefik has no ACME resolver. It must share the namespace of the route that names it, so its solver pods run in plane-prod too.
+# Plane's certificate, and cert-manager its only owner: the Plane chart's createIssuer and generateCerts stay off, and Traefik has no
+# ACME resolver. It must share the namespace of the route that names it, so its solver pods run in plane-prod too.
 #
 # No renewBefore: cert-manager renews at two thirds of the lifetime, and Let's Encrypt is shortening that lifetime in 2027 and 2028.
 #

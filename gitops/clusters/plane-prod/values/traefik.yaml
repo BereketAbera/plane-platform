@@ -49,16 +49,16 @@ tlsOptions:
 providers:
   kubernetesCRD:
     enabled: true
-    # Plane's route, and the namespace that holds the TLSOption above. Nothing else here publishes anything.
-    namespaces: [plane-prod, traefik]
-    # So a default TLSOption in plane-prod cannot lower the minimum version.
+    # Plane's route, Grafana's in monitoring, and the namespace that holds the TLSOption above. Nothing else here publishes anything.
+    namespaces: [plane-prod, monitoring, traefik]
+    # So a default TLSOption in plane-prod or monitoring cannot lower the minimum version.
     defaultTLSResourcesNamespace: traefik
-  # Only for cert-manager's HTTP-01 solver, which makes a temporary Ingress and has no IngressRoute shim. Every route is still an
-  # IngressRoute, and policy/hosted.rego refuses an Ingress in Git.
+  # Only for cert-manager's HTTP-01 solver, which makes a temporary Ingress and has no IngressRoute shim, in the namespace of each
+  # Certificate. Every route is still an IngressRoute, and policy/hosted.rego refuses an Ingress in Git.
   kubernetesIngress:
     enabled: true
     ingressClass: traefik
-    namespaces: [plane-prod]
+    namespaces: [plane-prod, monitoring]
     # The status it would copy is empty on a ClusterIP Service, and cert-manager does not read it.
     publishedService:
       enabled: false

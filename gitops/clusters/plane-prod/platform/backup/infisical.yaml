@@ -85,6 +85,13 @@ spec:
                   D=/work/backup
                   TAB="$(printf '\t')"
                   mkdir "$D" "$D/postgres"
+                  # kube-router admits a new pod a second or two after it starts, and until then refuses its connections just as a
+                  # closed port does: see plane-prod.yaml. So wait for an answer, and if a minute brings none, psql below fails the run.
+                  TRIES=0
+                  until pg_isready -q -t 10 || [ "$TRIES" -ge 30 ]; do
+                    TRIES=$((TRIES + 1))
+                    sleep 2
+                  done
                   # A run killed before its trap below leaves its scratch copy in the live server, a full plaintext copy with nothing
                   # to remove it. Only this Job makes them, one at a time, so any found here is left over.
                   psql -XAt -d "$POSTGRES_DB" -c "SELECT datname FROM pg_database WHERE datname LIKE 'scratch\_%'" | while read -r OLD; do

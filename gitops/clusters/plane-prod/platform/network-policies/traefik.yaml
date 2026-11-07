@@ -11,7 +11,8 @@
 # host network, and anything the node itself sends to a pod, is exempt, so the kubelet's probes need no rule, and only the
 # host firewall guards 6443, 9100 and 10250 from outside.
 #
-# No routes to Argo CD, Grafana, Infisical, Prometheus or Alertmanager exist on this cluster, so nothing here reaches them.
+# Grafana is the one console with a route, and egress below reaches it on its container port alone. No route to Argo CD, Infisical,
+# Prometheus or Alertmanager exists on this cluster, so nothing here reaches them.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -82,7 +83,8 @@ spec:
       ports:
         - { protocol: TCP, port: 9100 }
 ---
-# The coarse half of each pair: plane-prod's own policies narrow which pods and ports accept.
+# The coarse half of each pair for plane-prod, whose own policies narrow which pods and ports accept. monitoring holds the consoles with
+# no route, so there each rule names its pods.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -105,3 +107,14 @@ spec:
         - { protocol: TCP, port: 8000 }
         - { protocol: TCP, port: 8089 }
         - { protocol: TCP, port: 9000 }
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: grafana } }
+      ports:
+        - { protocol: TCP, port: 3000 }
+    # The solver for grafana-tls, which runs beside that Certificate.
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
+      ports:
+        - { protocol: TCP, port: 8089 }

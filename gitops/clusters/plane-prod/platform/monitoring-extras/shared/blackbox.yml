@@ -1,9 +1,9 @@
 # Body assertions are mandatory. With no endpoints Traefik can fall through to the catch-all web
 # route, which answers 200 with HTML, so a status-only probe would pass while the API is gone.
 #
-# Every target is https://wayline.bereket.dev. Inside the cluster CoreDNS rewrites that name to Traefik's Service, so a probe crosses
-# the same TLS, certificate and routes as a browser, without leaving the node. The certificate is verified, so a staging certificate
-# or a failed renewal reads as a failed probe. SNI and Host come from the target.
+# Every target is https://wayline.bereket.dev or https://grafana.bereket.dev. Inside the cluster CoreDNS rewrites those names to Traefik's
+# Service, so a probe crosses the same TLS, certificate and routes as a browser, without leaving the node. The certificate is verified, so a
+# staging certificate or a failed renewal reads as a failed probe. SNI and Host come from the target.
 modules:
   http_html:
     prober: http
@@ -39,6 +39,15 @@ modules:
       fail_if_not_ssl: true
       valid_status_codes: [200]
       fail_if_body_json_not_matches_cel: "body.status == 'OK'"
+  # Grafana's own page, by its title, so another service behind that route reads as down.
+  http_grafana_login:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      fail_if_not_ssl: true
+      valid_status_codes: [200]
+      fail_if_body_not_matches_regexp: ['<title>Grafana</title>']
   # A connection that must not succeed: see the denied-prometheus Probe.
   tcp_denied:
     prober: tcp

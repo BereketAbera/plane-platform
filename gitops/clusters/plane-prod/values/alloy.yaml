@@ -79,10 +79,12 @@ alloy:
       discovery.relabel "pod_logs" {
         targets = discovery.kubernetes.pods.targets
 
+        // Every namespace but K3s's own and the restore tests, whose pods work on a copy of live data and whose logs stay out of Loki for
+        // that. A list to leave out and not one to keep, so a new app's logs arrive with no change here.
         rule {
           source_labels = ["__meta_kubernetes_namespace"]
-          regex         = "plane-prod|cert-manager|infisical|argocd|traefik|monitoring"
-          action        = "keep"
+          regex         = "kube-system|kube-public|kube-node-lease|restore-test-.*"
+          action        = "drop"
         }
         // Finished pods have nothing left to tail, and each dead target would retry forever.
         rule {

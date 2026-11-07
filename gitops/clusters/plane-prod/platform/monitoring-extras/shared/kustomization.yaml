@@ -4,6 +4,7 @@ namespace: monitoring
 resources:
   - blackbox.yaml
   - alert-sink.yaml
+  - grafana-route.yaml
   - service-monitors.yaml
   - probes.yaml
   - rules-hosted.yaml
