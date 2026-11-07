@@ -262,6 +262,13 @@ plant_hosted_infisical_claim_module_reads_no_body() { replace_first gitops/clust
 plant_hosted_infisical_claim_watch_misses_the_module() { replace_first gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted.yaml '\n\s+or absent\(probe_failed_due_to_cel\{probe="infisical-claimed"\}\)' ''; }
 plant_hosted_infisical_guess_limit_gone() { replace_first "$INFISICAL_ROUTE" '(?s)---\n# A person.s guesses, measured per client.*?(?=---\n)' ''; }
 plant_hosted_infisical_session_probe_gone() { replace_first "$INFISICAL_PROBES" '(?s)---\n# The route.s session part.*\Z' ''; }
+# The route is found by the host target.yaml gives Infisical and not by its name, so a renamed one still needs its limits, and the policy
+# and that file must give the same host.
+plant_hosted_infisical_route_renamed_and_its_limit_gone() {
+  replace_first "$INFISICAL_ROUTE" '(kind: IngressRoute\nmetadata:\n  name: )infisical\n' '\1infisical-public\n'
+  plant_hosted_infisical_guess_limit_gone
+}
+plant_hosted_infisical_host_moved_in_target_alone() { replace_first infrastructure/hosted/plane-prod/target.yaml 'infisical_domain: infisical\.bereket\.dev' 'infisical_domain: vault.bereket.dev'; }
 plant_hosted_infisical_postgres_open_to_traefik() { replace_first gitops/clusters/plane-prod/platform/network-policies/infisical.yaml '(        - podSelector: \{ matchLabels: \{ app\.kubernetes\.io/component: backup \} \}\n)' '\1        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }\n'; }
 plant_hosted_traefik_egress_to_all_of_infisical() { replace_first gitops/clusters/plane-prod/platform/network-policies/traefik.yaml 'podSelector: \{ matchLabels: \{ app: infisical-standalone, component: infisical \} \}\n(\s+)ports:\n(\s+)- \{ protocol: TCP, port: 8080 \}' 'podSelector: {}\n\1ports:\n\2- { protocol: TCP, port: 8080 }\n\2- { protocol: TCP, port: 5432 }'; }
 # The way out of namespace infisical, which bounds the server's relaxed SSRF protection: a policy with no ingress rule, and DNS's own rule
@@ -567,6 +574,8 @@ control hosted-infisical-claim-module-reads-no-body validate-manifests.sh "black
 control hosted-infisical-claim-watch-misses-the-module validate-manifests.sh "promtool: hosted rule unit tests FAILED" plant_hosted_infisical_claim_watch_misses_the_module
 control hosted-infisical-guess-limit-gone validate-manifests.sh "Middleware infisical/infisical-guess-limit is not" plant_hosted_infisical_guess_limit_gone
 control hosted-infisical-session-probe-gone validate-manifests.sh "Probe infisical/infisical-session is not" plant_hosted_infisical_session_probe_gone
+control hosted-infisical-route-renamed-and-its-limit-gone validate-manifests.sh "IngressRoute infisical/infisical-public serves infisical.bereket.dev, and Middleware infisical/infisical-guess-limit is not" plant_hosted_infisical_route_renamed_and_its_limit_gone
+control hosted-infisical-host-moved-in-target-alone validate-manifests.sh "puts Infisical at vault.bereket.dev" plant_hosted_infisical_host_moved_in_target_alone
 control hosted-infisical-postgres-open-to-traefik validate-manifests.sh "so nothing new reaches the secret store or its database" plant_hosted_infisical_postgres_open_to_traefik
 control hosted-traefik-egress-to-all-of-infisical validate-manifests.sh "where Traefik reaches only Infisical's server on 8080" plant_hosted_traefik_egress_to_all_of_infisical
 control hosted-infisical-server-egress-opened validate-manifests.sh "is not one of the NetworkPolicies in namespace infisical" plant_hosted_infisical_server_egress_opened

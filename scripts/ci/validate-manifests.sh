@@ -84,11 +84,12 @@ conftest_run() { # conftest_run <namespaces, comma-separated> <files...>
 }
 
 # Everything Argo CD applies to hosted production, read at once, so policy/hosted_combined.rego can say an object is there at all, which no
-# rule reading one object at a time can.
+# rule reading one object at a time can. target.yaml goes with it, because Infisical's route is the one on the host that file gives Infisical.
+HOSTED_TARGET=infrastructure/hosted/plane-prod/target.yaml
 conftest_hosted_together() {
   local files=("$WORK"/hosted-charts/*.yaml)
   if has_yaml "$WORK/hosted"; then files+=("$WORK"/hosted/*.yaml); fi
-  conftest test --combine --policy policy --no-color --namespace hosted_combined "${files[@]}"
+  conftest test --combine --policy policy --no-color --namespace hosted_combined "${files[@]}" "$HOSTED_TARGET"
 }
 
 check "conftest: rendered Plane" conftest_run environments,gitops,workloads,plane "${ENVIRONMENT_FILES[@]}"
@@ -108,7 +109,7 @@ if has_yaml "$WORK/hosted"; then
   check "conftest: hosted tree" conftest_run gitops,workloads,plane,hosted,hosted_tree "$WORK"/hosted/*.yaml
   # The tree alone, read at once, so what policy/hosted_combined.rego asks of it is asked without the charts too: Infisical's route and its
   # limits and Probes are all in the tree. With the charts it runs again below, and Grafana's rules there need them.
-  check "conftest: hosted tree together" conftest test --combine --policy policy --no-color --namespace hosted_combined "$WORK"/hosted/*.yaml
+  check "conftest: hosted tree together" conftest test --combine --policy policy --no-color --namespace hosted_combined "$WORK"/hosted/*.yaml "$HOSTED_TARGET"
   check "hosted tree stands alone" hosted_tree_stands_alone "$WORK/hosted-alone"
   check "hosted tree: every image is listed" hosted_images_listed some "$WORK"/hosted/*.yaml
   check "hosted Alloy scrubs a Telegram bot token" alloy_scrubs_the_telegram_token "$HOSTED_TREE/values/alloy.yaml"
