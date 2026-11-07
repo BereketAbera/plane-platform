@@ -11,14 +11,17 @@
 # accident:
 # - plane-prod-sim's rows, renamed. There is no other environment, so no rows between the two, and no Docker Desktop host address.
 # - 5.253.234.127 is the node, in place of kind's node name. No policy in this cluster allows 172.16.0.0/12.
-# - Traefik reaches only Plane. The admin UIs have no route, so its rows to them are deny, where locally they were allow.
+# - Traefik reaches Plane and Grafana, whose public route is the one a console has. The other admin UIs have no route, so its rows to them
+#   are deny, where locally they were allow.
 # - api and blackbox reach Traefik on 443. The web entrypoint only redirects, so nothing but cert-manager's self-check needs 80.
 # - Argo CD reads GitHub on 443. No Git remote on a local network.
 # - Alertmanager reaches public 443, for Telegram and Healthchecks.
-# - New: cert-manager, the HTTP-01 solvers, the node's own ports from a pod. No frameflow rows: its quota is no pods, so none can start.
+# - New: cert-manager, the HTTP-01 solvers in both namespaces, the node's own ports from a pod. No frameflow rows: its quota is no pods, so
+#   none can start.
 #
 # Known limit, deliberately not a row: api is allowed to Traefik, and Traefik routes by Host header, so api could ask for any host
-# Traefik serves. NetworkPolicy cannot see that. scripts/hosted/test-hosted.sh shows the UI hosts answer 404 to it.
+# Traefik serves. NetworkPolicy cannot see that. scripts/hosted/test-hosted.sh shows the UI hosts answer 404 to it. Grafana's public host
+# answers it as it answers anyone, with its login.
 #
 # Not covered, because a pod cannot exercise it: traffic from outside. scripts/hosted/test-hosted.sh scans from outside.
 cases:
@@ -156,6 +159,11 @@ cases:
   - { from: { ns: plane-prod, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
   - { from: { ns: plane-prod, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: plane-pgdb.plane-prod.svc.cluster.local, port: 5432 }, expect: deny }
 
+  # monitoring: HTTP-01 solvers answer Traefik and call nothing, Prometheus least of all
+  - { from: { ns: monitoring, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: monitoring, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: kps-prometheus.monitoring.svc.cluster.local, port: 9090 }, expect: deny }
+  - { from: { ns: monitoring, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: kps-grafana.monitoring.svc.cluster.local, port: 80 }, expect: deny }
+
   # plane-prod: nothing reaches the platform's own control surfaces
   - { from: { ns: plane-prod, labels: { app.kubernetes.io/component: api } }, to: { host: argocd-server.argocd.svc.cluster.local, port: 80 }, expect: deny }
   - { from: { ns: plane-prod, labels: { app.kubernetes.io/component: api } }, to: { host: argocd-repo-server.argocd.svc.cluster.local, port: 8081 }, expect: deny }
@@ -178,12 +186,13 @@ cases:
   - { from: { ns: infisical, labels: { app.kubernetes.io/component: backup } }, to: { host: infisical-redis.infisical.svc.cluster.local, port: 6379 }, expect: deny }
   - { from: { ns: infisical, labels: { probe: unlabelled } }, to: { host: infisical-postgres.infisical.svc.cluster.local, port: 5432 }, expect: deny }
 
-  # traefik: only Plane and the API server. Nothing else has a route, and policy refuses it the consoles as well
+  # traefik: Plane, Grafana and the API server. Nothing else has a route, and policy refuses it the other consoles as well
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow, note: "CRD and Ingress providers" }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: argocd-server.argocd.svc.cluster.local, port: 80 }, expect: deny }
-  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kps-grafana.monitoring.svc.cluster.local, port: 80 }, expect: deny }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kps-grafana.monitoring.svc.cluster.local, port: 80 }, expect: allow, note: "the public route. Service 80 is pod port 3000" }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kps-prometheus.monitoring.svc.cluster.local, port: 9090 }, expect: deny }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kps-alertmanager.monitoring.svc.cluster.local, port: 9093 }, expect: deny }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: blackbox.monitoring.svc.cluster.local, port: 9115 }, expect: deny, note: "in monitoring, only Grafana and a solver" }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: loki.monitoring.svc.cluster.local, port: 3100 }, expect: deny }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: argocd-repo-server.argocd.svc.cluster.local, port: 8081 }, expect: deny }

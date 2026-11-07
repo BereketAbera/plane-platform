@@ -1,5 +1,5 @@
-# cert-manager. Only the controller leaves the cluster, and only to ACME on 443. The solver pods it starts run in plane-prod, under
-# that namespace's policies.
+# cert-manager. Only the controller leaves the cluster, and only to ACME on 443. The solver pods it starts run beside each Certificate,
+# in plane-prod and monitoring, under those namespaces' policies.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
