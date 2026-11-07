@@ -4,7 +4,7 @@
 # root or a local script see production. Run by scripts/ci/lint.sh, so by make ci and CI alike.
 #
 #   no plane-git, localhost:5001, *.localhost, kind-<name> or kind's address pool in the hosted trees and scripts
-#   no gitops/clusters and no plane-prod in the local trees (plane-prod-sim is a local name)
+#   no gitops/clusters, no plane-prod and no grafana.bereket.dev in the local trees (plane-prod-sim is a local name)
 #   no kubectl in scripts/hosted except through the kubeconfig and context lib.sh sets
 #
 # Reads what Git would track, so CI and make ci see the same files. Markdown is left out, because prose may say why not.
@@ -59,6 +59,9 @@ report "a hosted path in a local tree" "$(matches 'gitops/clusters' "${LOCAL_PAT
 
 # plane-prod-sim is the one name that may start this way, and ERE has no lookahead.
 report "the hosted cluster's name in a local tree" "$(matches 'plane-prod($|[^-]|-($|[^s])|-s($|[^i])|-si($|[^m]))' "${LOCAL_PATHS[@]}")"
+
+# policy/plane.rego lets that one route go without the allow list, and only this keeps a copy of it off the local cluster's Traefik.
+report "the hosted Grafana host in a local tree" "$(matches 'grafana\.bereket\.dev' "${LOCAL_PATHS[@]}")"
 
 # A kubectl of its own would follow whatever KUBECONFIG and current context this shell has, which may be kind's. On the node
 # it is `k3s kubectl`, which reaches only that node. Installing the tool is not running it.

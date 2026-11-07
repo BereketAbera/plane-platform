@@ -37,7 +37,7 @@ for directory in monitoring-extras backup; do
 done
 while read -r file; do
   as_json "$file" "$WORK/manifests/$(basename "$file" .yaml).json"
-done < <(find "$HOSTED_TREE/platform/infisical" -type f -name '*.yaml' 2>/dev/null | LC_ALL=C sort)
+done < <(find "$HOSTED_TREE/platform/infisical" "$HOSTED_TREE/platform/certificates" -type f -name '*.yaml' 2>/dev/null | LC_ALL=C sort)
 if [[ -f "$HOSTED_ENVIRONMENT/manifests.yaml" ]]; then
   as_json "$HOSTED_ENVIRONMENT/manifests.yaml" "$WORK/manifests/plane-prod-render.json"
 else
@@ -204,6 +204,11 @@ def extra(namespace, totals):
     entry["extra"] = tuple(max(a, b) for a, b in zip(entry["extra"], totals))
 
 
+# cert-manager's defaults for the pod it starts beside a Certificate for each HTTP-01 challenge. The flags that would change them are its
+# --acme-http01-solver-resource-*, and values/cert-manager.yaml sets none. No renewal can finish with no room for this pod.
+SOLVER = (quantity("10m"), quantity("64Mi"), quantity("64Mi"))
+
+
 def count_claim(namespace, spec):
     entry = row(namespace)
     entry["storage"] += quantity(spec["resources"]["requests"]["storage"])
@@ -234,6 +239,8 @@ for default, document in documents():
     elif kind in ("Job", "CronJob"):
         job = spec["jobTemplate"]["spec"] if kind == "CronJob" else spec
         extra(namespace, pod_totals(job["template"]["spec"], namespace))
+    elif kind == "Certificate":
+        extra(namespace, SOLVER)
     elif kind == "PersistentVolumeClaim":
         count_claim(namespace, spec)
     elif kind in ("Prometheus", "Alertmanager"):
@@ -252,9 +259,9 @@ for default, document in documents():
 for namespace, entry in sorted(usage.items()):
     hard = others[namespace]
     needs = [
-        ("limits.memory", entry["limit"] + entry["extra"][2], mib, f"{mib(entry['limit'])} steady, and {mib(entry['extra'][2])} for the largest rollout or Job"),
-        ("requests.memory", entry["request"] + entry["extra"][1], mib, f"{mib(entry['request'])} steady, and {mib(entry['extra'][1])} for the largest rollout or Job"),
-        ("requests.cpu", entry["cpu"] + entry["extra"][0], cores, f"{cores(entry['cpu'])} steady, and {cores(entry['extra'][0])} for the largest rollout or Job"),
+        ("limits.memory", entry["limit"] + entry["extra"][2], mib, f"{mib(entry['limit'])} steady, and {mib(entry['extra'][2])} for the largest rollout, Job or solver"),
+        ("requests.memory", entry["request"] + entry["extra"][1], mib, f"{mib(entry['request'])} steady, and {mib(entry['extra'][1])} for the largest rollout, Job or solver"),
+        ("requests.cpu", entry["cpu"] + entry["extra"][0], cores, f"{cores(entry['cpu'])} steady, and {cores(entry['extra'][0])} for the largest rollout, Job or solver"),
         ("requests.storage", entry["storage"], gib, f"{entry['claims']} claims"),
     ]
     for key, need, show, why in needs:

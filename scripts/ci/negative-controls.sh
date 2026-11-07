@@ -212,6 +212,36 @@ spec:
     secretName: wayline-tls
 YAML
 }
+# Grafana's real route, with each thing policy/hosted.rego exists to refuse on it.
+GRAFANA_ROUTE=gitops/clusters/plane-prod/platform/monitoring-extras/shared/grafana-route.yaml
+plant_hosted_grafana_on_another_host() { replace_every "$GRAFANA_ROUTE" 'Host(`grafana.bereket.dev`)' 'Host(`metrics.bereket.dev`)'; }
+plant_hosted_grafana_on_web() { replace_first "$GRAFANA_ROUTE" 'entryPoints: \[websecure\]' 'entryPoints: [web]'; }
+plant_hosted_grafana_without_tls() { replace_first "$GRAFANA_ROUTE" '\n  tls:\n    secretName: grafana-tls' ''; }
+plant_hosted_prometheus_under_the_grafana_host() { replace_first "$GRAFANA_ROUTE" '- name: kps-grafana\n(\s+)port: 80' '- name: kps-prometheus\n\1port: 9090'; }
+plant_hosted_grafana_metrics_public() { replace_first "$GRAFANA_ROUTE" ' && !PathPrefix\(`/metrics`\)' ''; }
+plant_hosted_grafana_login_without_its_limit() { replace_first "$GRAFANA_ROUTE" '\n\s+middlewares:\n\s+- name: grafana-login-limit' ''; }
+plant_hosted_grafana_limit_on_a_header() { replace_first "$GRAFANA_ROUTE" '(sourceCriterion:\n\s+)ipStrategy:\n\s+depth: 0' '\1requestHeaderName: X-Forwarded-For'; }
+plant_hosted_alertmanager_route_beside_grafana() {
+  plant_in_hosted_tree route.yaml <<'YAML'
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: planted
+  namespace: monitoring
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`grafana.bereket.dev`) && PathPrefix(`/alertmanager`)
+      kind: Rule
+      services:
+        - { name: kps-alertmanager, port: 9093 }
+  tls:
+    secretName: grafana-tls
+YAML
+}
+plant_hosted_grafana_host_in_a_local_tree() { printf '# see https://grafana.bereket.dev\n' >>helm/values/traefik.yaml; }
+# What the check adds for a solver, and no more: this is over the operator's surge and under one solver.
+plant_hosted_no_quota_room_for_a_solver() { yq -i '.quotas.monitoring."requests.memory" = "1690Mi"' infrastructure/hosted/plane-prod/capacity.yaml; }
 plant_hosted_node_port() {
   plant_in_hosted_tree service.yaml <<'YAML'
 apiVersion: v1
@@ -458,6 +488,16 @@ control hosted-web-entry-point validate-manifests.sh 'entryPoints is ["web"]' pl
 control hosted-route-without-tls validate-manifests.sh "tls is {} and must name only secretName wayline-tls" plant_hosted_route_without_tls
 control hosted-console-route-in-the-tree validate-manifests.sh "Hosted production gives no console a public route" plant_hosted_console_route
 control hosted-silo-console-in-the-render validate-manifests.sh "reaches plane-minio:9090" plant_hosted_silo_console_route
+control hosted-grafana-on-another-host validate-manifests.sh "is not one of Grafana's two" plant_hosted_grafana_on_another_host
+control hosted-grafana-on-web validate-manifests.sh 'entryPoints is ["web"]' plant_hosted_grafana_on_web
+control hosted-grafana-without-tls validate-manifests.sh "tls is {} and must name only secretName grafana-tls" plant_hosted_grafana_without_tls
+control hosted-prometheus-under-the-grafana-host validate-manifests.sh "is not one of Grafana's two" plant_hosted_prometheus_under_the_grafana_host
+control hosted-alertmanager-route-beside-grafana validate-manifests.sh "is not one of Grafana's two" plant_hosted_alertmanager_route_beside_grafana
+control hosted-grafana-metrics-public validate-manifests.sh "is not one of Grafana's two" plant_hosted_grafana_metrics_public
+control hosted-grafana-login-without-its-limit validate-manifests.sh "is not one of Grafana's two" plant_hosted_grafana_login_without_its_limit
+control hosted-grafana-limit-on-a-header validate-manifests.sh "any other source criterion counts something the client chooses" plant_hosted_grafana_limit_on_a_header
+control hosted-grafana-host-in-a-local-tree check-cluster-separation.sh "the hosted Grafana host in a local tree" plant_hosted_grafana_host_in_a_local_tree
+CONTROL_SKIP_CHARTS=no control hosted-no-quota-room-for-a-solver check-capacity.sh "for the largest rollout, Job or solver), and its quota is 1690Mi" plant_hosted_no_quota_room_for_a_solver
 control hosted-node-port-in-the-tree validate-manifests.sh "no NodePort Service" plant_hosted_node_port
 control hosted-load-balancer-in-the-render validate-manifests.sh "no LoadBalancer Service" plant_hosted_load_balancer_in_the_render
 control hosted-ingress-in-the-tree validate-manifests.sh "no Ingress in Git" plant_hosted_ingress
