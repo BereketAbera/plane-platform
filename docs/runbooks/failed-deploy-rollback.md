@@ -176,3 +176,21 @@ None of these is from prod-sim, and none waited for Argo CD's own look.
 | Assume a rollback restored data | It restores images only |
 | Pass `SKIP_BACKUP=yes` to a prod-sim promotion you might need to undo | That dump is the only way back past a migration |
 | Delete the migrator Job to "unstick" a sync | Argo CD re-creates a hook through `BeforeHookCreation`. Fix the cause or roll back |
+
+## Hosted production
+
+Nothing on this page reaches hosted production. `make promote` and `make rollback` take `dev` and `prod-sim` only, and publish to the bare
+repository on this Mac, which hosted Argo CD never reads. There a rollback is a revert on `main`, or the promotion workflow with an older set,
+and CI's `release-plane-prod` job moves branch `deploy/plane-prod`. [Rollback on hosted production](hosted-rollback.md) has the steps and
+what Argo CD does with them, and NOT RUN is its status: no rollback has run there.
+
+What carries over, and what does not:
+
+| | Here | Hosted production |
+|---|---|---|
+| A bad image on a Deployment | Old pods kept serving, measured once in dev | The same rollout settings and waves. Not measured |
+| A failing migrator | Deployments stay on their images, measured once in dev | The same waves, with the dump hook at wave 1 before it. Not measured |
+| A revert during a retry loop | Landed with no step by hand, twice in dev | `retry.refresh` is set the same way. Not seen |
+| The way back past a migration | The dump `make promote ENV=prod-sim` took | The dump the Sync hook took for that backend, and the steps in [`scripts/hosted/README.md`](../../scripts/hosted/README.md), section After a rollback: the database does not go back |
+| The first promotion | A revert undoes it | A revert of it is refused, so the branch stays where it is |
+| Who is told | The sink | Telegram, for warning and critical alerts |

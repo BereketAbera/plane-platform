@@ -146,3 +146,24 @@ Restoring a Plane backup taken before a rotation: Not tested in Pass 1. Both rea
 | Commit or paste anything from `.local/secret-zero/` | Mode 0600 and gitignored for a reason |
 | Test the password over `127.0.0.1` | Trust authentication accepts anything there |
 | Rotate during a backup | In-flight Jobs keep the old value and can fail at their next connection |
+
+## Hosted production
+
+`make rotate` takes `dev` and `prod-sim` only, on kind, so nothing above rotates a hosted secret. Hosted production has its own Infisical,
+project `plane-prod`, which its operator reads every 60 seconds. Its secret zero, the restic password, the deploy key and the alert
+credentials come from `.local/hosted/plane-prod/` and never from Infisical, so nothing depends on itself. None of these rotations has run on
+hosted production: NOT RUN.
+
+| Secret | How | Note |
+|---|---|---|
+| `PG_PASSWORD` and Plane's other values | No script | `scripts/rotate.sh` has no hosted target. Changing one in Infisical alone breaks Plane, for the reasons above |
+| `SECRET_KEY` | **Never** | As above |
+| Grafana's admin password | `make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=rotate`, then `make remote-bundle TARGET=plane-prod` | It replaces Grafana's pod, which signs everyone out. To change the username, write it into `.local/hosted/plane-prod/grafana-admin-user`, with no newline, and run `VERB=apply` |
+| Infisical's admin token | Before it ends, 90 days after it was made | With two-factor on, no script can sign in to make the next one. The owner makes it in the UI, into `.local/hosted/plane-prod/secret-zero/infisical-admin-token.new`, and the next `make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod` moves it into place: [`scripts/hosted/README.md`](../../scripts/hosted/README.md), section Locked out of Infisical. `make remote-status TARGET=plane-prod` says when it ends |
+| Infisical's admin password, and two-factor | By hand, in the UI or the database | [Lockout on hosted production](hosted-lockout.md#infisical) |
+| The GHCR pull token | By hand | The seed writes a value only where none exists, so a new token goes into Infisical as `GHCR_PULL_TOKEN` in project `plane-prod`, where the operator renders Secret `ghcr-pull` from it, and into `.local/hosted/plane-prod/ghcr-pull-token` with `scripts/hosted/owner-inputs.sh ghcr`, for the bundle |
+| Telegram and Healthchecks | `scripts/hosted/owner-inputs.sh telegram` or `healthchecks`, then `make remote-alerts TARGET=plane-prod CONFIRM=plane-prod` | `make remote-alerts TARGET=plane-prod VERB=state` says COMPLETE or INCOMPLETE |
+| Infisical's `ENCRYPTION_KEY`, `AUTH_SECRET` and database password, and the restic password | No procedure | Secret zero and the restic password are made once. Losing `ENCRYPTION_KEY` loses every secret, and the restic password every backup. The recovery bundle holds both |
+
+After any of these, run `make remote-bundle TARGET=plane-prod`, which writes a new recovery bundle and proves it decrypts, because the old
+one holds the old value.

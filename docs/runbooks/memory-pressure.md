@@ -169,3 +169,40 @@ docker stats --no-stream
 | Start both environments' first boots at the same time | It is expected to be the worst case. It has not been measured |
 | Stop containers that you do not recognise | Other projects on this host share Docker |
 | Conclude "the apps leak" from a working-set graph alone | Working set includes page cache. Check for actual OOM kills |
+
+## Hosted production
+
+Hosted production runs on a VPS with 12 vCPU and 47 GiB of memory as the OS reports it, with no Docker VM between, so the Mac's limits and
+the overcommitted VM above do not apply. Its bounds are set in one file, [`capacity.yaml`](../../infrastructure/hosted/plane-prod/capacity.yaml):
+
+| Bound | Value | Where |
+|---|---|---|
+| Kept for the system | 1500m of CPU and 4 GiB, and the kubelet evicts pods when less than 1 GiB is available | [`kubelet.conf`](../../infrastructure/hosted/plane-prod/kubelet.conf) |
+| Per namespace | A ResourceQuota and a LimitRange each, which Terraform's [`environments/prod`](../../infrastructure/terraform/environments/prod/README.md) applies from `capacity.yaml` | `kc -n <namespace> describe resourcequota` |
+| Frameflow | 18Gi, 6 CPU requested, 8 CPU of limits and 100Gi of disk, kept free. Its namespace allows no pods | `scripts/ci/check-capacity.sh`, which fails CI unless every quota, the system's share and Frameflow's still fit the node |
+
+The quotas count each rollout's surge too, so a quota full to its last MiB stops a rollout, not the node. `infisical` is the tight one: it
+fits one of the server's rollout, the nightly backup and a certificate's solver at a time.
+
+| Symptom | Meaning |
+|---|---|
+| `NodeMemoryLow` | Available memory under 10% of the node for 5 minutes |
+| `ContainerMemorySaturation`, `PodRestarting` | As above. Both leave out K3s's own namespaces and the restore tests |
+| `exceeded quota` in a Job or a rollout | That namespace's quota, not the node. In `infisical`, read [Restore on hosted production](hosted-restore.md#diagnosis-of-a-failed-backup) |
+
+```bash
+kc top nodes
+kc top pods -A --sort-by=memory | head -25
+kc get pods -A -o json | jq -r '.items[] | .metadata as $m | .status.containerStatuses[]? | select(.lastState.terminated.reason == "OOMKilled") | "\($m.namespace)/\($m.name) \(.name) \(.lastState.terminated.finishedAt)"'
+kc -n plane-prod describe resourcequota
+```
+
+Grafana at https://grafana.bereket.dev has the node and per-pod dashboards. Read CPU on the node with `top` as well before acting on a
+CPU panel: how far the stock dashboards and `top` differ on this VM is not in `docs/evidence` yet. [Resource utilization](../resource-utilization.md)
+is the page for measured figures.
+
+**One container is too small.** Change it in Git, with a measurement: Plane's in `helm/plane/overlays/prod/patches/<workload>.yaml`, then
+`make render`, and the platform's in `gitops/clusters/plane-prod/values/<chart>.yaml`. If the new limits no longer fit the namespace's quota,
+change `capacity.yaml` in the same commit, so CI's capacity check reads them together, then apply the quota with Terraform, planned first, as
+[Terraform](../terraform.md#plan-and-apply-on-hosted-production) shows for root `prod`. Merge to `main`, and CI releases the rest. None of this has run on
+hosted production: NOT RUN.

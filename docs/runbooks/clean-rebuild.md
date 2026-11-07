@@ -187,4 +187,4 @@ Save output to `docs/evidence/`, labelled with date and command. A rebuild that 
 | `kind load docker-image` | It cannot work with this host's containerd image store (kind #3795). Use the registry at `localhost:5001` |
 | Restore Plane before Infisical | `SECRET_KEY` mismatch |
 | `PURGE=yes` without a way to rebuild images | No backup holds the digests Git deploys, and GHCR holds other ones. `make images` needs the branding inputs. It has built and pushed the four images here (`docs/evidence/branding/build.txt`), and from a purged registry on the cold install, in a clone, where they got other digests ([make up](../evidence/runs/clean-install-20261105T105546Z/make-up-stops-on-new-digests.txt)) |
-| Claim a rebuild proves production recovery | This rebuilds one laptop's kind cluster. Pass 2 on Hetzner is a different system, and has its own proof to make |
+| Claim a rebuild proves production recovery | This rebuilds one laptop's kind cluster. Hosted production, on its Contabo VPS, is a different system, and its own rebuild has never run: [Disaster recovery](../disaster-recovery.md#rebuilding-the-vps-from-nothing) |

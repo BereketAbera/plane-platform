@@ -267,3 +267,58 @@ With a refresh asked and no retry open, the sync starts within about a second of
 | Expect root to restore a paused child | It leaves `enabled: false` alone. Patch the child back |
 | Leave self-heal paused after a drill | The environment silently stops following Git |
 | Move the migrator to `PreSync` | It deadlocks a fresh install |
+
+## Hosted production
+
+Hosted production has its own Argo CD, v3.5.7 as here, with one replica of each part, no Dex and no notifications. Its UI has no public
+route: `make remote-ui TARGET=plane-prod UI=argocd`. The display trap, the alerts, ending an operation and putting auto-sync back read the
+same there, with `kc` in place of `kubectl` ([conventions](README.md#hosted-production)). Where a fix above says `make gitops-publish`,
+hosted production takes a push to `main` instead. The alert rules are copies, in
+[`rules-hosted-platform.yaml`](../../gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted-platform.yaml), and reach
+Telegram. Ending an operation, pausing auto-sync and the first-install states have not been tried on hosted production: NOT RUN. What
+differs is where it reads from.
+
+**A commit on `main` has not reached the cluster.** Hosted Argo CD reads only branch `deploy/plane-prod` on GitHub, and nothing on this Mac
+publishes to it. A commit gets there when `ci.yml`'s `lint`, `manifests` and `security` jobs pass on `main` and its `release-plane-prod`
+job moves the branch. Look at each link in turn:
+
+```bash
+git fetch origin
+git log -1 --format='%h %s' origin/main
+git show origin/deploy/plane-prod:RELEASE.json
+gh run list --workflow ci.yml --branch main --limit 3
+kc -n argocd get application root -o jsonpath='{.status.sync.revision}{"\n"}'
+kc -n argocd annotate application root argocd.argoproj.io/refresh=normal --overwrite
+```
+
+| What you see | Why |
+|---|---|
+| The run is green, and `RELEASE.json` still names an older `main` commit | The commit changed nothing under `gitops/clusters/plane-prod` or `gitops/environments/prod`, so there was nothing to release |
+| `release-plane-prod` red at the evidence check | A Wayline digest in the render has no signed evidence, so the branch stayed where it was |
+| Red at the refusal to move backwards | The commit `RELEASE.json` names is not an ancestor of this one, as after a rewrite of `main` |
+| Red because the branch no longer holds what its `RELEASE.json` released | Someone pushed `deploy/plane-prod` by hand. See [Rollback on hosted production](hosted-rollback.md#what-not-to-do) |
+| Red at the refusal to go from a set back to none | A revert of the first promotion. See [Rollback on hosted production](hosted-rollback.md#roll-back-the-images) |
+| `lint`, `manifests` or `security` red | `release-plane-prod` needs all three, so it did not run |
+| The branch moved, and root is still on the old revision | Argo CD has not looked yet, or cannot read GitHub, which a `ComparisonError` condition says |
+
+**Argo CD cannot read GitHub.** It dials `ssh.github.com:443` with a read-only deploy key, in Secret `argocd/argocd-repo-plane-platform`.
+`make remote-bootstrap` writes that Secret, because Argo CD deploys Infisical and so cannot take its own key from it.
+
+```bash
+kc -n argocd get application root -o jsonpath='{.status.conditions}{"\n"}'
+kc -n argocd logs deploy/argocd-repo-server --tail=50
+```
+
+**Argo CD's own install** is not in a release. Its values in `gitops/clusters/plane-prod/values/argocd.yaml`, the AppProjects and root are
+applied by Terraform's [`environments/prod`](../../infrastructure/terraform/environments/prod/README.md). `make remote-bootstrap` applies that
+whole root with no plan to read first, so plan it on its own before, with the tunnel up, and apply the plan file you read, as
+[Terraform](../terraform.md#plan-and-apply-on-hosted-production) shows:
+
+```bash
+.tools/bin/terraform -chdir=infrastructure/terraform/environments/prod init -input=false -lockfile=readonly
+TF_IN_AUTOMATION=1 .tools/bin/terraform -chdir=infrastructure/terraform/environments/prod plan
+```
+
+Its Applications are `root` and thirteen children: `alloy`, `backup`, `cert-manager`, `certificates`, `infisical`,
+`infisical-operator-prod`, `kube-prometheus-stack`, `loki`, `metrics-server`, `monitoring-extras`, `network-policies`, `plane-prod` and
+`traefik`. `make remote-status TARGET=plane-prod` prints each one's sync, health and revision.

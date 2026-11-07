@@ -291,3 +291,54 @@ df -h .
 ```
 
 Check Secrets and tokens are not in what you share.
+
+## Hosted production
+
+Problems with hosted production's platform, one K3s node on a Contabo VPS. Plane's own behaviour there is in
+[Plane app debugging](plane-app-debugging.md#hosted-production). Start with `make remote-status TARGET=plane-prod`: it only reads, and prints
+the node and its disk, the Applications, pods not ready, certificates, backups, the firewall, the release branch, alert delivery, the copies
+off the VPS, Infisical's admin token and the recovery bundle. Then `make remote-test TARGET=plane-prod CONFIRM=plane-prod`, which exits 0, 1
+or 2 and says BLOCKED or INCOMPLETE where it could not say yes. Its whole run tonight: PENDING.
+
+**A script refuses before it starts.** [`scripts/hosted/lib.sh`](../../scripts/hosted/lib.sh) is the only way a script reaches this cluster,
+and it fails closed:
+
+| Message | Why | Way on |
+|---|---|---|
+| `this reaches hosted production, so it needs TARGET=plane-prod` | No local target or variable can aim at it by accident | Add `TARGET=plane-prod` |
+| `... on hosted production, so it needs CONFIRM=plane-prod. CONFIRM=yes does not count here.` | It changes something, and the local habit must not reach production | Add `CONFIRM=plane-prod`, if you mean it |
+| `refusing, because .../kubeconfig is missing` | The kubeconfig for the tunnel is not here | `make remote-kubeconfig TARGET=plane-prod` |
+| `refusing, because the SSH tunnel to 5.253.234.127 will not start` | SSH fails, or something else holds 127.0.0.1:16443 | [Lockout on hosted production](hosted-lockout.md#the-tunnel) |
+| `refusing, because the live kube-system UID is ... and target.yaml records ...` | What answers is not the cluster [`target.yaml`](../../infrastructure/hosted/plane-prod/target.yaml) describes | Stop. Record a new UID only after a rebuild you made yourself, with `scripts/hosted/kubeconfig.sh` |
+| `HOSTED_NO_CLUSTER is exported` | That variable would switch off the check above for every script | `unset HOSTED_NO_CLUSTER` |
+| `WAYLINE_TARGET=plane-prod aims this script at hosted production, so it needs CONFIRM=plane-prod` | A shared script, such as `scripts/test-netpol.sh`, was aimed at hosted production | Add `CONFIRM=plane-prod`, or unset `WAYLINE_TARGET` if you meant kind |
+
+**Symptoms.**
+
+| Symptom or alert | Cause | Way on |
+|---|---|---|
+| A Certificate not Ready, `CertificateNotReady`, `CertificateNotWatched` | Port 80 was closed at the order, the name's A record did not exist yet, so the zone's wildcard answered, or the solver waits for quota | [`scripts/hosted/README.md`](../../scripts/hosted/README.md), section The first certificate. [ADR 0018](../adr/0018-hosted-tls-cert-manager.md) says how the certificates work |
+| `CertificateExpiringSoon`, `ServedCertificateExpiringSoon` | Renewal has failed for over a week, or Traefik serves an old Secret | `kc get certificates -A`, then `kc -n <namespace> describe certificate <name>`, and as above |
+| `GrafanaRouteDown`, `InfisicalRouteDown` | A console's public route fails its probe | `make remote-ui TARGET=plane-prod UI=grafana` or `UI=infisical` reaches it meanwhile |
+| `InfisicalOpenToClaim`, critical | Infisical does not read claimed and closed to sign-up, so whoever signs up first may own every secret | Close 443 first: [`scripts/hosted/README.md`](../../scripts/hosted/README.md), section Infisical reads open |
+| A `...NotWatched` or `...NotRead` alert | The probe or metric behind another alert is missing, so that alert cannot fire | `make remote-ui TARGET=plane-prod UI=prometheus`, and read the probe's target |
+| `NetworkPolicyNotEnforced`, critical | Blackbox connected to a port every policy forbids | `make remote-netpol TARGET=plane-prod CONFIRM=plane-prod`, whose sentinel checks kube-router's chains, `ipset` and K3s's journal first. K3s only warns without `ipset`, and then enforces nothing |
+| `NodeRebootRequired` | Unattended upgrades installed something that needs a reboot, and nothing reboots the node by itself | A reboot takes everything down until K3s and every pod are back, which has not been timed. Choose a quiet time, and afterwards read `make remote-status` and run `make remote-test` |
+| `PublicFirewallNotLoaded`, critical | The firewall's table is not loaded | [Lockout on hosted production](hosted-lockout.md#the-firewall) |
+| A Wayline image in `ImagePullBackOff` | GHCR's packages are private, and Secret `ghcr-pull` in `plane-prod`, rendered from Infisical, holds no working token | `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=secrets` reads it. [Secret rotation](secret-rotation.md#hosted-production) has the token's way in |
+| A new pod's first connections refused, for a second or two | kube-router admits a new pod a moment after it starts. Three pods on this node were refused at once and answered at 1 to 2s (`hosted-policy-admit-20261107T065005Z.txt`, not published yet) | Retry. The backup Jobs wait up to a minute |
+| `kubectl top` fails | metrics-server is Argo CD's, at wave -8, not K3s's | `kc -n kube-system get deploy metrics-server` |
+
+**NetworkPolicy reads differently here.** K3s enforces policy with kube-router, which refuses what a policy denies, where kindnet drops it.
+So a deny row here passes on a refusal, and only while the node's own witness connected to that port at the same moment. A row the witness
+could not read is INCONCLUSIVE, never a pass. The matrix:
+
+| Run | Result | Evidence |
+|---|---|---|
+| 2026-11-07, 04:38Z, before any Plane workload | 143 PASS, 0 FAIL, 67 INCONCLUSIVE, exit 2. 62 of those were names that did not resolve yet | [log](../evidence/runs/hosted-netpol-first-20261107T043810Z.txt), [matrix](../evidence/runs/netpol-plane-prod-20261107T043811Z.tsv) |
+| 2026-11-07, 07:27Z, with Plane and Grafana's route | 206 PASS, 0 FAIL, 8 INCONCLUSIVE, exit 2. Seven had no witness reading, because this Mac's SSH to the node failed with `Can't assign requested address`, and one was refused to the node too, during a Grafana restart | `hosted-netpol-grafana-20261107T072723Z.log` and `netpol-plane-prod-20261107T072728Z.tsv`, not published yet |
+| Tonight's clean run, `make remote-netpol TARGET=plane-prod CONFIRM=plane-prod` | PENDING | |
+
+**Lookups.** Contabo's resolvers took over 3 seconds a lookup, so K3s's CoreDNS forwards to 1.1.1.1 and 8.8.8.8 through
+`/etc/rancher/k3s/resolv.conf` ([`k3s-config.yaml`](../../infrastructure/hosted/plane-prod/k3s-config.yaml)). Inside pods, the three public
+names resolve to Traefik's Service, through the `coredns-custom` rewrite Terraform owns, as `plane.dev.localhost` does on kind.
