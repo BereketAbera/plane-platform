@@ -1,0 +1,157 @@
+# Release B (kustomization.yaml). What the web image was built to proxy /api/* and /streams/* to, and where the worker sends its status
+# callbacks, STATUS_CALLBACK_BASE_URL in config.yaml. No route names it: policy/hosted.rego allows this namespace's routes frameflow-web
+# and frameflow-silo alone, so the API's /internal/* routes, the callbacks, are reached from inside the namespace only, by the web server
+# and the worker, as network-policies/frameflow.yaml admits.
+apiVersion: v1
+kind: Service
+metadata:
+  name: frameflow-api
+  labels:
+    app.kubernetes.io/name: frameflow-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/component: api
+  ports:
+    - name: http
+      port: 4000
+      targetPort: http
+---
+# Frameflow's database: SQLite, one file, DATABASE_PATH in config.yaml. The CronJobs open it too, and so does the nightly backup in
+# platform/backup, which ReadWriteOnce allows on this one node. The storage class keeps the volume's folder if the claim goes.
+#
+# In the API's wave, not ahead of it at 0: local-path-retain binds a claim only once a pod mounts it, a claim waiting for that reads
+# Progressing, and Argo CD holds a wave on anything Progressing. Alone in an earlier wave, it would stop the sync there for good.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: frameflow-data
+  labels:
+    app.kubernetes.io/name: frameflow-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path-retain
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Frameflow's API, Fastify on port 4000: it signs each upload's URL, submits each video to Hatchet, takes the worker's callbacks, and
+# serves the private streams. It runs the database's migrations every time it starts, and refuses to start without the Hatchet client
+# token, which is why it is in release B.
+#
+# One replica, and Recreate, as Frameflow's README asks: the whole database is the one file on that volume, and Recreate never runs two
+# pods against it. So a rollout stops the old pod before the new one starts, and for that while the pages load and their calls fail.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frameflow-api
+  labels:
+    app.kubernetes.io/name: frameflow-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    # After the token's Secret at 3, which it reads, and with its volume.
+    argocd.argoproj.io/sync-wave: "4"
+    # Must sit on the workload, not the pod template. It restarts the API when frameflow-app or hatchet-client-token changes.
+    secrets.infisical.com/auto-reload: "true"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frameflow-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: frameflow-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: frameflow
+    spec:
+      serviceAccountName: api
+      automountServiceAccountToken: false
+      securityContext:
+        # UID and GID 1000 are node in the image, which its Dockerfile runs as by number. The folders K3s's local-path makes are open to
+        # every user, and fsGroup gives the volume to the image's group in case one is not.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: ghcr.io/bereketabera/frameflow/backend:83f693d81006@sha256:15eb8058f40ebae5d2b2f2a97b67264e80f1c7f3cd858b6b97cca94370f92688
+          # args and no command, so the image's tini stays in front and passes SIGTERM on, as Frameflow's README asks of every role. The
+          # image's own default, written out, so that each role here says what it runs.
+          args: [node, --import, tsx, src/api/server.ts]
+          # Its settings, the owner's keys, the callback secret, Silo's app user, and the Hatchet client token. The API, the worker and
+          # the CronJobs all check AUTH_MODE=owner against the owner's keys when they start.
+          envFrom:
+            - configMapRef:
+                name: frameflow-env
+            - secretRef:
+                name: frameflow-app
+            - secretRef:
+                name: hatchet-client-token
+          ports:
+            - name: http
+              containerPort: 4000
+          # tsx compiles the API at every start, and the migrations run before it listens, so the first answer can take a while.
+          # /health/ready also fails while the database or Silo does, which takes the pod out of the Service until both answer.
+          # /health/live says only that the process answers.
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # Starting values, not yet measured on this node.
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          # The database's folder, and /tmp for tsx's compile cache. Nothing else is written.
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: frameflow-data
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi

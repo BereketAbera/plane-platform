@@ -1,0 +1,124 @@
+# Release B (kustomization.yaml). Frameflow's Hatchet worker: it takes each video's tasks from Hatchet, probes the source, encodes the
+# 360p and 720p renditions with FFmpeg, publishes them to Silo, and reports each step to the API. It refuses to start without the Hatchet
+# client token. No Service: nothing calls it, and the kubelet reaches its health server from the node.
+#
+# One replica, and Recreate. A rolling update would start a second worker beside the first, with another 3Gi that frameflow's quota has
+# no room for (infrastructure/hosted/plane-prod/capacity.yaml), so the rollout would stop there. Hatchet queues the next video meanwhile,
+# for up to FRAMEFLOW_SCHEDULE_TIMEOUT in config.yaml, which also holds the limits that keep it to one video and one rendition at a time.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frameflow-worker
+  labels:
+    app.kubernetes.io/name: frameflow-worker
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    # After the token's Secret at 3, which it reads, and with the API it reports to.
+    argocd.argoproj.io/sync-wave: "4"
+    # Must sit on the workload, not the pod template. It restarts the worker when frameflow-app or hatchet-client-token changes, and the
+    # restart drains as below.
+    secrets.infisical.com/auto-reload: "true"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  # A rollout waits for the old pod's drain, up to the 600s below, and the default deadline is also 600s, so a long drain would read
+  # as a stalled rollout, and the Deployment as Degraded to Argo CD.
+  progressDeadlineSeconds: 1200
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frameflow-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: frameflow-worker
+        app.kubernetes.io/component: worker
+        app.kubernetes.io/part-of: frameflow
+    spec:
+      serviceAccountName: worker
+      automountServiceAccountToken: false
+      # On SIGTERM, which tini passes on, SDK 1.43 asks Hatchet's REST API to stop assigning it tasks, and lets a running task finish
+      # before it exits. Ten minutes covers an encode of a 100 MiB source on 3 threads. A longer one is cut off, and Hatchet runs it again.
+      terminationGracePeriodSeconds: 600
+      securityContext:
+        # UID and GID 1000 are node in the image, which its Dockerfile runs as by number.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ghcr.io/bereketabera/frameflow/backend:83f693d81006@sha256:15eb8058f40ebae5d2b2f2a97b67264e80f1c7f3cd858b6b97cca94370f92688
+          # args and no command, so the image's tini stays in front, as Frameflow's README asks of every role.
+          args: [node, --import, tsx, src/worker.ts]
+          # As the API's: the worker checks the owner's keys too, and uses the callback secret, Silo's app user and the token.
+          envFrom:
+            - configMapRef:
+                name: frameflow-env
+            - secretRef:
+                name: frameflow-app
+            - secretRef:
+                name: hatchet-client-token
+          ports:
+            - name: health
+              containerPort: 8001
+          # The SDK's health server, HATCHET_CLIENT_WORKER_HEALTHCHECK_PORT in config.yaml. It starts only once the worker has
+          # registered its workflows with Hatchet, after tsx compiles it and the SDK's retries, so the startup probe allows five
+          # minutes. /livez answers whenever the process can, and /readyz only while the worker is registered and taking tasks. A
+          # worker serves nothing, so readiness only says when a rollout is done. If its listener gives up reconnecting, the worker
+          # exits, and the kubelet restarts it.
+          startupProbe:
+            httpGet:
+              path: /livez
+              port: health
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: health
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # FFmpeg runs on 3 threads, FFMPEG_THREADS in config.yaml, within these 3 CPUs. Starting values for one video at a time, not yet
+          # measured on this node. ephemeral-storage bounds what scratch, /tmp and the logs take of the node's disk together.
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+              ephemeral-storage: 1Gi
+            limits:
+              cpu: "3"
+              memory: 3Gi
+              ephemeral-storage: 10Gi
+          volumeMounts:
+            - name: scratch
+              mountPath: /scratch
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        # WORKER_TEMP_DIR in config.yaml: each task's copy of its source and an encode's HLS output, one task at a time, of a source of up
+        # to 100 MiB. The worker clears what a start before it in this pod left, and the kubelet evicts the pod past 8Gi.
+        - name: scratch
+          emptyDir:
+            sizeLimit: 8Gi
+        # tsx's compile cache.
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi

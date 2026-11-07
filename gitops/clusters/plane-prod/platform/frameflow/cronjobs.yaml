@@ -1,0 +1,182 @@
+# Release B (kustomization.yaml). Frameflow's two maintenance commands, from the backend image, on the API's database: each mounts
+# frameflow-data, which ReadWriteOnce allows beside the API on this one node, and runs the migrations before anything else, as the API
+# does. Neither calls the API. Each command is safe to repeat, so a failed try is tried twice more, and a Job that still fails is kept
+# an hour or two for its logs and for KubeJobFailed to read, and then goes.
+#
+# ignore-healthcheck, as on the backup's CronJobs: a run that fails must not hold this Application's sync, and root's with it.
+#
+# Hourly cleanup: it expires the uploads whose URLs lapsed and deletes their objects, and deletes the staging of videos that have
+# finished. Scratch is the worker's own emptyDir, which this does not mount, so the /scratch that WORKER_TEMP_DIR names is missing here,
+# and cleanup reads that as nothing to remove. Silo and SQLite, so no Hatchet token. At 23 past, clear of the backup at 02:47, which
+# reads the same database.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: frameflow-cleanup
+  labels:
+    app.kubernetes.io/name: frameflow-cleanup
+    app.kubernetes.io/component: maintenance
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/ignore-healthcheck: "true"
+spec:
+  schedule: "23 * * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  # A run that cannot start within this, after the node was down, is skipped rather than started late, and the next hour's does the
+  # same work.
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: frameflow-cleanup
+        app.kubernetes.io/component: maintenance
+        app.kubernetes.io/part-of: frameflow
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      # Past the next hour's run, so a cleanup that keeps failing keeps a failed Job here.
+      ttlSecondsAfterFinished: 7200
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: frameflow-cleanup
+            app.kubernetes.io/component: maintenance
+            app.kubernetes.io/part-of: frameflow
+        spec:
+          restartPolicy: Never
+          serviceAccountName: maintenance
+          automountServiceAccountToken: false
+          securityContext:
+            # UID and GID 1000 are node in the image, which its Dockerfile runs as by number.
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: cleanup
+              image: ghcr.io/bereketabera/frameflow/backend:83f693d81006@sha256:15eb8058f40ebae5d2b2f2a97b67264e80f1c7f3cd858b6b97cca94370f92688
+              # args and no command, so the image's tini stays in front. --apply deletes: without it, cleanup only prints its plan.
+              args: [node, --import, tsx, src/cleanup.ts, --apply]
+              # The owner's keys too, because every role checks AUTH_MODE=owner against them when it starts.
+              envFrom:
+                - configMapRef:
+                    name: frameflow-env
+                - secretRef:
+                    name: frameflow-app
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 384Mi
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: frameflow-data
+            # tsx's compile cache.
+            - name: tmp
+              emptyDir:
+                sizeLimit: 256Mi
+---
+# Every ten minutes: it asks Hatchet about each video queued or processing for longer than RECONCILIATION_STALE_MINUTES in config.yaml,
+# and repairs a record whose run has already ended, so a callback that never arrived does not leave a video waiting for good. So it reads
+# the Hatchet client token, and reaches Hatchet's gRPC and REST ports and Silo.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: frameflow-reconcile
+  labels:
+    app.kubernetes.io/name: frameflow-reconcile
+    app.kubernetes.io/component: maintenance
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/ignore-healthcheck: "true"
+spec:
+  schedule: "*/10 * * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  # As for cleanup: a late run is skipped, and the next one ten minutes on does its work.
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: frameflow-reconcile
+        app.kubernetes.io/component: maintenance
+        app.kubernetes.io/part-of: frameflow
+    spec:
+      backoffLimit: 2
+      # Inside the ten minutes, so a run that hangs on Hatchet ends before the next is due, rather than Forbid skipping that one.
+      activeDeadlineSeconds: 540
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: frameflow-reconcile
+            app.kubernetes.io/component: maintenance
+            app.kubernetes.io/part-of: frameflow
+        spec:
+          restartPolicy: Never
+          serviceAccountName: maintenance
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: reconcile
+              image: ghcr.io/bereketabera/frameflow/backend:83f693d81006@sha256:15eb8058f40ebae5d2b2f2a97b67264e80f1c7f3cd858b6b97cca94370f92688
+              args: [node, --import, tsx, src/reconcile.ts]
+              envFrom:
+                - configMapRef:
+                    name: frameflow-env
+                - secretRef:
+                    name: frameflow-app
+                - secretRef:
+                    name: hatchet-client-token
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 384Mi
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: frameflow-data
+            - name: tmp
+              emptyDir:
+                sizeLimit: 256Mi
