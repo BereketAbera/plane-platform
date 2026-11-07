@@ -505,16 +505,33 @@ deny contains msg if {
 	msg := sprintf("%s: blackbox module %s is %v, and must be exactly %v, because Infisical's alerts read what it reports", [identity, name, object.get(modules, name, "missing"), want])
 }
 
-# ---- Who reaches Infisical
+# ---- Who reaches Infisical, and what it reaches
 
-# NetworkPolicy adds up: what may arrive in namespace infisical is every policy there that admits anything. So each of those is written out
-# here, and a policy more, or one of these wider, is a change a person reads first: Traefik's pods reach the server on 8080 and a solver on
-# 8089, the operator the server, and only the server and the backup Jobs reach Postgres, and only the server Redis.
+# NetworkPolicy adds up, and in both directions: what may arrive in namespace infisical, and what may leave it, is every policy there taken
+# together. So every policy there is written out here, and a policy more, or one of these wider, is a change a person reads first. In:
+# Traefik's pods reach the server on 8080 and a solver on 8089, the operator the server, and only the server and the backup Jobs reach
+# Postgres, and only the server Redis. Out: every pod reaches kube-dns, the server its database, Redis and the API server, and the backup Jobs
+# Postgres. That is all that bounds what the server's relaxed SSRF protection lets a caller of its public route make it dial, as
+# values/infisical.yaml says at ALLOW_INTERNAL_IP_CONNECTIONS, so an egress-only policy is as much a way out as one with ingress is a way in.
 infisical_server_pods := {"matchLabels": {"app": "infisical-standalone", "component": "infisical"}}
 
 traefik_pods := {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "traefik"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "traefik"}}}
 
-infisical_ingress_policies := {
+infisical_network_policies := {
+	"default-deny": {"podSelector": {}, "policyTypes": ["Ingress", "Egress"]},
+	"allow-dns": {
+		"podSelector": {},
+		"policyTypes": ["Egress"],
+		"egress": [{
+			"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "kube-system"}}, "podSelector": {"matchLabels": {"k8s-app": "kube-dns"}}}],
+			"ports": [{"protocol": "UDP", "port": 53}, {"protocol": "TCP", "port": 53}],
+		}],
+	},
+	"backup": {
+		"podSelector": {"matchLabels": {"app.kubernetes.io/component": "backup"}},
+		"policyTypes": ["Egress"],
+		"egress": [{"to": [{"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-postgres"}}}], "ports": [{"protocol": "TCP", "port": 5432}]}],
+	},
 	"infisical-server": {
 		"podSelector": infisical_server_pods,
 		"policyTypes": ["Ingress", "Egress"],
@@ -552,16 +569,15 @@ is_network_policy_in(namespace) if {
 
 deny contains msg if {
 	is_network_policy_in(infisical_namespace)
-	count(object.get(input.spec, "ingress", [])) > 0
-	not infisical_ingress_policies[input.metadata.name]
-	msg := sprintf("%s: admits traffic into namespace %s, where only %v may, as policy/hosted.rego writes them", [identity, infisical_namespace, object.keys(infisical_ingress_policies)])
+	not infisical_network_policies[input.metadata.name]
+	msg := sprintf("%s: is not one of the NetworkPolicies in namespace %s, which are %v, as policy/hosted.rego writes them. A policy more lets more in or out, with ingress rules or without", [identity, infisical_namespace, object.keys(infisical_network_policies)])
 }
 
 deny contains msg if {
 	is_network_policy_in(infisical_namespace)
-	want := infisical_ingress_policies[input.metadata.name]
+	want := infisical_network_policies[input.metadata.name]
 	input.spec != want
-	msg := sprintf("%s: spec must be exactly %v, so nothing new reaches the secret store or its database", [identity, want])
+	msg := sprintf("%s: spec must be exactly %v, so nothing new reaches the secret store or its database, and they reach nothing new", [identity, want])
 }
 
 # Traefik's way into namespace infisical, from its side: the server on 8080 and a solver on 8089, and nothing else there.
