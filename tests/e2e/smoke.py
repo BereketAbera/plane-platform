@@ -2175,8 +2175,8 @@ class Smoke:
         def attempt(what: str, send, *statuses: int) -> Response | None:
             try:
                 response = send()
-            except (OSError, http.client.HTTPException) as exc:
-                left.append(f"{what} ({type(exc).__name__})")
+            except (OSError, http.client.HTTPException, StepFailed, StepBlocked) as exc:
+                left.append(f"{what} ({type(exc).__name__}: {exc})")
                 return None
             data[what] = response.status
             if statuses and response.status not in statuses:
