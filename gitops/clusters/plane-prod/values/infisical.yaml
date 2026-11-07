@@ -40,12 +40,33 @@ infisical:
       value: "--max-old-space-size=640"
     # Token review goes through safeRequest, which rejects private IPs, and kubernetes.default.svc
     # is 10.96.0.1. It also relaxes SSRF protection globally. Bounded here by the default-deny egress
-    # of platform/network-policies/infisical.yaml, which allows only its database, Redis and the API server.
+    # of platform/network-policies/infisical.yaml, which allows only its database, Redis and the API server,
+    # so whatever address a caller of the public route got it to dial, nothing else would answer.
     - name: ALLOW_INTERNAL_IP_CONNECTIONS
       value: "true"
-    # No public route: reached through the SSH tunnel with a port-forward. scripts/hosted/ui.sh uses this port first.
+    # Its public route, gitops/clusters/plane-prod/platform/infisical/route.yaml. The links it writes and CORS name this, and the tunnel still
+    # works: a page from http://localhost asks its own origin, which CORS does not cover. Passkeys are bound to this host, and the
+    # tunnel cannot use one.
     - name: SITE_URL
-      value: "http://localhost:18100"
+      value: "https://infisical.bereket.dev"
+    # Marks every cookie Secure. Chrome and Firefox keep a Secure cookie from http://localhost, so scripts/hosted/ui.sh still signs in.
+    # WebKit, which Safari is built on, drops it, so a sign-in there through the tunnel lasts until the page reloads. All three were run
+    # against this image in Docker, and a session from before the change carried on after it.
+    #
+    # No INVITE_ONLY_SIGNUP: this version reads no such variable. With it set and sign-up open in the database, a stranger was sent a
+    # sign-up code all the same. Sign-up is closed in the database, by the bootstrap call, and a probe in monitoring-extras watches that.
+    - name: HTTPS_ENABLED
+      value: "true"
+    # The pods' range, so the address Infisical records for a client is the one Traefik saw. With none it trusts the first of a dozen
+    # headers a client may send, CF-Connecting-IP first, and Traefik passes that one on, so any client could name its own: through the
+    # pinned Traefik in Docker, a sign-in recorded the CF-Connecting-IP it sent without this, and Traefik's own reading with it.
+    - name: TRUSTED_PROXY_CIDRS
+      value: "10.244.0.0/16"
+    # Anyone may share a secret through this version's anonymous POST /api/v1/shared-secrets/public unless this is set, and the anonymous
+    # config said isPublicSecretSharingDisabled false on this cluster. The route refuses that call too, and the server should not lean on
+    # it: this is the server's own refusal, which a super admin's Server Console override could still turn back.
+    - name: DISABLE_PUBLIC_SECRET_SHARING
+      value: "true"
     - name: TELEMETRY_ENABLED
       value: "false"
     - name: DISABLE_UPDATE_CHECK
