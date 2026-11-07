@@ -7,9 +7,9 @@
 # - Release A, the list below: Infisical's CRs but the token's, the settings, Hatchet's Postgres, Silo and the Sync hook that makes its
 #   bucket and users, hatchet-lite, the web server and its route. The pages load, and every call to the API fails until release B.
 # - Then scripts/hosted/frameflow-hatchet-token.sh mints the token inside Hatchet's pod and writes it to Infisical.
-# - Release B, the commented block: the token's CR, the API with its volume, the worker, the two CronJobs and the upload route. One change
-#   uncomments all five, and only once Infisical holds the token. CI builds this folder as Argo CD does, from this list, so the schema,
-#   policy, image and quota checks read those five only in that change's pull request. The same change adds the backend image's line to
+# - Release B, the last five in the list: the token's CR, the API with its volume, the worker, the two CronJobs and the upload route. One
+#   change listed all five, once Infisical held the token. CI builds this folder as Argo CD does, from this list, so the schema, policy,
+#   image and quota checks read those five from that change on. The same change added the backend image's line to
 #   policy/hosted-images.txt, which fails on an entry nothing names, and nothing names the backend before release B.
 #
 # The token's CR reads Degraded until Infisical holds the token, and a sync waits on it. Listed before that, it would stop this
@@ -33,8 +33,8 @@ resources:
   - web.yaml
   - routes.yaml
   # Release B, all five together, once the Hatchet client token is in Infisical, and the backend's line in policy/hosted-images.txt:
-  # - token.yaml
-  # - api.yaml
-  # - worker.yaml
-  # - cronjobs.yaml
-  # - upload-route.yaml
+  - token.yaml
+  - api.yaml
+  - worker.yaml
+  - cronjobs.yaml
+  - upload-route.yaml
