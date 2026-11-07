@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Reach an admin UI through the tunnel: a port-forward, on this machine only. Runs until Ctrl-C. None has a public route but Grafana's,
-# and this still reaches Grafana when that route is down.
+# Reach an admin UI through the tunnel: a port-forward, on this machine only. Runs until Ctrl-C. None has a public route but Grafana's
+# and Infisical's, and this still reaches each when its route is down.
 #
 #   TARGET=plane-prod scripts/hosted/ui.sh argocd|grafana|prometheus|alertmanager|infisical [local-port]
 #
@@ -13,7 +13,7 @@ case "${1:-}" in
   grafana) NS=monitoring SVC=svc/kps-grafana REMOTE=80 FIRST=18090 NOTE="the login for https://$HOSTED_GRAFANA_DOMAIN: make remote-grafana-admin TARGET=plane-prod VERB=login. Its session cookie is Secure, which some browsers refuse on http://localhost, and its links name the public host" ;;
   prometheus) NS=monitoring SVC=svc/kps-prometheus REMOTE=9090 FIRST=19090 NOTE="no login" ;;
   alertmanager) NS=monitoring SVC=svc/kps-alertmanager REMOTE=9093 FIRST=19093 NOTE="no login" ;;
-  infisical) NS=infisical SVC=svc/infisical REMOTE=8080 FIRST=18100 NOTE="first admin's password in .local/hosted/plane-prod/secret-zero/infisical-admin-password" ;;
+  infisical) NS=infisical SVC=svc/infisical REMOTE=8080 FIRST=18100 NOTE="the login for https://$HOSTED_INFISICAL_DOMAIN: make remote-infisical-admin TARGET=plane-prod VERB=login. Its cookies are Secure, which Chrome and Firefox keep on http://localhost and Safari drops, so sign in here with one of those two" ;;
   *) die "usage: $0 argocd|grafana|prometheus|alertmanager|infisical [local-port]" ;;
 esac
 
