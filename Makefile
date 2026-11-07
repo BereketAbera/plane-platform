@@ -161,7 +161,7 @@ remote-status: remote-guard ## Hosted: node, Argo CD, pods, certificate, backups
 remote-bootstrap: remote-guard ## Hosted: deploy key, Terraform, restic password, secret zero, Infisical, alerts: make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod
 	@./scripts/hosted/bootstrap.sh
 
-remote-ui: remote-guard ## Hosted: port-forward an admin UI. Only Grafana and Infisical have a public route, and this reaches either when its route is down: make remote-ui TARGET=plane-prod UI=argocd|grafana|prometheus|alertmanager|infisical [PORT=<local port>]
+remote-ui: remote-guard ## Hosted: port-forward an admin UI. Only Grafana and Infisical have a public route, and this reaches either when its route is down: make remote-ui TARGET=plane-prod UI=argocd|grafana|prometheus|alertmanager|infisical|hatchet|frameflow-silo [PORT=<local port>]
 	@./scripts/hosted/ui.sh "$(UI)" $(PORT)
 
 remote-grafana-admin: remote-guard ## Hosted: Grafana's admin login. VERB=login prints the URL and username and copies the password; CONFIRM=plane-prod VERB=apply makes it and writes its Secret, and VERB=rotate replaces the password: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply|rotate, or TARGET=plane-prod VERB=login
