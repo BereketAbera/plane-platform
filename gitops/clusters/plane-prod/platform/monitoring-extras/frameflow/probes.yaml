@@ -1,0 +1,21 @@
+# What a browser gets at Frameflow's public route: the same TLS, certificate and route, without leaving the node, because CoreDNS rewrites
+# this name to Traefik's Service too. The home page, which the web server renders without the API, because the browser fetches its data
+# afterwards. So this reads the web server, its route and its certificate, and nothing behind them: FrameflowApiUnavailable is the API's.
+# FrameflowDown in rules.yaml reads this.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: frameflow
+spec:
+  jobName: frameflow-http
+  interval: 30s
+  scrapeTimeout: 10s
+  module: http_html
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://frameflow.bereket.dev/
+      labels: { probe: frameflow }

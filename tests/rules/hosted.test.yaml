@@ -106,6 +106,8 @@ tests:
         values: '1x40'
       - series: 'certmanager_certificate_ready_status{namespace="awushi-cloudgarden",name="devops-tls",condition="True"}'
         values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="frameflow",name="frameflow-tls",condition="True"}'
+        values: '1x40'
     alert_rule_test:
       - { eval_time: 29m, alertname: CertificateNotReady, exp_alerts: [] }
       - eval_time: 31m
@@ -114,7 +116,7 @@ tests:
           - exp_labels: { namespace: plane-prod, name: wayline-tls, condition: "False", severity: critical, component: certificate }
             exp_annotations: { summary: "Certificate plane-prod/wayline-tls has not been Ready for 30m" }
       - { eval_time: 31m, alertname: CertificateNotWatched, exp_alerts: [] }
-  - name: cert-manager reporting nothing for any of the five certificates fires, because the rules above would stay silent
+  - name: cert-manager reporting nothing for any of the six certificates fires, because the rules above would stay silent
     interval: 1m
     input_series:
       - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="another",condition="True"}'
@@ -134,6 +136,8 @@ tests:
             exp_annotations: { summary: "cert-manager reports nothing for rillmark-tls, so the certificate alerts cannot fire" }
           - exp_labels: { name: devops-tls, severity: warning, component: certificate }
             exp_annotations: { summary: "cert-manager reports nothing for devops-tls, so the certificate alerts cannot fire" }
+          - exp_labels: { name: frameflow-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "cert-manager reports nothing for frameflow-tls, so the certificate alerts cannot fire" }
   - name: with only infisical-tls missing, the same rule names it alone
     interval: 1m
     input_series:
@@ -145,13 +149,15 @@ tests:
         values: '1x40'
       - series: 'certmanager_certificate_ready_status{namespace="awushi-cloudgarden",name="devops-tls",condition="True"}'
         values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="frameflow",name="frameflow-tls",condition="True"}'
+        values: '1x40'
     alert_rule_test:
       - eval_time: 31m
         alertname: CertificateNotWatched
         exp_alerts:
           - exp_labels: { name: infisical-tls, severity: warning, component: certificate }
             exp_annotations: { summary: "cert-manager reports nothing for infisical-tls, so the certificate alerts cannot fire" }
-  - name: with only the static sites' certificates missing, the same rule names each of them, and the three it watched before stay quiet
+  - name: with only the static sites' certificates missing, the same rule names each of them, and the others it watches stay quiet
     interval: 1m
     input_series:
       - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="wayline-tls",condition="True"}'
@@ -159,6 +165,8 @@ tests:
       - series: 'certmanager_certificate_ready_status{namespace="monitoring",name="grafana-tls",condition="True"}'
         values: '1x40'
       - series: 'certmanager_certificate_ready_status{namespace="infisical",name="infisical-tls",condition="True"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="frameflow",name="frameflow-tls",condition="True"}'
         values: '1x40'
     alert_rule_test:
       - eval_time: 31m
@@ -168,6 +176,26 @@ tests:
             exp_annotations: { summary: "cert-manager reports nothing for rillmark-tls, so the certificate alerts cannot fire" }
           - exp_labels: { name: devops-tls, severity: warning, component: certificate }
             exp_annotations: { summary: "cert-manager reports nothing for devops-tls, so the certificate alerts cannot fire" }
+  - name: with only Frameflow's certificate missing, the same rule names it alone
+    interval: 1m
+    input_series:
+      - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="wayline-tls",condition="True"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="monitoring",name="grafana-tls",condition="True"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="infisical",name="infisical-tls",condition="True"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="rillmark",name="rillmark-tls",condition="True"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="awushi-cloudgarden",name="devops-tls",condition="True"}'
+        values: '1x40'
+    alert_rule_test:
+      - { eval_time: 29m, alertname: CertificateNotWatched, exp_alerts: [] }
+      - eval_time: 31m
+        alertname: CertificateNotWatched
+        exp_alerts:
+          - exp_labels: { name: frameflow-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "cert-manager reports nothing for frameflow-tls, so the certificate alerts cannot fire" }
   - name: infisical-tls fires like any other certificate, under the namespace it lives in
     interval: 1m
     input_series:
