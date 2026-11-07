@@ -260,10 +260,13 @@ grafana:
     # the database, at any length. Nothing here needs it, because the sidecars below make no reload call.
     auth.basic:
       enabled: false
+    # hide_version takes the version and commit out of /api/health and most of /login. One field of /login still holds the version.
     auth.anonymous:
       enabled: false
+      hide_version: true
     # The page after login. Grafana's own home offers to create a first dashboard, which read as if none had loaded. The sidecar writes this
-    # file, by the folder annotation in monitoring-extras, and until it has, Grafana falls back to its own.
+    # file, by the folder annotation in monitoring-extras. Until it has, or while the sidecar or that ConfigMap is broken,
+    # /api/dashboards/home answers 500 "Failed to load home dashboard". The rest of Grafana does not depend on it.
     dashboards:
       default_home_dashboard_path: /tmp/dashboards/Platform/platform-overview.json
     # No pod here has internet egress, so each of these can only time out and log an error.
