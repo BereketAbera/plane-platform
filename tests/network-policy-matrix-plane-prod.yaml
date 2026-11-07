@@ -1,6 +1,7 @@
 # Expected network reachability on hosted production, for scripts/test-netpol.sh. WAYLINE_TARGET=plane-prod picks this file, and
-# make remote-test runs it. Run only after the network-policies Application is Synced, and once Plane and the two static sites are
-# deployed, or their rows read INCONCLUSIVE, which is not a pass.
+# make remote-test runs it. Run only after the network-policies Application is Synced, and once Plane, the two static sites and Frameflow
+# are deployed, or their rows read INCONCLUSIVE, which is not a pass. Frameflow's rows to its API read so until its second release, which
+# brings the API, the worker and the two maintenance CronJobs.
 #
 # How a row runs is written at the head of tests/network-policy-matrix.yaml and scripts/test-netpol.sh. In short: a NEW short-lived
 # pod in from.ns with from.labels, never hostNetwork. kube-router rejects what a policy denies, where the local cluster drops it, so
@@ -17,9 +18,9 @@
 # - api and blackbox reach Traefik on 443. The web entrypoint only redirects, so nothing but cert-manager's self-check needs 80.
 # - Argo CD reads GitHub on 443. No Git remote on a local network.
 # - Alertmanager reaches public 443, for Telegram and Healthchecks.
-# - New: cert-manager, the HTTP-01 solvers in each namespace with a Certificate, the node's own ports from a pod, and the two static sites,
-#   rillmark and awushi-cloudgarden, which only Traefik reaches and which reach nothing but DNS. No frameflow rows yet: its quota is still
-#   no pods, so none can start. They come with the pull request that deploys it.
+# - New: cert-manager, the HTTP-01 solvers in each namespace with a Certificate, the node's own ports from a pod, the two static sites,
+#   rillmark and awushi-cloudgarden, which only Traefik reaches and which reach nothing but DNS, and frameflow. There Traefik reaches the
+#   web and Silo's S3 port, each component reaches only the others it calls, and the operator alone reaches Infisical and the API server.
 #
 # Known limit, deliberately not a row: api is allowed to Traefik, and Traefik routes by Host header, so api could ask for any host
 # Traefik serves. NetworkPolicy cannot see that. scripts/hosted/test-hosted.sh shows the UI hosts answer 404 to it. Grafana's and Infisical's
@@ -37,6 +38,7 @@ cases:
   - { from: { ns: monitoring-agents, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
   - { from: { ns: rillmark, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
   - { from: { ns: awushi-cloudgarden, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
+  - { from: { ns: frameflow, labels: { probe: unlabelled } }, to: { host: kube-dns.kube-system.svc.cluster.local, port: 53, protocol: udp }, expect: allow }
 
   # plane-prod: Traefik to the app
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: plane-web.plane-prod.svc.cluster.local, port: 3000 }, expect: allow }
@@ -196,8 +198,8 @@ cases:
   - { from: { ns: infisical, labels: { app.kubernetes.io/component: backup } }, to: { host: infisical-redis.infisical.svc.cluster.local, port: 6379 }, expect: deny }
   - { from: { ns: infisical, labels: { probe: unlabelled } }, to: { host: infisical-postgres.infisical.svc.cluster.local, port: 5432 }, expect: deny }
 
-  # traefik: Plane, Grafana, Infisical's server and the API server, and the static sites in their own rows at the end. Nothing else has a
-  # route, and policy refuses it the other consoles as well
+  # traefik: Plane, Grafana, Infisical's server and the API server, and the apps in their own rows at the end. Nothing else has a route, and
+  # policy refuses it the other consoles as well
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow, note: "CRD and Ingress providers" }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: argocd-server.argocd.svc.cluster.local, port: 80 }, expect: deny }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kps-grafana.monitoring.svc.cluster.local, port: 80 }, expect: allow, note: "the public route. Service 80 is pod port 3000" }
@@ -329,3 +331,129 @@ cases:
   - { from: { ns: awushi-cloudgarden, labels: { app.kubernetes.io/component: web } }, to: { host: rillmark.rillmark.svc.cluster.local, port: 80 }, expect: deny, note: "nor the other site" }
   - { from: { ns: awushi-cloudgarden, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
   - { from: { ns: awushi-cloudgarden, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: awushi-cloudgarden.awushi-cloudgarden.svc.cluster.local, port: 80 }, expect: deny }
+
+  # frameflow: Traefik reaches the web, and Silo's S3 port for the upload route, and nothing else there. The rows from kube-system are the
+  # ones whose source no policy limits, so they alone show each component's own ingress rule refusing
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: frameflow-web.frameflow.svc.cluster.local, port: 3000 }, expect: allow, note: "the public route" }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: allow, note: "the upload route, which policy/hosted.rego holds to presigned PUTs" }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9090 }, expect: deny, note: "Silo console stays closed" }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: frameflow-api.frameflow.svc.cluster.local, port: 4000 }, expect: deny, note: "the web proxies the API, so no route reaches it" }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 8888 }, expect: deny, note: "the dashboard has no route" }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 7070 }, expect: deny }
+  - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny, note: "no route needs the database" }
+  - { from: { ns: kube-system, labels: { probe: unlabelled } }, to: { host: frameflow-web.frameflow.svc.cluster.local, port: 3000 }, expect: deny, note: "only Traefik's pods, by web's own ingress rule" }
+  - { from: { ns: kube-system, labels: { probe: unlabelled } }, to: { host: frameflow-api.frameflow.svc.cluster.local, port: 4000 }, expect: deny, note: "only the web and the worker" }
+  - { from: { ns: kube-system, labels: { probe: unlabelled } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 7070 }, expect: deny, note: "only the API, the worker and the maintenance CronJobs" }
+  - { from: { ns: kube-system, labels: { probe: unlabelled } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 8888 }, expect: deny, note: "only the API, the worker and the maintenance CronJobs" }
+  - { from: { ns: kube-system, labels: { probe: unlabelled } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny, note: "only Hatchet and the backup" }
+  - { from: { ns: kube-system, labels: { probe: unlabelled } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: deny, note: "only Frameflow's own pods, Traefik and Prometheus" }
+
+  # frameflow: the web proxies the API, and reaches nothing else
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: frameflow-api.frameflow.svc.cluster.local, port: 4000 }, expect: allow, note: "Next.js proxies /api/* and /streams/*" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 7070 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 8888 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: deny, note: "browsers upload through Traefik, not through the web" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kube-router's INPUT chain" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: traefik.traefik.svc.cluster.local, port: 443 }, expect: deny, note: "unlike Plane's api, nothing here dials a public host" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+
+  # frameflow: the API reaches Hatchet's two ports and Silo, and nothing else
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 7070 }, expect: allow, note: "gRPC: it submits each video" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 8888 }, expect: allow, note: "REST, behind lite's proxy" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9090 }, expect: deny, note: "Silo console stays closed" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny, note: "Hatchet's database is Hatchet's" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kube-router's INPUT chain" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: 5.253.234.127, port: 10250 }, expect: deny, note: "the kubelet" }
+
+  # frameflow: the worker reaches Hatchet's two ports, Silo and the API, and nothing outside
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 7070 }, expect: allow, note: "gRPC: its tasks" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 8888 }, expect: allow, note: "REST: on SIGTERM, SDK 1.43 asks there for no more tasks" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: frameflow-api.frameflow.svc.cluster.local, port: 4000 }, expect: allow, note: "status callbacks" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9090 }, expect: deny, note: "Silo console stays closed" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: frameflow-web.frameflow.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block. FFmpeg reads only what Silo holds" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: 1.1.1.1, port: 80 }, expect: deny, note: "FFmpeg could fetch a plain-HTTP URL too" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kube-router's INPUT chain" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: 5.253.234.127, port: 10250 }, expect: deny, note: "the kubelet" }
+
+  # frameflow: Hatchet reaches its Postgres alone, and its Postgres and Silo reach nothing
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: hatchet } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: allow, note: "its database and its queue" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: hatchet } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: hatchet } }, to: { host: frameflow-api.frameflow.svc.cluster.local, port: 4000 }, expect: deny, note: "the worker makes the callbacks, not the engine" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: hatchet } }, to: { host: security.hatchet.run, port: 443 }, expect: deny, note: "phone-home, which its env turns off too; DNS failure means inconclusive, not deny" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: hatchet } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: hatchet } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "lite reads no Kubernetes API" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: postgres } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: s3 } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: s3 } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny }
+
+  # frameflow: Silo's setup Job reaches Silo's S3 port alone, where mc's admin calls go too
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: s3-setup } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: s3-setup } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9090 }, expect: deny, note: "Silo console stays closed" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: s3-setup } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: s3-setup } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "it holds Silo's root keys" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: s3-setup } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kube-router's INPUT chain" }
+
+  # frameflow: the maintenance CronJobs reach Silo and Hatchet, and never the API, whose database file they open themselves
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: maintenance } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: maintenance } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 7070 }, expect: allow, note: "reconcile reads each stale run" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: maintenance } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 8888 }, expect: allow }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: maintenance } }, to: { host: frameflow-api.frameflow.svc.cluster.local, port: 4000 }, expect: deny, note: "the CLIs call no API" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: maintenance } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: maintenance } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: maintenance } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kube-router's INPUT chain" }
+
+  # frameflow: backup reaches Hatchet's Postgres and Silo, and nothing outside
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: backup } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: allow, note: "pg_dump" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: backup } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: allow, note: "rclone, as the read-only backup user" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: backup } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 8888 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: backup } }, to: { host: frameflow-api.frameflow.svc.cluster.local, port: 4000 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: backup } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "the backup Jobs keep no internet, and off-VPS copies are pulled over SFTP" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: backup } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: deny, note: "evaluated as node IP:6443 on kube-router's INPUT chain" }
+
+  # frameflow: its own Infisical operator, as plane-prod's. The row from kube-system shows the operator's label alone gets nothing in:
+  # infisical-server reads the namespace with it
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: allow }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: kubernetes.default.svc.cluster.local, port: 443 }, expect: allow }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: 1.1.1.1, port: 443 }, expect: deny, note: "by IP, so a DNS failure cannot pass as a block" }
+  - { from: { ns: kube-system, labels: { app.kubernetes.io/name: secrets-operator } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny, note: "only plane-prod's and frameflow's operators, and Traefik's pods" }
+
+  # frameflow: Prometheus scrapes Silo on its S3 port, where its metrics are, and nothing else there
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: allow }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9090 }, expect: deny, note: "Silo console stays closed" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 8888 }, expect: deny, note: "Hatchet exports no metrics here" }
+  - { from: { ns: monitoring, labels: { app.kubernetes.io/name: prometheus } }, to: { host: frameflow-web.frameflow.svc.cluster.local, port: 3000 }, expect: deny, note: "no metrics here, and blackbox goes through Traefik" }
+
+  # frameflow: HTTP-01 solvers answer Traefik and call nothing, and a pod with no component's label reaches nothing
+  - { from: { ns: frameflow, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
+  - { from: { ns: frameflow, labels: { acme.cert-manager.io/http01-solver: "true" } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: frameflow, labels: { probe: unlabelled } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: frameflow, labels: { probe: unlabelled } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny }
+
+  # frameflow and the other tenants: none reaches another, and Frameflow's Silo and Postgres are its own
+  - { from: { ns: plane-prod, labels: { app.kubernetes.io/component: api } }, to: { host: frameflow-web.frameflow.svc.cluster.local, port: 3000 }, expect: deny, note: "no tenant reaches another" }
+  - { from: { ns: plane-prod, labels: { app.kubernetes.io/component: api } }, to: { host: frameflow-silo.frameflow.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: plane-prod, labels: { app.kubernetes.io/component: worker } }, to: { host: hatchet.frameflow.svc.cluster.local, port: 7070 }, expect: deny }
+  - { from: { ns: plane-prod, labels: { app.kubernetes.io/component: backup } }, to: { host: hatchet-postgres.frameflow.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: rillmark, labels: { app.kubernetes.io/component: web } }, to: { host: frameflow-web.frameflow.svc.cluster.local, port: 3000 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: plane-pgdb.plane-prod.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: web } }, to: { host: rillmark.rillmark.svc.cluster.local, port: 80 }, expect: deny, note: "nor a static site" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: plane-pgdb.plane-prod.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: api } }, to: { host: plane-minio.plane-prod.svc.cluster.local, port: 9000 }, expect: deny, note: "its own Silo, never Plane's" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-pgdb.plane-prod.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: worker } }, to: { host: plane-minio.plane-prod.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: hatchet } }, to: { host: plane-pgdb.plane-prod.svc.cluster.local, port: 5432 }, expect: deny, note: "its own Postgres, never Plane's" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: maintenance } }, to: { host: plane-minio.plane-prod.svc.cluster.local, port: 9000 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: s3-setup } }, to: { host: plane-minio.plane-prod.svc.cluster.local, port: 9000 }, expect: deny, note: "Silo's root keys reach its own Silo alone" }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-pgdb.plane-prod.svc.cluster.local, port: 5432 }, expect: deny }
+  - { from: { ns: frameflow, labels: { app.kubernetes.io/component: backup } }, to: { host: plane-minio.plane-prod.svc.cluster.local, port: 9000 }, expect: deny }

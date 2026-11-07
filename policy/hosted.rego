@@ -557,10 +557,12 @@ deny contains msg if {
 
 # NetworkPolicy adds up, and in both directions: what may arrive in namespace infisical, and what may leave it, is every policy there taken
 # together. So every policy there is written out here, and a policy more, or one of these wider, is a change a person reads first. In:
-# Traefik's pods reach the server on 8080 and a solver on 8089, the operator the server, and only the server and the backup Jobs reach
-# Postgres, and only the server Redis. Out: every pod reaches kube-dns, the server its database, Redis and the API server, and the backup Jobs
-# Postgres. That is all that bounds what the server's relaxed SSRF protection lets a caller of its public route make it dial, as
-# values/infisical.yaml says at ALLOW_INTERNAL_IP_CONNECTIONS, so an egress-only policy is as much a way out as one with ingress is a way in.
+# Traefik's pods reach the server on 8080 and a solver on 8089, plane-prod's operator and frameflow's the server, and only the server and
+# the backup Jobs reach Postgres, and only the server Redis. Each operator is its namespace and its pods' label in one element: apart, they
+# would let in every pod of that namespace, and any pod in infisical that wore the label. Out: every pod reaches kube-dns, the server its
+# database, Redis and the API server, and the backup Jobs Postgres. That is all that bounds what the server's relaxed SSRF protection lets a
+# caller of its public route make it dial, as values/infisical.yaml says at ALLOW_INTERNAL_IP_CONNECTIONS, so an egress-only policy is as
+# much a way out as one with ingress is a way in.
 infisical_server_pods := {"matchLabels": {"app": "infisical-standalone", "component": "infisical"}}
 
 traefik_pods := {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "traefik"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "traefik"}}}
@@ -584,7 +586,10 @@ infisical_network_policies := {
 		"podSelector": infisical_server_pods,
 		"policyTypes": ["Ingress", "Egress"],
 		"ingress": [
-			{"from": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "plane-prod"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "secrets-operator"}}}], "ports": [{"protocol": "TCP", "port": 8080}]},
+			{"from": [
+				{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "plane-prod"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "secrets-operator"}}},
+				{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "frameflow"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "secrets-operator"}}},
+			], "ports": [{"protocol": "TCP", "port": 8080}]},
 			{"from": [traefik_pods], "ports": [{"protocol": "TCP", "port": 8080}]},
 		],
 		"egress": [

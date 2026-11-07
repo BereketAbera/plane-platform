@@ -114,6 +114,13 @@ spec:
         - { protocol: TCP, port: 9187 }
         - { protocol: TCP, port: 9121 }
         - { protocol: TCP, port: 8443 }
+    # Frameflow's Silo, whose metrics are on its S3 port, as Plane's are. Its pods alone: Hatchet and its Postgres beside it export
+    # nothing here. frameflow.yaml lets Prometheus in there and nowhere else.
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: frameflow } }
+          podSelector: { matchLabels: { app.kubernetes.io/component: s3 } }
+      ports:
+        - { protocol: TCP, port: 9000 }
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
