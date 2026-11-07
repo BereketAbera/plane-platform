@@ -432,7 +432,7 @@
    },
    "targets": [
     {
-     "expr": "min by (namespace, probe) (probe_success{namespace=~\"plane-.*\"})",
+     "expr": "min by (namespace, probe) (probe_success{probe!=\"denied-prometheus\"})",
      "legendFormat": "{{namespace}} {{probe}}",
      "range": true,
      "instant": false,
@@ -498,7 +498,7 @@
    },
    "targets": [
     {
-     "expr": "count(ALERTS{alertstate=\"firing\",alertname!~\"Watchdog|InfoInhibitor\"}) or vector(0)",
+     "expr": "count(ALERTS{alertstate=\"firing\",severity=~\"warning|critical\"}) or vector(0)",
      "legendFormat": "__auto",
      "range": false,
      "instant": true,
@@ -509,7 +509,7 @@
      }
     }
    ],
-   "description": "Everything firing except Watchdog, which is always on by design."
+   "description": "Warning and critical alerts firing, which are the ones that reach Telegram. Info alerts show only in Alertmanager."
   },
   {
    "id": 12,
@@ -785,7 +785,7 @@
    },
    "targets": [
     {
-     "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{namespace=~\"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical\",container!=\"\",container!=\"POD\"}[5m]))",
+     "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{namespace!~\"kube-system|kube-public|kube-node-lease|restore-test-.*\",container!=\"\",container!=\"POD\"}[5m]))",
      "legendFormat": "{{namespace}}",
      "range": true,
      "instant": false,
@@ -848,7 +848,7 @@
    },
    "targets": [
     {
-     "expr": "sum by (namespace) (container_memory_working_set_bytes{namespace=~\"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical\",container!=\"\",container!=\"POD\"})",
+     "expr": "sum by (namespace) (container_memory_working_set_bytes{namespace!~\"kube-system|kube-public|kube-node-lease|restore-test-.*\",container!=\"\",container!=\"POD\"})",
      "legendFormat": "{{namespace}}",
      "range": true,
      "instant": false,
@@ -912,7 +912,7 @@
    },
    "targets": [
     {
-     "expr": "sum by (namespace) (increase(kube_pod_container_status_restarts_total{namespace=~\"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical\"}[5m]))",
+     "expr": "sum by (namespace) (increase(kube_pod_container_status_restarts_total{namespace!~\"kube-system|kube-public|kube-node-lease|restore-test-.*\"}[5m]))",
      "legendFormat": "{{namespace}}",
      "range": true,
      "instant": false,
@@ -959,7 +959,7 @@
    },
    "targets": [
     {
-     "expr": "topk(10, sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total{namespace=~\"plane-.*|monitoring|monitoring-agents|argocd|traefik|infisical\"}[$__range]))) > 0",
+     "expr": "topk(10, sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total{namespace!~\"kube-system|kube-public|kube-node-lease|restore-test-.*\"}[$__range]))) > 0",
      "legendFormat": "__auto",
      "range": false,
      "instant": true,
