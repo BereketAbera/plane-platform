@@ -218,7 +218,7 @@ grafana:
   testFramework: { enabled: false }
   defaultDashboardsTimezone: utc
   # A Role in its own namespace, where the chart default is cluster-wide. The chart writes that Role with configmaps and secrets, and this is
-  # the one pod on the internet, so its token would read every Secret in monitoring. The sidecars below read ConfigMaps alone. So
+  # the one pod on the internet, so its token would read every Secret in monitoring. The dashboard sidecar below reads ConfigMaps alone. So
   # useExistingRole stops the chart's Role, and extraObjects writes it with configmaps only. By the same name, because a new one would
   # change the RoleBinding's roleRef, which the API server refuses on a running cluster.
   rbac:
@@ -257,7 +257,7 @@ grafana:
       allow_sign_up: false
       allow_org_create: false
     # Off, because it answers on every path, where the limit on POST /login does not reach, and each failure writes the name it was given to
-    # the database, at any length. Nothing here needs it, because the sidecars below make no reload call.
+    # the database, at any length. Nothing here needs it: the dashboard sidecar below makes no reload call, and nothing writes datasources.
     auth.basic:
       enabled: false
     # hide_version takes the version and commit out of /api/health and most of /login. One field of /login still holds the version.
@@ -307,20 +307,33 @@ grafana:
       provider:
         foldersFromFilesStructure: true
         allowUiUpdates: false
+    # Grafana reads datasources only when it starts, or on a reload call, which would need basic auth. So nothing writes them while it runs:
+    # they are in datasources below, which the chart puts in ConfigMap kps-grafana, and that ConfigMap's checksum is on the pod. So a changed
+    # datasource rolls the pod. From a sidecar, or a ConfigMap labelled for one, it would sit unread until something replaced the pod.
     datasources:
-      defaultDatasourceEnabled: true
-      uid: prometheus # dashboards in monitoring-extras pin this uid
-      resource: configmap # as above
-      # Grafana reads datasources only when it starts, or on a reload call, which would need basic auth. So one LIST before it starts, in place
-      # of a sidecar. The chart's default of WATCH would never exit, and the pod would stay in Init. A LIST that fails exits 1, and the kubelet
-      # runs it again. A changed datasource takes a new pod.
-      initDatasources: true
-      skipReload: true
-      watchMethod: LIST
-  additionalDataSources:
-    - name: Loki
-      uid: loki
-      type: loki
-      access: proxy
-      url: http://loki.monitoring.svc.cluster.local:3100
-      jsonData: { maxLines: 1000 }
+      enabled: false
+  # The three the chart's datasource ConfigMap held, as it held them. Dashboards in monitoring-extras pin these uids. timeInterval is
+  # Prometheus's scrapeInterval above.
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          url: http://kps-prometheus.monitoring:9090/
+          access: proxy
+          isDefault: true
+          jsonData: { httpMethod: POST, timeInterval: 30s }
+        - name: Alertmanager
+          type: alertmanager
+          uid: alertmanager
+          url: http://kps-alertmanager.monitoring:9093/
+          access: proxy
+          jsonData: { handleGrafanaManagedAlerts: false, implementation: prometheus }
+        - name: Loki
+          type: loki
+          uid: loki
+          url: http://loki.monitoring.svc.cluster.local:3100
+          access: proxy
+          jsonData: { maxLines: 1000 }
