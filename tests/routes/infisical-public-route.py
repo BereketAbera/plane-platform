@@ -539,6 +539,21 @@ def h2_verdict(returncode: int, stdout: str, stderr: str, path: str, real: bool,
     return "PASS", f"{code} over HTTP/2 from {'backend' if forwarded else 'traefik'}{elsewhere}"
 
 
+def h2_rows(report: Report, port: int, real: bool, echo: Echo | None, ask=h2_ask) -> None:
+    """Four of the refused paths in every spelling, over HTTP/2."""
+    sample = ["/api/v1/auth/universal-auth/login", "/api/docs", "/signup", "/api/v1/admin/bootstrap"]
+    asks = [(path, label, target) for path in sample for label, target in spellings(path).items()]
+    for index, (path, label, target) in enumerate(asks):
+        before = len(echo.lines) if echo is not None else 0
+        returncode, stdout, stderr = ask(port, target)
+        verdict, detail = h2_verdict(returncode, stdout, stderr, path, real, echo.lines[before:] if echo is not None else None)
+        report.row(verdict, f"h2 POST {target} is refused [{label}]", detail)
+        if verdict == "BLOCKED" and index + 1 < len(asks):
+            # A Traefik that gave no answer in five tries, or none over HTTP/2, gives the rest none either, and each would wait as long.
+            report.row("BLOCKED", f"the {len(asks) - index - 1} HTTP/2 rows after it", "were not asked")
+            break
+
+
 def run(arguments: argparse.Namespace) -> int:
     client = Client(arguments.port)
     real = arguments.backend == "real"
@@ -709,17 +724,7 @@ def run(arguments: argparse.Namespace) -> int:
     report.row("FAIL" if who == "backend" else "PASS", "HTTP/1.0 on a refused path", f"{status} from {who}")
 
     print("== the same spellings over HTTP/2, where the path travels as a header of its own")
-    sample = ["/api/v1/auth/universal-auth/login", "/api/docs", "/signup", "/api/v1/admin/bootstrap"]
-    asks = [(path, label, target) for path in sample for label, target in spellings(path).items()]
-    for index, (path, label, target) in enumerate(asks):
-        before = len(echo.lines) if echo is not None else 0
-        returncode, stdout, stderr = h2_ask(arguments.port, target)
-        verdict, detail = h2_verdict(returncode, stdout, stderr, path, real, echo.lines[before:] if echo is not None else None)
-        report.row(verdict, f"h2 POST {target} is refused [{label}]", detail)
-        if verdict == "BLOCKED" and index + 1 < len(asks):
-            # A Traefik that gave no answer in five tries, or none over HTTP/2, gives the rest none either, and each would wait as long.
-            report.row("BLOCKED", f"the {len(asks) - index - 1} HTTP/2 rows after it", "were not asked")
-            break
+    h2_rows(report, arguments.port, real, echo)
 
     if echo is not None:
         print(f"the echo server received {len(echo.lines)} requests in all")
@@ -1087,6 +1092,16 @@ def selftest() -> int:
     assert h2_ask(1, "%2fsignup", malformed, no_wait)[0] == 92 and len(malformed.commands) == 1, "a reset is the same answer at every try"
     command = malformed.commands[0]
     assert command[command.index("--request-target") + 1] == "%2fsignup", "the target goes as it is, past curl's URL parser"
+    # The section as a whole: every row from an answer, and when Traefik stops answering, one row that could not be asked and one for the
+    # rest, which would each wait ten seconds for nothing.
+    for real in (False, True):
+        report = Report()
+        h2_rows(report, 1, real, None, lambda _port, _target: (0, traefik_404, ""))
+        assert report.passed == len(report.lines) == 4 * len(spellings(path)), report.lines[:3]
+        report = Report()
+        with contextlib.redirect_stdout(io.StringIO()):
+            h2_rows(report, 1, real, None, lambda _port, _target: (7, "\n000 0", refused_connection))
+        assert (report.blocked, len(report.lines)) == (2, 2) and "were not asked" in report.lines[1], report.lines
 
     report = Report()
     with contextlib.redirect_stdout(io.StringIO()):
