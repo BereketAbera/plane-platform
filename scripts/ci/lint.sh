@@ -14,12 +14,13 @@ run() { # run <label> <command...>
 }
 
 # Tracked files and new ones Git would pick up, so CI and make ci see the same set, and something
-# gitignored, such as a fetched upstream source tree, is never linted as if it were ours.
+# gitignored, such as a fetched upstream source tree, is never linted as if it were ours. Published evidence is a record of
+# what ran, scratch scripts among it, and editing it to please a linter would make it a false record.
 files_matching() { # files_matching <pathspec...>
   local file
   while read -r file; do
     if [[ -f "$file" ]]; then printf '%s\n' "$file"; fi
-  done < <(git ls-files --cached --others --exclude-standard -- "$@" ':(exclude)helm/plane/vendor/**')
+  done < <(git ls-files --cached --others --exclude-standard -- "$@" ':(exclude)helm/plane/vendor/**' ':(exclude)docs/evidence/**')
 }
 scripts_to_check() { files_matching '*.sh'; }
 python_files() { files_matching '*.py'; }
