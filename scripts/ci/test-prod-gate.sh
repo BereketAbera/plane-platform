@@ -1835,6 +1835,7 @@ workflow_gate_runs_in_make_ci() {
   as_json "$ROOT/.github/workflows/ci.yml"
   expect "make ci runs this" grep -qE '^[[:space:]]*for check in .*test-prod-gate' "$ROOT/Makefile"
   expect "the Manifests job runs this" equal "$(workflow_says '[.jobs.manifests.steps[] | select(.run // "" | test("scripts/ci/test-prod-gate.sh"))] | length')" 1
+  expect "the Manifests job, which the release needs, checks the quotas too" equal "$(workflow_says '[.jobs.manifests.steps[] | select(.run // "" | test("scripts/ci/check-capacity.sh"))] | length')" 1
 }
 
 # ---- The real tree ------------------------------------------------------------------------------------------------------

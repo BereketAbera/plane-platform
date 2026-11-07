@@ -61,6 +61,8 @@ jobs:
         run: ./scripts/ci/validate-manifests.sh
       - name: One owner per resource
         run: ./scripts/ci/ownership.sh
+      - name: Quotas fit the node, with Frameflow's share free
+        run: ./scripts/ci/check-capacity.sh
       - name: The exact-digest promotion gate, with a throwaway key and repository
         run: ./scripts/ci/test-prod-gate.sh
 
