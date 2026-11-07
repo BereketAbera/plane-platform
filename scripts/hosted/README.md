@@ -51,14 +51,17 @@ points at Vercel, so each A record has to be live before Argo CD first sees that
 
 `infisical-tls` has one more condition, at its first order and at every renewal, about every 60 days. Its solver pod takes 64Mi of the
 namespace's `limits.memory` quota, 1376Mi of 2400Mi is used steady, and the server's rollout and the nightly backup each take 1024Mi more, so
-the quota fits one of the three at a time, and the node has no memory to raise it. A solver that meets a rollout or a backup waits for it to
-finish. A solver whose self-check keeps failing holds its 64Mi until its challenge passes or is deleted, and meanwhile the next rollout's new
-pod and the backup's pod are refused. That shows as `PlaneBackupFailed` for namespace infisical once the backup Job reaches its 2-hour
-deadline, `BackupTooOld` 26 hours after the last good one, `ArgoAppDegraded` for infisical once a rollout's 10 minutes are up, and
-`CertificateExpiringSoon` at 21 days. `CertificateNotReady` stays quiet, because the old certificate is still Ready. `kc -n infisical get
-challenges,pods` shows the solver, and `kc -n infisical describe challenge` why it waits. The values that come with the route roll the server,
-so they go out in a push of their own, and the Certificate in a later one, once that rollout has finished. On a new VPS there is nothing to
-roll, and both fit.
+the quota fits one of the three at a time, and the node has no memory to raise it. A pod the quota refuses is never created, so it never fails
+either. A solver that meets a rollout or a backup waits for it to finish. A solver whose self-check keeps failing holds its 64Mi until its
+challenge passes or is deleted, and meanwhile the next rollout's new pod and the backup's pod are refused. The backup Job then ends at its
+2-hour deadline with no pod failed, and `PlaneBackupFailed`, which counts failed pods, stays quiet. kube-prometheus-stack's `KubeJobFailed`
+warns 15 minutes later, and `BackupTooOld` pages 26 hours after the last good backup. Argo CD reads the server's Deployment as Degraded once a
+rollout passes its 10-minute progress deadline, and `ArgoAppDegraded` fires for infisical 5 minutes after. A solver that waits shows as
+`CertificateNotReady` once the Certificate has not been Ready for 30 minutes, which is only at the first order: at a renewal the old
+certificate is still Ready, and nothing fires for it until `CertificateExpiringSoon` at 21 days. `kc -n infisical get challenges,pods` shows
+the solver, and `kc -n infisical describe challenge` why it waits, in the Challenge's reason and events: the quota's refusal of its pod, with
+the quota's numbers, or the self-check that fails. The values that come with the route roll the server, so they go out in a push of their own,
+and the Certificate in a later one, once that rollout has finished. On a new VPS there is nothing to roll, and both fit.
 
 Port 80 alone is enough for a retry. If 443 was closed as well, `edge.sh open` refuses while Infisical's config does not answer, so with
 Infisical down Plane stays off the internet too: `TARGET=plane-prod CONFIRM=plane-prod scripts/hosted/edge.sh owner <your ipv4>` reaches the
