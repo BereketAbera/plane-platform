@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Does hosted production still leave Frameflow its share? Quotas cap rather than reserve, so its reservation exists only as what the
-# caps on everything else leave free. This sums them from infrastructure/hosted/plane-prod/capacity.yaml, which Terraform also applies,
-# and fails if they no longer fit the node. It also fails if what is deployed no longer fits its own quota, because that shows up
-# only on the cluster, as a rollout that stops with "exceeded quota".
+# Does hosted production still fit its node? Quotas cap rather than reserve, so what keeps one namespace from taking another's room is
+# that their caps add up to no more than the node. This sums them from infrastructure/hosted/plane-prod/capacity.yaml, which Terraform
+# also applies, with the system's share and the scratch space no quota counts, and fails if they no longer fit. It also fails if what is
+# deployed no longer fits its own quota, because that shows up only on the cluster, as a rollout that stops with "exceeded quota".
 #
 # No cluster and no credentials. SKIP_CHARTS=yes leaves out the third-party charts, which need network, and then the workload
 # totals cover only what this repository holds as plain files.
@@ -29,19 +29,20 @@ as_json() { # as_json <yaml file> <output file>
   yq -N -o=json -I=0 'select(.kind != null)' "$1" >"$2"
 }
 
-for directory in monitoring-extras backup; do
+# Each folder as Argo CD reads it: what its kustomization.yaml lists, or else every plain file, in which each object names its own
+# namespace. A new app's folder is counted only once it is listed here, and a file its kustomization does not list only once it does. A
+# plain file is named by its folder too, because the static sites' folders hold files of the same names, and one would overwrite the other.
+for directory in monitoring-extras backup infisical certificates rillmark awushi-cloudgarden frameflow; do
   if [[ -f "$HOSTED_TREE/platform/$directory/kustomization.yaml" ]]; then
     kustomize build "$HOSTED_TREE/platform/$directory" >"$WORK/$directory.yaml"
     as_json "$WORK/$directory.yaml" "$WORK/manifests/$directory.json"
+  elif [[ -d "$HOSTED_TREE/platform/$directory" ]]; then
+    while read -r file; do
+      as_json "$file" "$WORK/manifests/$directory-$(basename "$file" .yaml).json"
+    done < <(find "$HOSTED_TREE/platform/$directory" -type f -name '*.yaml' 2>/dev/null | LC_ALL=C sort)
+  else
+    warn "$HOSTED_TREE/platform/$directory does not exist, so nothing there is counted"
   fi
-done
-# The plain folders, in which each object names its own namespace. A new app's folder is counted only once it is listed here. Each file
-# is named by its folder too, because the static sites' folders hold files of the same names, and one would overwrite the other.
-for directory in infisical certificates rillmark awushi-cloudgarden; do
-  [[ -d "$HOSTED_TREE/platform/$directory" ]] || { warn "$HOSTED_TREE/platform/$directory does not exist, so nothing there is counted"; continue; }
-  while read -r file; do
-    as_json "$file" "$WORK/manifests/$directory-$(basename "$file" .yaml).json"
-  done < <(find "$HOSTED_TREE/platform/$directory" -type f -name '*.yaml' 2>/dev/null | LC_ALL=C sort)
 done
 if [[ -f "$HOSTED_ENVIRONMENT/manifests.yaml" ]]; then
   as_json "$HOSTED_ENVIRONMENT/manifests.yaml" "$WORK/manifests/plane-prod-render.json"
@@ -104,9 +105,10 @@ def require(ok, message):
         problems.append(message)
 
 
-node, system, frameflow = capacity["node"], capacity["system"], capacity["frameflow"]
+node, system = capacity["node"], capacity["system"]
 quotas, limit_ranges = capacity["quotas"], capacity["limit_ranges"]
-others = {name: hard for name, hard in quotas.items() if name != "frameflow"}
+# What a namespace's emptyDirs take of the disk, which no quota here counts.
+ephemeral = capacity.get("ephemeral") or {}
 
 # ---- The numbers capacity.yaml copies from elsewhere must still be those numbers.
 reserved = (kubelet["kubeReserved"], kubelet["systemReserved"])
@@ -130,31 +132,32 @@ if block:
     namespaces = set(re.findall(r"^\s+([a-z0-9-]+)\s*=\s*\{\s*enforce", block.group(1), re.M))
     require(namespaces == set(quotas), f"Terraform makes namespaces {sorted(namespaces)}, and capacity.yaml has quotas for {sorted(quotas)}. A namespace with no quota means the sums below do not hold")
 
-# ---- Frameflow's share exists only because of these.
-require(str(quotas.get("frameflow", {}).get("pods")) == "0", "Frameflow is not deployed, so its quota must hold pods at 0. Deploying it is a change to these sums, not to that one line")
-for name, hard in others.items():
+# ---- Every namespace is summed the same way, so every quota must bound all six.
+for name, hard in quotas.items():
     for key in ("requests.cpu", "requests.memory", "limits.memory", "pods", "persistentvolumeclaims", "requests.storage"):
         require(key in hard, f"quota for {name} sets no {key}, so nothing bounds it and the sums below do not hold")
+for name in ephemeral:
+    require(name in quotas, f"ephemeral budgets {name}, which has no quota, so it is no namespace Terraform makes")
 
 
 def total(key):
-    return sum(quantity(hard.get(key, 0)) for hard in others.values())
+    return sum(quantity(hard.get(key, 0)) for hard in quotas.values())
 
 
-memory_used = total("limits.memory") + quantity(system["memory"]) + quantity(frameflow["memory"])
-cpu_used = total("requests.cpu") + quantity(system["cpu"]) + quantity(frameflow["cpu_requests"])
-disk_used = total("requests.storage") + quantity(system["disk"]) + quantity(frameflow["temp_disk"])
+scratch = sum(quantity(size) for size in ephemeral.values())
+memory_used = total("limits.memory") + quantity(system["memory"])
+cpu_used = total("requests.cpu") + quantity(system["cpu"])
+disk_used = total("requests.storage") + quantity(system["disk"]) + scratch
 # NodeDiskLow warns under 20% free, so a node with every budget full should still be quiet.
 disk_ceiling = quantity(node["disk"]) * 0.80
 
-require(memory_used <= quantity(node["memory"]), f"memory: limits {gib(total('limits.memory'))}, system {system['memory']} and Frameflow {frameflow['memory']} come to {gib(memory_used)}, and the node has {node['memory']}")
-require(cpu_used <= quantity(node["cpu"]), f"CPU: requests {cores(total('requests.cpu'))}, system {system['cpu']} and Frameflow {frameflow['cpu_requests']} come to {cores(cpu_used)}, and the node has {node['cpu']}")
-require(disk_used <= disk_ceiling, f"disk: claims {gib(total('requests.storage'))}, system {system['disk']} and Frameflow's temp {frameflow['temp_disk']} come to {gib(disk_used)}, and NodeDiskLow warns past {gib(disk_ceiling)}")
-require(quantity(frameflow["cpu_limits"]) <= quantity(node["cpu"]), f"Frameflow's CPU limit {frameflow['cpu_limits']} is more than the node's {node['cpu']}")
+require(memory_used <= quantity(node["memory"]), f"memory: limits {gib(total('limits.memory'))} and system {system['memory']} come to {gib(memory_used)}, and the node has {node['memory']}")
+require(cpu_used <= quantity(node["cpu"]), f"CPU: requests {cores(total('requests.cpu'))} and system {system['cpu']} come to {cores(cpu_used)}, and the node has {node['cpu']}")
+require(disk_used <= disk_ceiling, f"disk: claims {gib(total('requests.storage'))}, system {system['disk']} and emptyDir scratch {gib(scratch)} come to {gib(disk_used)}, and NodeDiskLow warns past {gib(disk_ceiling)}")
 
-print(f"  memory {gib(memory_used)} of {node['memory']}: limits {gib(total('limits.memory'))}, system {system['memory']}, Frameflow {frameflow['memory']}")
-print(f"  CPU    {cores(cpu_used)} of {node['cpu']}: requests {cores(total('requests.cpu'))}, system {system['cpu']}, Frameflow {frameflow['cpu_requests']}, limit {frameflow['cpu_limits']}")
-print(f"  disk   {gib(disk_used)} of {gib(disk_ceiling)}, 80% of {node['disk']}: claims {gib(total('requests.storage'))}, system {system['disk']}, Frameflow's temp {frameflow['temp_disk']}")
+print(f"  memory {gib(memory_used)} of {node['memory']}: limits {gib(total('limits.memory'))}, system {system['memory']}")
+print(f"  CPU    {cores(cpu_used)} of {node['cpu']}: requests {cores(total('requests.cpu'))}, system {system['cpu']}")
+print(f"  disk   {gib(disk_used)} of {gib(disk_ceiling)}, 80% of {node['disk']}: claims {gib(total('requests.storage'))}, system {system['disk']}, emptyDir scratch {gib(scratch)}")
 
 
 # ---- What is deployed must fit its own namespace's quota.
@@ -225,7 +228,7 @@ for default, document in documents():
     metadata = document.get("metadata") or {}
     namespace = metadata.get("namespace") or default
     spec = document.get("spec") or {}
-    if namespace not in others:
+    if namespace not in quotas:
         continue
     if kind in ("Deployment", "StatefulSet", "DaemonSet"):
         replicas = spec.get("replicas", 1)
@@ -262,7 +265,7 @@ for default, document in documents():
             count_claim(namespace, claim)
 
 for namespace, entry in sorted(usage.items()):
-    hard = others[namespace]
+    hard = quotas[namespace]
     needs = [
         ("limits.memory", entry["limit"] + entry["extra"][2], mib, f"{mib(entry['limit'])} steady, and {mib(entry['extra'][2])} for the largest rollout, Job or solver"),
         ("requests.memory", entry["request"] + entry["extra"][1], mib, f"{mib(entry['request'])} steady, and {mib(entry['extra'][1])} for the largest rollout, Job or solver"),
@@ -278,7 +281,7 @@ for namespace, entry in sorted(usage.items()):
 if problems:
     for problem in problems:
         print(f"\033[1;31mfail\033[0m {problem}", file=sys.stderr)
-    print("Change infrastructure/hosted/plane-prod/capacity.yaml, or lower what asked for more, so Frameflow's share still holds.", file=sys.stderr)
+    print("Change infrastructure/hosted/plane-prod/capacity.yaml, or lower what asked for more, so every quota still fits the node.", file=sys.stderr)
     raise SystemExit(1)
 PY
-ok "hosted production's quotas fit the node, with Frameflow's share free, and what is deployed fits its quotas"
+ok "hosted production's quotas fit the node, with the system's share and the scratch no quota counts, and what is deployed fits its quotas"

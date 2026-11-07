@@ -27,7 +27,7 @@ statically and fails if a resource has two owners.
 |---|---|
 | **Terraform**, `infrastructure/terraform/environments/local` | Seven namespaces and their labels; a ResourceQuota and a LimitRange in each Plane namespace; the CoreDNS Corefile rewrite; the Argo CD Helm release; a second Helm release holding the AppProjects and the root Application |
 | **Terraform**, `infisical/terraform` | Infisical projects, environments, machine identities, project memberships, Kubernetes Auth config. On hosted production the same code makes project `plane-prod` and its one identity, bound to namespace `plane-prod`, in a state of its own |
-| **Terraform**, `infrastructure/terraform/environments/prod` | Hosted production's ten namespaces and their labels; a ResourceQuota `budget` in each, and a LimitRange `defaults` in each but `frameflow`, both from `infrastructure/hosted/plane-prod/capacity.yaml`; StorageClass `local-path-retain`; K3s's `coredns-custom` ConfigMap; the Argo CD Helm release; a second Helm release holding AppProjects `platform`, `plane-prod`, `frameflow`, `rillmark` and `awushi-cloudgarden` and the root Application |
+| **Terraform**, `infrastructure/terraform/environments/prod` | Hosted production's ten namespaces and their labels; a ResourceQuota `budget` in each, and a LimitRange `defaults` in each, both from `infrastructure/hosted/plane-prod/capacity.yaml`; StorageClass `local-path-retain`; K3s's `coredns-custom` ConfigMap; the Argo CD Helm release; a second Helm release holding AppProjects `platform`, `plane-prod`, `frameflow`, `rillmark` and `awushi-cloudgarden` and the root Application |
 | **Terraform**, `infrastructure/terraform/environments/prod-host` | The A records `wayline`, `grafana`, `infisical`, `frameflow`, `rillmark` and `devops` in `bereket.dev`, on Vercel. It reads the VPS from Contabo, and owns nothing there |
 
 ## What Terraform does not own
@@ -276,10 +276,11 @@ port-forward, through `scripts/infisical-bootstrap.sh` as locally.
 | `traefik` | `privileged` | Traefik's hostPorts cannot pass baseline, and they are the only way in |
 | `monitoring-agents` | `privileged` | node-exporter's hostNetwork and hostPID |
 | `rillmark`, `awushi-cloudgarden` | `restricted` | The static sites. nginx runs as user 101 with every capability dropped, and cert-manager's solver pod passes too |
-| `frameflow` | `restricted` | Not deployed. Its quota allows no pods, and the other quotas leave its share of the node free |
+| `frameflow` | `restricted` | Frameflow, its Hatchet, Postgres and Silo, its operator and its Jobs: each runs as a user that is not root, with every capability dropped and no privilege escalation, as cert-manager's solver does |
 
 Every namespace also warns and audits at `restricted`. The quotas' numbers and reasons are in `capacity.yaml`, and
-`scripts/ci/check-capacity.sh` fails CI unless their sum, with the system's share and Frameflow's, still fits the node.
+`scripts/ci/check-capacity.sh` fails CI unless their sum, with the system's share and the scratch space that no quota counts, still fits
+the node.
 [kubernetes-helm.md](kubernetes-helm.md#hosted-production) has the table.
 
 `modules/argocd` installs the same chart as locally, `argo-cd` 10.11.7 with v3.5.7, with values from
