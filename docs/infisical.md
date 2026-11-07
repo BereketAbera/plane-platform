@@ -395,13 +395,21 @@ So neither reads a separator the other does not. The rules allow for a trailing 
 family finds no route in Fastify. [`tests/routes/infisical-public-route.sh`](../tests/routes/infisical-public-route.sh) asks the pinned Traefik
 every anonymous and machine route, 59 refused paths in 49 spellings each over HTTP/1.1 and four of them over HTTP/2, 43 walks from an allowed
 path to a refused one, 12 kinds of machine credential on six of a browser's calls, and 49 calls a browser makes. Behind an echo server, which
-sees each request as Traefik forwards it and so is the proof that nothing refused arrives, 4083 rows passed and none failed. Behind this
-Infisical, which shows what its router makes of what does arrive in another shape, 3480 passed and none failed. That run cannot see what
-Traefik forwarded, and it then read any 404 from Infisical as no route, which a handler's own 404 is not. The 47 rows it read so were 40
-spellings and walks that Traefik passed on with an encoded slash, a NUL or a backslash inside a segment, which Fastify reads as one segment, 5
-rows that stay, and two header tricks. Which kind of 404 each of the 40 was is not on record. The test now reads only its router's own
-`Route <method>:<url> not found` as no route, and has run that way, with none failed, against a stand-in that answers as this version's code
-does, and not yet against the image. With the CA certificate download let through, the stand-in run fails, as it should.
+sees each request as Traefik forwards it, 4083 rows passed and none failed. That run shows what Traefik forwards, not that nothing refused arrives.
+Of its 3136 refused requests over HTTP/1.1, Traefik answered 3084 itself, and 52 arrived in another shape, with an encoded slash or backslash, a
+doubly encoded slash or dot, an overlong encoded dot, a NUL or a semicolon inside one segment: `/api/v1/admin/x/%2e%2e%2fbootstrap` arrived as
+`/api/v1/admin/x/..%2Fbootstrap`. Each of the 52 passed because `fastify_reads`, the test's model of find-my-way, does not read what arrived as the
+path refused, so their verdict is the model's. Routed by hand through find-my-way 9.9.0 as this image holds it, with Infisical's router options and
+the 183 distinct routes the test refuses, none of the 52 reached one of them: 42 found no route, and the 10 overlong forms took its bad-URL path,
+which Fastify answers 400. That check is not in this repository. Over HTTP/2, Traefik answered 176 of the 188 requests itself, 3 reached the echo,
+and 9 got no answer, which the test counted as passes. The run came before a fix to how those rows read curl's output, so they show nothing of what
+the 3 arrived as. Behind this Infisical, 3480 passed and none failed. That run cannot see what Traefik forwarded, and it then read any 404 from
+Infisical as no route, which a handler's own 404 is not. The 47 rows it read so were 40 spellings and walks that Traefik passed on with an encoded
+slash, a NUL or a backslash inside a segment, which Fastify reads as one segment, 5 rows that stay, and two header tricks. Which kind of 404 each
+of the 40 was is not on record. The test now reads only its router's own `Route <method>:<url> not found` as no route, and still passes a 401 or
+403 from Infisical when `fastify_reads` reads the path as sent as another route. It has run that way, with none failed, only against a stand-in
+that routes with that same model, so the run tried the verdict's code and not the model, and it has not yet run against the image. With the CA
+certificate download let through, the stand-in run fails, as it should.
 
 **What stays reachable with no session.** 24 of the 143: `GET /api/status` and `GET /api/v1/admin/config`, which a sign-in page reads; the
 sign-in itself, token refresh and logout, which read the session cookie; the five two-factor endpoints, which need the token a correct password

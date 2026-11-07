@@ -67,10 +67,15 @@ Around it:
 - **Proved against the pinned Traefik.** [`tests/routes/infisical-public-route.sh`](../../tests/routes/infisical-public-route.sh) starts the
   Traefik image and flags hosted production pins, in Docker, with `route.yaml`, and asks every anonymous and machine route, and the named ones in
   49 spellings each: trailing and doubled slashes, case, percent-encoding once and twice, encoded slashes and dots, dot segments, semicolons,
-  backslashes, NUL and the rest, over HTTP/1.1 and HTTP/2. With an echo server behind it, which sees each request as Traefik forwards it, that
-  is the proof that nothing refused arrives. With a real Infisical of this version behind it, it shows what Fastify's router makes of what does
-  arrive in another shape. That run cannot see what Traefik forwarded, so it does not stand in for the echo run. Given the backend's own address on a copy nobody has claimed, it also claims that copy and sends the real tokens it hands out through
-  the route, so a version whose tokens begin another way fails it.
+  backslashes, NUL and the rest, over HTTP/1.1 and HTTP/2. With an echo server behind it, which sees each request as Traefik forwards it, it
+  shows what Traefik lets through, not that nothing refused arrives. Traefik answers most refused spellings itself, and 52 arrive in another shape,
+  with an encoded slash or backslash, a doubly encoded slash or dot, an overlong encoded dot, a NUL or a semicolon inside one segment. Those pass
+  on the test's own model of Fastify's router, which does not read them as the path refused, and none of them reaches a refused route when routed
+  by hand through this image's own find-my-way. With a real Infisical of this version behind it, the test shows what Infisical answers, and cannot
+  see what Traefik forwarded, so neither run stands in for the other. The verdict that run now uses has not run against the image, only against a
+  stand-in that routes with the same model. [`docs/infisical.md`](../infisical.md#the-public-route) says what each run showed. Given the backend's
+  own address on a copy nobody has claimed, it also claims that copy and sends the real tokens it hands out through the route, so a version whose
+  tokens begin another way fails it.
 - **Only Traefik, and only to the server.** NetworkPolicy lets Traefik reach Infisical's server on 8080, and cert-manager's solver there on 8089
   while a challenge runs, and nothing else in that namespace. Its Postgres and Redis stay denied to it, and the matrix has rows for both. The
   server's pod holds no Kubernetes token.
