@@ -103,6 +103,7 @@ run "restore test verdict self check" scripts/hosted/restore-test.sh --selftest
 run "hosted test verdict self check" scripts/hosted/test-hosted.sh --selftest
 run "Infisical claim verdict self check" scripts/hosted/edge.sh --selftest
 run "host Terraform plan check self check" scripts/hosted/host-terraform.sh --selftest
+run "hosted admin token end self check" scripts/hosted/status.sh --selftest
 
 [[ "$failed" -eq 0 ]] || die "$failed lint check(s) failed"
 ok "lint passed"

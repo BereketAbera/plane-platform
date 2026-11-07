@@ -2,9 +2,59 @@
 # What hosted production is doing, read-only.
 #
 #   TARGET=plane-prod scripts/hosted/status.sh
+#   scripts/hosted/status.sh --selftest   what it says of the admin token's end, from a table, with no cluster, so CI can run it
 #
 # Keeps going when a section cannot be read, so one problem does not hide the rest. Exit 0 if the cluster answered. Alert delivery
 # and off-VPS backups say COMPLETE or INCOMPLETE from local files, whether or not it did.
+
+# The admin token's end, from its exp: when it ended, or when it ends and in how many whole days. Ended is read from the times themselves and
+# not from the days, because the division rounds toward zero, and a token that ended in the last 24 hours would read as ending in 0 days.
+token_end_words() { # <exp> <now>, in epoch seconds
+  local ends days
+  ends="$(date -u -r "$1" +%Y-%m-%dT%H:%MZ 2>/dev/null || date -u -d "@$1" +%Y-%m-%dT%H:%MZ)"
+  if [[ "$1" -le "$2" ]]; then
+    printf 'ended %s' "$ends"
+    return 0
+  fi
+  days=$((($1 - $2) / 86400))
+  case "$days" in
+    0) printf 'ends %s, in under a day' "$ends" ;;
+    1) printf 'ends %s, in 1 day' "$ends" ;;
+    *) printf 'ends %s, in %s days' "$ends" "$days" ;;
+  esac
+}
+
+if [[ "${1:-}" == --selftest ]]; then
+  failures=0
+  now=1800000000
+  # Seconds from now to the token's exp, then what follows the date: ended has nothing after it.
+  while read -r offset want; do
+    got="$(token_end_words "$((now + offset))" "$now")"
+    if [[ "$want" == ended ]]; then
+      [[ "$got" == "ended "* && "$got" != *", in "* ]] || { printf 'fail exp now%+d: %s, and wants it ended\n' "$offset" "$got"; failures=$((failures + 1)); }
+    else
+      [[ "$got" == "ends "*", $want" ]] || { printf 'fail exp now%+d: %s, and wants %s\n' "$offset" "$got" "$want"; failures=$((failures + 1)); }
+    fi
+  done <<'TABLE'
+-7776000 ended
+-86400 ended
+-86399 ended
+-3600 ended
+-1 ended
+0 ended
+1 in under a day
+3600 in under a day
+86399 in under a day
+86400 in 1 day
+172799 in 1 day
+172800 in 2 days
+7776000 in 90 days
+TABLE
+  [[ "$failures" -eq 0 ]] || { printf 'fail selftest: %s failed\n' "$failures" >&2; exit 1; }
+  printf ' ok selftest passed\n'
+  exit 0
+fi
+
 HOSTED_NO_CLUSTER=yes
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -72,9 +122,7 @@ section "Infisical's admin token"
 token_exp="$(jq -r '.token // "" | split(".")[1] // "" | gsub("-"; "+") | gsub("_"; "/") | (. + ("=" * ((4 - (length % 4)) % 4))) | @base64d | fromjson | .exp // 0' \
   "$LOCAL_DIR/secret-zero/infisical-admin.json" 2>/dev/null || echo 0)"
 if [[ "$token_exp" =~ ^[0-9]+$ && "$token_exp" -gt 0 ]]; then
-  ends="$(date -u -r "$token_exp" +%Y-%m-%dT%H:%MZ 2>/dev/null || date -u -d "@$token_exp" +%Y-%m-%dT%H:%MZ)"
-  days=$(((token_exp - $(date +%s)) / 86400))
-  if [[ "$days" -ge 0 ]]; then printf 'ends %s, in %s days' "$ends" "$days"; else printf 'ended %s' "$ends"; fi
+  token_end_words "$token_exp" "$(date +%s)"
   printf '. With two-factor on, a person replaces it in the UI: scripts/hosted/README.md, section Locked out of Infisical\n'
 else
   printf 'none here that can be read: secret-zero/infisical-admin.json. infisical/README.md, section Recovery, says how one comes back\n'
