@@ -52,9 +52,13 @@ Traefik's routes real, and it means a closed 443, a wrong DNS record or Contabo'
 from outside: `edge.sh scan` and `make remote-test`'s `outside` section read that, when someone runs them.
 
 From 19:23Z to 20:30Z on 2026-11-07, read-only, `infisical-sign-in` and `infisical-session` were answered 500 at nearly every minute's
-reading, and `InfisicalRouteDown` was firing for both, active since 19:23:47Z, while `infisical` and `infisical-claimed` read 200. The hosted
-handoff traces the 500 to Infisical v0.167.6 itself, whose two-factor routes turn their own 401 into a 500. No file in `docs/evidence` holds
-that reading.
+reading, and `InfisicalRouteDown` was firing for both, active since 19:23:47Z, while `infisical` and `infisical-claimed` read 200. The 500 is
+Infisical v0.167.6's own: its MFA router answers a two-factor call with no token from its own hook, in a body its route's 401 schema refuses,
+so the server answers 500 ([known limitations](known-limitations.md#what-real-runs-found)). The probe fix `1cb99ef`, released at 20:38:06Z
+as `928b5fc`, pointed the two probes at paths beside it under the same two limits: `POST /api/v1/password/password-setup`, which answers 401
+`Token missing`, and `POST /api/v1/auth/token`, which answers 404 `AuthTokenNotFound`. All four of Infisical's probes have read 1 since
+20:40:49Z, and `InfisicalRouteDown` resolved. Read from Prometheus with `kubectl`, last at 21:46Z for this page, and no file in
+`docs/evidence` holds those readings.
 
 ### Rules
 
@@ -91,7 +95,9 @@ its rule silent for good. Two have fired for a reason other than the one they na
 order at 07:08Z on 2026-11-07, because cert-manager reports an expiry of 0 before a certificate exists. `ec76d65` keeps it quiet until one
 does, as the rule's comment records, with a promtool test that fails on the old rule. It fired once more, at 19:23Z, for `infisical-tls`'s
 first order, which the hosted handoff says began before Prometheus had loaded that rule. `InfisicalRouteDown` is the other,
-[above](#probes). Prometheus's own record of both was read at 20:30Z, and no file in `docs/evidence` holds it.
+[above](#probes): its two probes asked paths that v0.167.6 answers 500, and it resolved once `1cb99ef` moved them, with all four probes at 1
+since 20:40:49Z. Prometheus's own record of both was read at 20:30Z, and of the probes again at 21:46Z, and no file in `docs/evidence` holds
+either.
 
 ### Where alerts go
 
