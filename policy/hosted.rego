@@ -504,6 +504,94 @@ deny contains msg if {
 	msg := sprintf("%s: blackbox module %s is %v, and must be exactly %v, because Infisical's alerts read what it reports", [identity, name, object.get(modules, name, "missing"), want])
 }
 
+# ---- Who reaches Infisical
+
+# NetworkPolicy adds up: what may arrive in namespace infisical is every policy there that admits anything. So each of those is written out
+# here, and a policy more, or one of these wider, is a change a person reads first: Traefik's pods reach the server on 8080 and a solver on
+# 8089, the operator the server, and only the server and the backup Jobs reach Postgres, and only the server Redis.
+infisical_server_pods := {"matchLabels": {"app": "infisical-standalone", "component": "infisical"}}
+
+traefik_pods := {"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "traefik"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "traefik"}}}
+
+infisical_ingress_policies := {
+	"infisical-server": {
+		"podSelector": infisical_server_pods,
+		"policyTypes": ["Ingress", "Egress"],
+		"ingress": [
+			{"from": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "plane-prod"}}, "podSelector": {"matchLabels": {"app.kubernetes.io/name": "secrets-operator"}}}], "ports": [{"protocol": "TCP", "port": 8080}]},
+			{"from": [traefik_pods], "ports": [{"protocol": "TCP", "port": 8080}]},
+		],
+		"egress": [
+			{"to": [{"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-postgres"}}}], "ports": [{"protocol": "TCP", "port": 5432}]},
+			{"to": [{"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-redis"}}}], "ports": [{"protocol": "TCP", "port": 6379}]},
+			{"to": [{"ipBlock": {"cidr": "5.253.234.127/32"}}], "ports": [{"protocol": "TCP", "port": 6443}]},
+		],
+	},
+	"infisical-postgres": {
+		"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-postgres"}},
+		"policyTypes": ["Ingress"],
+		"ingress": [{"from": [{"podSelector": infisical_server_pods}, {"podSelector": {"matchLabels": {"app.kubernetes.io/component": "backup"}}}], "ports": [{"protocol": "TCP", "port": 5432}]}],
+	},
+	"infisical-redis": {
+		"podSelector": {"matchLabels": {"app.kubernetes.io/name": "infisical-redis"}},
+		"policyTypes": ["Ingress"],
+		"ingress": [{"from": [{"podSelector": infisical_server_pods}], "ports": [{"protocol": "TCP", "port": 6379}]}],
+	},
+	"acme-http01-solver": {
+		"podSelector": {"matchLabels": {"acme.cert-manager.io/http01-solver": "true"}},
+		"policyTypes": ["Ingress"],
+		"ingress": [{"from": [traefik_pods], "ports": [{"protocol": "TCP", "port": 8089}]}],
+	},
+}
+
+is_network_policy_in(namespace) if {
+	input.kind == "NetworkPolicy"
+	object.get(input.metadata, "namespace", "") == namespace
+}
+
+deny contains msg if {
+	is_network_policy_in(infisical_namespace)
+	count(object.get(input.spec, "ingress", [])) > 0
+	not infisical_ingress_policies[input.metadata.name]
+	msg := sprintf("%s: admits traffic into namespace %s, where only %v may, as policy/hosted.rego writes them", [identity, infisical_namespace, object.keys(infisical_ingress_policies)])
+}
+
+deny contains msg if {
+	is_network_policy_in(infisical_namespace)
+	want := infisical_ingress_policies[input.metadata.name]
+	input.spec != want
+	msg := sprintf("%s: spec must be exactly %v, so nothing new reaches the secret store or its database", [identity, want])
+}
+
+# Traefik's way into namespace infisical, from its side: the server on 8080 and a solver on 8089, and nothing else there.
+traefik_infisical_egress := {
+	{"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": infisical_namespace}}, "podSelector": infisical_server_pods}], "ports": [{"protocol": "TCP", "port": 8080}]},
+	{"to": [{"namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": infisical_namespace}}, "podSelector": {"matchLabels": {"acme.cert-manager.io/http01-solver": "true"}}}], "ports": [{"protocol": "TCP", "port": 8089}]},
+}
+
+# A rule with no destination reaches everything, a namespace selector that does not name one namespace may select infisical, and an address
+# block over the pods' range reaches its pods, because kube-router reads a pod's own address.
+egress_reaches_infisical(rule) if count(object.get(rule, "to", [])) == 0
+
+egress_reaches_infisical(rule) if {
+	some peer in rule.to
+	peer.namespaceSelector
+	object.get(peer.namespaceSelector, ["matchLabels", "kubernetes.io/metadata.name"], infisical_namespace) == infisical_namespace
+}
+
+egress_reaches_infisical(rule) if {
+	some peer in rule.to
+	net.cidr_intersects(peer.ipBlock.cidr, "10.244.0.0/16")
+}
+
+deny contains msg if {
+	is_network_policy_in("traefik")
+	some rule in object.get(input.spec, "egress", [])
+	egress_reaches_infisical(rule)
+	not traefik_infisical_egress[rule]
+	msg := sprintf("%s: egress rule %v may reach namespace %s, where Traefik reaches only Infisical's server on 8080 and a solver on 8089", [identity, rule, infisical_namespace])
+}
+
 public_backend(service) if {
 	public_backends[service.name] == service.port
 	object.get(service, "kind", "Service") == "Service"
