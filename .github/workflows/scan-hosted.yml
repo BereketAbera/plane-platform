@@ -1,0 +1,58 @@
+# Weekly, and on demand: scan every image hosted production runs, for linux/amd64, as main says it runs them. Runs the same
+# script as `make scan-images-hosted`, which reads registries alone and never the cluster, and fails as it does. The Wayline
+# images are private packages on GHCR, so this job logs Docker in with its own token, which packages: read lets read them,
+# and trivy reads that login. The report goes up as an artifact, because whatever is left on a runner goes with it.
+name: scan-hosted
+
+on:
+  schedule:
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+# A dispatch during the weekly run waits for it, and cancels nothing that is nearly done.
+concurrency:
+  group: scan-hosted
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    name: Scan every image hosted production runs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: read # read the private Wayline images on GHCR
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Each pinned tool was checked against tools.lock when it was first fetched. GitHub's release downloads answered 504
+      # for minutes at a time on 2026-11-05, and one such download fails a job before any check has run.
+      - name: Restore pinned tools
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools
+          key: tools-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools.lock') }}
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # This runner has about 14 GiB free, and the two databases take about 3 of it. Each image's temp space comes back
+      # after that image, so the floor stays where it starts.
+      - name: Scan, for linux/amd64
+        env:
+          SCAN_ONLY: hosted
+          SCAN_MIN_FREE_GIB: "5"
+          SCAN_OUTPUT_DIR: ${{ runner.temp }}/scan-hosted
+        run: ./scripts/ci/scan-images.sh
+      - name: Keep the report and the raw results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: scan-hosted
+          path: ${{ runner.temp }}/scan-hosted
+          if-no-files-found: error
+          retention-days: 30
