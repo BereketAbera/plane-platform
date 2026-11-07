@@ -1,5 +1,10 @@
 # Frameflow is not deployed. Its namespace exists so its reservation has a name (infrastructure/hosted/plane-prod/capacity.yaml), with
 # a quota of no pods, so deploying it takes a pull request. Whatever lands here first has nothing allowed.
+#
+# Prometheus scrapes any namespace by itself, and this one will need letting in. No rule yet, because a rule needs the port Frameflow's
+# metrics turn out to be on, and no pod here to open it for. That pull request adds two: an ingress rule here, from namespace monitoring
+# and pods named prometheus, on that port, and the same port for namespace frameflow in Prometheus's egress in monitoring.yaml.
+# docs/monitoring-new-app.md has both, written out.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

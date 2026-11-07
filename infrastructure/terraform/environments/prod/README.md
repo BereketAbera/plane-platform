@@ -12,4 +12,4 @@ UID matches `infrastructure/hosted/plane-prod/target.yaml`. So `kube_system_uid`
 Not run against a cluster yet.
 
 **Do not run `terraform destroy` here.** It deletes the namespaces, and with them every claim. The volumes stay, on reclaim Retain, but
-nothing would be bound to them. See [`environments/prod-host`](../prod-host) for the VPS and the DNS record, which this root does not touch.
+nothing would be bound to them. See [`environments/prod-host`](../prod-host) for the VPS and the DNS records, which this root does not touch.

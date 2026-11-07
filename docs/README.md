@@ -83,6 +83,7 @@ A number with no measurement behind it says "estimate" and how it was derived. P
 | [data-operations.md](data-operations.md) | How do backup, restore, and rotation work? |
 | [disaster-recovery.md](disaster-recovery.md) | What can be recovered, and from what? |
 | [monitoring.md](monitoring.md) | What is scraped, what alerts, and how is delivery tested? |
+| [monitoring-new-app.md](monitoring-new-app.md) | On hosted production, what does a new app get for free, and what does it add? |
 | [runbooks/](runbooks/) | What do I do when a specific thing breaks? |
 
 ### Security and limits
