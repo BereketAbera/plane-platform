@@ -1,0 +1,81 @@
+# What the backend image's roles read, the API, the worker and the two CronJobs, and nothing secret: that is Secret frameflow-app, from
+# infisical.yaml. Each takes all of it with envFrom, because Frameflow checks the whole set in every role, and the worker and the CLIs
+# refuse the owner's keys without AUTH_MODE=owner, as the API does.
+#
+# Each is set even where Frameflow's default is the same, because several of its defaults are wrong for a public host: with AUTH_MODE
+# unset every visitor acts as the owner, and the worker runs two tasks at once and as many videos as there are. The web server reads none
+# of these: its address and port are in web.yaml, and the API's address is built into its image.
+#
+# None of these names is one that policy/hosted.rego or policy/plane.rego holds to Plane's value in every workload: WEB_URL,
+# CORS_ALLOWED_ORIGINS, MINIO_ENDPOINT_SSL, ENABLE_SIGNUP and AWS_S3_BUCKET_NAME.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frameflow-env
+  labels:
+    app.kubernetes.io/name: frameflow-backend
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+data:
+  # Production also makes the owner's session cookie Secure.
+  NODE_ENV: production
+  # The API's. The worker and the CLIs listen on neither, and the worker's health server has its own port, below.
+  HOST: 0.0.0.0
+  PORT: "4000"
+  # SQLite, on the API's volume, which the CronJobs mount too. The worker never opens it.
+  DATABASE_PATH: /data/app.db
+
+  # Silo, which the API and the worker call inside the cluster. Upload URLs are signed for the public host instead, whose upload route
+  # sends a PUT under /frameflow-media/videos/ to Silo with its Host header unchanged, and the signature covers that header. Path style, so
+  # the bucket is the first segment of the path that route matches. silo-setup.yaml makes the bucket.
+  S3_ENDPOINT: http://frameflow-silo:9000
+  S3_PUBLIC_ENDPOINT: https://frameflow.bereket.dev
+  S3_REGION: us-east-1
+  S3_BUCKET: frameflow-media
+  S3_FORCE_PATH_STYLE: "true"
+  S3_PRESIGNED_UPLOAD_TTL_SECONDS: "900"
+  # 100 MiB. An upload is one PUT, and Traefik's websecure entry point cuts a request that takes more than 180 s, its body included
+  # (values/traefik.yaml), so this is what about 4.7 Mbit/s of upload finishes in time. The API checks the size an upload declares before
+  # it signs the URL, and the size Silo holds after.
+  MAX_UPLOAD_BYTES: "104857600"
+
+  # Unset, the worker skips its status callbacks silently, and no video's status ever moves.
+  STATUS_CALLBACK_BASE_URL: http://frameflow-api:4000
+
+  # Visitors browse and watch, and only the holder of the owner's access key uploads, edits or deletes. The user the owner acts as.
+  AUTH_MODE: owner
+  OWNER_USER_ID: local-development
+
+  # One video at a time, and one rendition of it, with FFmpeg on 3 threads inside the worker's 3 CPUs. A second video waits in Hatchet's
+  # queue, for up to the schedule timeout, and so does the second rendition, so neither wait counts against an encode's own timeout.
+  # MAX_CONCURRENT_ENCODES stays at least the slots: an encode that waited for FFmpeg would wait inside that timeout, which Frameflow
+  # warns of.
+  FRAMEFLOW_WORKER_SLOTS: "1"
+  FRAMEFLOW_MAX_CONCURRENT_VIDEOS: "1"
+  MAX_CONCURRENT_ENCODES: "1"
+  FFMPEG_THREADS: "3"
+  # Without it FFmpeg's progress lines reach Loki, whose ingestion limit the whole cluster shares.
+  FFMPEG_LOG_LEVEL: warning
+  FRAMEFLOW_SCHEDULE_TIMEOUT: 12h
+  # That workflow reads and writes local files that the API would have to share with the worker, and no upload uses it.
+  FRAMEFLOW_REGISTER_LEGACY_WORKFLOW: "false"
+  # The worker's emptyDir, which it clears of leftovers when it starts.
+  WORKER_TEMP_DIR: /scratch
+  # How old a scratch directory must be for cleanup to remove it. Scratch is the worker's own emptyDir, which the CronJob does not mount,
+  # so here the worker's clearing at start is what removes it. Uploads expire by the time their URL was signed for, and staging goes once
+  # its video has finished, whatever this says.
+  CLEANUP_STALE_HOURS: "6"
+  # Reconcile asks Hatchet about a video queued or processing for longer than this.
+  RECONCILIATION_STALE_MINUTES: "30"
+
+  # Hatchet's own Service. The token names http://localhost:18888 and hatchet:7070, the addresses Hatchet was told of itself in
+  # hatchet.yaml, and these take over from both, so pods dial the Service and never the port-forward. Plain gRPC: it stays inside the
+  # namespace, where network-policies/frameflow.yaml lets only the API, the worker and the CronJobs reach it. The worker's health server
+  # answers on 8001, which worker.yaml probes, and only the worker starts it. No HATCHET_CLIENT_NAMESPACE: one app, one tenant.
+  HATCHET_CLIENT_HOST_PORT: hatchet:7070
+  HATCHET_CLIENT_API_URL: http://hatchet:8888
+  HATCHET_CLIENT_TLS_STRATEGY: none
+  HATCHET_CLIENT_WORKER_HEALTHCHECK_ENABLED: "true"
+  HATCHET_CLIENT_WORKER_HEALTHCHECK_PORT: "8001"

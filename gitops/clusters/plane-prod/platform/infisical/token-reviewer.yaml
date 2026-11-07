@@ -1,7 +1,8 @@
 # Kubernetes Auth uses the operator-minted token as its own TokenReview credential, so no long-lived
 # reviewer JWT exists anywhere. The cost is this binding, which grants only tokenreviews and
 # subjectaccessreviews create. Cluster-scoped, hence here under the platform project and not in the
-# Plane Application. Only the operator ever holds tokens for this account.
+# Plane Application. Only the operators ever hold tokens for these accounts, each its own namespace's:
+# iso-prod plane-prod's, and iso-frameflow frameflow's.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -16,3 +17,6 @@ subjects:
   - kind: ServiceAccount
     name: plane-infisical-auth
     namespace: plane-prod
+  - kind: ServiceAccount
+    name: plane-infisical-auth
+    namespace: frameflow

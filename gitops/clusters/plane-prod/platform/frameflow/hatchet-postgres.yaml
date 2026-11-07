@@ -1,0 +1,151 @@
+# Hatchet's database, and its queue too: hatchet-lite keeps both in Postgres, so no RabbitMQ runs. Frameflow's alone, never shared with
+# Plane or Infisical, and Frameflow's own data is SQLite, so nothing but Hatchet and the backup reads it. Credentials come from Secret
+# hatchet-db, which infisical.yaml makes. A copy of platform/infisical/postgres.yaml, at Hatchet's sizes, with this cluster's storage
+# class, which keeps the data if the claim goes.
+apiVersion: v1
+kind: Service
+metadata:
+  name: hatchet-postgres
+  labels:
+    app.kubernetes.io/name: hatchet-postgres
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/component: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+# No auto-reload: POSTGRES_PASSWORD acts only on an empty data directory, so a restart for a new one achieves nothing and is an outage.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hatchet-postgres
+  labels:
+    app.kubernetes.io/name: hatchet-postgres
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    # Ahead of Hatchet, whose start runs its migrations against this.
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  serviceName: hatchet-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hatchet-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hatchet-postgres
+        app.kubernetes.io/component: postgres
+        app.kubernetes.io/part-of: frameflow
+    spec:
+      serviceAccountName: hatchet-postgres
+      automountServiceAccountToken: false
+      securityContext:
+        # UID and GID 70 are the postgres user in the alpine image (image history), not 999 as on Debian.
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+          # Hatchet refuses to start on a database whose time zone is not UTC, so this sets it, whatever initdb chose. hatchet-lite opens
+          # several pools, each of up to DATABASE_MAX_CONNS, and held 28 connections at idle with that at 15 (measured on v0.114.2), so 100
+          # leaves room for its peaks and a backup. Hatchet partitions its tables by date, and pg_dump locks every partition in one
+          # transaction, so the lock table is sized as Infisical's Postgres needed for the same reason.
+          args:
+            - -c
+            - timezone=UTC
+            - -c
+            - max_connections=100
+            - -c
+            - shared_buffers=128MB
+            - -c
+            - max_locks_per_transaction=128
+          env:
+            # A subdirectory, because initdb must own and chmod its directory and non-root cannot
+            # do that to a volume root.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          envFrom:
+            - secretRef:
+                name: hatchet-db
+          ports:
+            - name: postgres
+              containerPort: 5432
+          # Generous: initdb runs on first boot. The temporary initdb server listens only on the
+          # socket, so probing 127.0.0.1 cannot report ready until the real server is up.
+          startupProbe:
+            exec:
+              command: ["sh", "-c", 'pg_isready -q -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", 'pg_isready -q -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", 'pg_isready -q -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # Starting values for one video at a time. Not yet measured on this node.
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1536Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            # The entrypoint logs "chmod: /var/run/postgresql: Operation not permitted" at every start.
+            # It is harmless: the emptyDir is root's, fsGroup 70 gives the group write, and the socket works.
+            - name: run
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
+            # Postgres keeps the shared memory of parallel queries here, and a container's default is 64MB, which Hatchet's docs raise
+            # for larger installs. Memory, so it counts against the limit above.
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: run
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path-retain
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 5Gi

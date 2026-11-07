@@ -1,0 +1,43 @@
+# Frameflow's own operator, as ADR 0009 gives each namespace that reads Infisical: it reads and writes Secrets in frameflow alone, and
+# mints tokens for its ServiceAccounts alone. Platform project, not frameflow's: the chart renders a ClusterRole, which that project
+# refuses. Wave 1, with the static sites and after plane-prod, so an operator that fails cannot hold Wayline's wave, and before frameflow
+# at 2, whose InfisicalAuth it serves. No finalizer, as for iso-prod: removing this file by mistake should leave frameflow's Secrets
+# syncing, not cascade. It installs no CRDs, which iso-prod owns.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infisical-operator-frameflow
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: frameflow
+  sources:
+    - repoURL: https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+      chart: secrets-operator
+      targetRevision: 0.11.16
+      helm:
+        valueFiles:
+          - $values/gitops/clusters/plane-prod/values/infisical-operator-frameflow.yaml
+    - repoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
+      targetRevision: deploy/plane-prod
+      ref: values
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

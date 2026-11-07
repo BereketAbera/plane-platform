@@ -1,0 +1,43 @@
+# Frameflow, https://frameflow.bereket.dev, from platform/frameflow, whose kustomization.yaml lists what deploys and puts every object in
+# namespace frameflow. Under its own project, which deploys only to that namespace, so nothing here can reach past it, and which refuses
+# NetworkPolicies and Certificates: those are network-policies' and certificates'. Wave 2, root's last: after plane-prod, so a Frameflow
+# that fails cannot hold Wayline's wave, and after its operator at 1, which serves its Infisical CRs.
+#
+# It deploys in two releases, which kustomization.yaml describes: the Hatchet client token can only be minted once Hatchet runs.
+#
+# No finalizer, as for plane-prod: deleting this Application, or removing its file from Git, orphans every object instead of deleting the
+# workloads and their data. The StatefulSets' claims come from volumeClaimTemplates, which Argo CD does not track, and frameflow-data's
+# storage class keeps its folder if the claim goes. PruneLast applies removals only after the new state is healthy.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: frameflow
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: frameflow
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: frameflow
+  source:
+    repoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
+    targetRevision: deploy/plane-prod
+    path: gitops/clusters/plane-prod/platform/frameflow
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - PruneLast=true
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
