@@ -201,7 +201,7 @@ cases:
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: kps-alertmanager.monitoring.svc.cluster.local, port: 9093 }, expect: deny }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: blackbox.monitoring.svc.cluster.local, port: 9115 }, expect: deny, note: "in monitoring, only Grafana and a solver" }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: allow, note: "the public route, to the server's port alone" }
-  - { from: { ns: traefik, labels: { probe: unlabelled } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny, note: "only Traefik's own pods" }
+  - { from: { ns: traefik, labels: { probe: unlabelled } }, to: { host: infisical.infisical.svc.cluster.local, port: 8080 }, expect: deny, note: "this pod's own egress denies it, as traefik-egress names only Traefik's pods. Infisical's ingress is policy/hosted.rego's to hold" }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: loki.monitoring.svc.cluster.local, port: 3100 }, expect: deny }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: argocd-repo-server.argocd.svc.cluster.local, port: 8081 }, expect: deny }
   - { from: { ns: traefik, labels: { app.kubernetes.io/name: traefik } }, to: { host: 1.1.1.1, port: 443 }, expect: deny }
