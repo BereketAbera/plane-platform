@@ -51,7 +51,8 @@ spec:
           labels: { severity: warning, component: certificate }
           annotations:
             summary: Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}, so renewal is failing
-        # An issue in progress reads False, and the first one can wait on the firewall, hence for:.
+        # An issue in progress reads False, hence for:. A failed order reads False too, until a try an hour or more away. Opening the
+        # firewall does not bring that closer: scripts/hosted/README.md says what does.
         - alert: CertificateNotReady
           expr: certmanager_certificate_ready_status{condition="False"} == 1
           for: 30m
@@ -125,3 +126,9 @@ spec:
           labels: { severity: warning, component: node }
           annotations:
             summary: Nothing reports whether the node needs a reboot, so NodeRebootRequired cannot fire
+        - alert: PublicFirewallNotLoaded
+          expr: wayline_edge_table_loaded == 0
+          for: 10m
+          labels: { severity: critical, component: node }
+          annotations:
+            summary: The public firewall's table is not loaded, so the API and kubelet ports answer on the public address
