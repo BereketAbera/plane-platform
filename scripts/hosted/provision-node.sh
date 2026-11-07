@@ -133,6 +133,16 @@ install -d -m 755 /srv/wayline /etc/wayline
 EOF
   ok "resolvers and sysctls set"
 
+  log "Reboot-required metric for node-exporter"
+  install_file "$HOSTED/reboot-metric.sh" /usr/local/sbin/wayline-reboot-metric 755
+  root_shell <<'EOF'
+set -euo pipefail
+printf '%s\n' '*/15 * * * * root /usr/local/sbin/wayline-reboot-metric' >/etc/cron.d/wayline-reboot-metric
+chmod 644 /etc/cron.d/wayline-reboot-metric
+/usr/local/sbin/wayline-reboot-metric
+EOF
+  ok "reboot metric written every 15 minutes"
+
   log "Firewall unit"
   install_file "$HOSTED/wayline-edge.service" /etc/systemd/system/wayline-edge.service 644
   if root_shell <<'EOF'
