@@ -83,6 +83,14 @@ conftest_run() { # conftest_run <namespaces, comma-separated> <files...>
   conftest test --policy policy --no-color "${args[@]}" "$@"
 }
 
+# Everything Argo CD applies to hosted production, read at once, so policy/hosted_combined.rego can say an object is there at all, which no
+# rule reading one object at a time can.
+conftest_hosted_together() {
+  local files=("$WORK"/hosted-charts/*.yaml)
+  if has_yaml "$WORK/hosted"; then files+=("$WORK"/hosted/*.yaml); fi
+  conftest test --combine --policy policy --no-color --namespace hosted_combined "${files[@]}"
+}
+
 check "conftest: rendered Plane" conftest_run environments,gitops,workloads,plane "${ENVIRONMENT_FILES[@]}"
 check "conftest: platform manifests" conftest_run gitops,workloads,plane "$WORK"/in-repo/*.yaml
 check "conftest: hosted render" conftest_run environments,gitops,workloads,plane,hosted "$HOSTED_RENDER"
@@ -172,6 +180,7 @@ else
     fetch_schemas "$HOSTED_K8S_VERSION" "$WORK"/hosted-charts/*.yaml
     check "kubeconform: hosted charts" "${HOSTED_KUBECONFORM[@]}" -ignore-missing-schemas "$WORK/hosted-charts"
     check "conftest: hosted charts" conftest_run charts,plane,hosted "$WORK"/hosted-charts/*.yaml
+    check "conftest: hosted tree and charts together" conftest_hosted_together
     check "hosted tree and charts: the images are what the list says" hosted_images_listed all "$WORK"/hosted/*.yaml "$WORK"/hosted-charts/*.yaml
     rule_files "$WORK/hosted-chart-rules" "$WORK"/hosted-charts/*.yaml
     if has_yaml "$WORK/hosted-chart-rules"; then

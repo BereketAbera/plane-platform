@@ -582,3 +582,211 @@ test_unrelated_document_ignored if {
 	count(hosted.deny) == 0 with input as {"kind": "NetworkPolicy", "metadata": {"name": "x", "namespace": "plane-prod"}}
 	count(hosted.deny) == 0 with input as {}
 }
+
+# Grafana's login and its token. The good grafana.ini is the render's, in its order, with the rest of its sections cut.
+good_grafana_ini := concat("\n", [
+	"[analytics]",
+	"check_for_updates = false",
+	"[auth.anonymous]",
+	"enabled = false",
+	"hide_version = true",
+	"[auth.basic]",
+	"enabled = false",
+	"[security]",
+	"cookie_secure = true",
+	"disable_brute_force_login_protection = false",
+	"disable_ip_address_login_protection = false",
+	"disable_username_login_protection = true",
+	"[users]",
+	"allow_sign_up = false",
+	"",
+])
+
+grafana_config(ini) := {"kind": "ConfigMap", "metadata": {"name": "kps-grafana", "namespace": "monitoring"}, "data": {"grafana.ini": ini}}
+
+# The good file with one line swapped for another, or taken out when the new one is empty.
+grafana_ini_with(old, new) := replace(good_grafana_ini, sprintf("%s\n", [old]), new)
+
+test_grafana_ini_accepted if {
+	count(hosted.deny) == 0 with input as grafana_config(good_grafana_ini)
+}
+
+test_grafana_ini_with_any_guard_reverted_rejected if {
+	every swap in [
+		["[auth.basic]\nenabled = false", "[auth.basic]\nenabled = true", "[auth.basic] enabled = true"],
+		["disable_username_login_protection = true", "disable_username_login_protection = false", "[security] disable_username_login_protection = false"],
+		["disable_ip_address_login_protection = false", "disable_ip_address_login_protection = true", "[security] disable_ip_address_login_protection = true"],
+		["disable_brute_force_login_protection = false", "disable_brute_force_login_protection = true", "[security] disable_brute_force_login_protection = true"],
+		["hide_version = true", "hide_version = false", "[auth.anonymous] hide_version = false"],
+		["[auth.anonymous]\nenabled = false", "[auth.anonymous]\nenabled = true", "[auth.anonymous] enabled = true"],
+	] {
+		doc := grafana_config(replace(good_grafana_ini, swap[0], swap[1]))
+		count(hosted.deny) == 1 with input as doc
+		says(doc, sprintf("grafana.ini sets %s, and it must be", [swap[2]]))
+	}
+}
+
+# Grafana's own default is what runs when the line is gone: basic auth on, and a count per username.
+test_grafana_ini_with_any_guard_missing_rejected if {
+	every line in [
+		"disable_username_login_protection = true",
+		"disable_ip_address_login_protection = false",
+		"disable_brute_force_login_protection = false",
+		"hide_version = true",
+	] {
+		doc := grafana_config(grafana_ini_with(line, ""))
+		count(hosted.deny) == 1 with input as doc
+		says(doc, "grafana.ini must set")
+	}
+	says(grafana_config(replace(good_grafana_ini, "[auth.basic]\nenabled = false\n", "")), "must set [auth.basic] enabled = false")
+	count(hosted.deny) == 6 with input as grafana_config("")
+	count(hosted.deny) == 6 with input as {"kind": "ConfigMap", "metadata": {"name": "kps-grafana", "namespace": "monitoring"}, "data": {}}
+}
+
+# A second line for the same key, a key under another section, or one Grafana would not read as that key.
+test_grafana_ini_read_as_grafana_reads_it if {
+	says(grafana_config(concat("", [good_grafana_ini, "[auth.basic]\nenabled = true\n"])), "[auth.basic] enabled = true")
+	says(grafana_config(replace(good_grafana_ini, "[auth.basic]\nenabled = false\n", "[auth]\nbasic.enabled = false\n")), "must set [auth.basic] enabled = false")
+	says(grafana_config(replace(good_grafana_ini, "[auth.basic]\nenabled = false\n", "[auth.basic]\nEnabled = false\n")), "must set [auth.basic] enabled = false")
+	says(grafana_config(replace(good_grafana_ini, "[auth.basic]\nenabled = false\n", "[auth.basic]\n; enabled = false\n")), "must set [auth.basic] enabled = false")
+	says(grafana_config(replace(good_grafana_ini, "[auth.basic]\nenabled = false\n", "[auth.basic]\nenabled = $__env{BASIC}\n")), "[auth.basic] enabled = $__env{BASIC}")
+	count(hosted.deny) == 0 with input as grafana_config(replace(good_grafana_ini, "[auth.basic]\nenabled = false\n", "[ auth.basic ]\n  enabled   =   false  \n"))
+}
+
+test_other_grafana_ini_ignored if {
+	count(hosted.deny) == 0 with input as {"kind": "ConfigMap", "metadata": {"name": "kps-grafana", "namespace": "other"}, "data": {"grafana.ini": ""}}
+	count(hosted.deny) == 0 with input as {"kind": "ConfigMap", "metadata": {"name": "kps-grafana-overview", "namespace": "monitoring"}, "data": {"grafana.ini": ""}}
+}
+
+grafana_deployment(containers) := {
+	"kind": "Deployment",
+	"metadata": {"name": "kps-grafana", "namespace": "monitoring"},
+	"spec": {"template": {"spec": {"serviceAccountName": "kps-grafana", "containers": containers}}},
+}
+
+grafana_container(env) := {"name": "grafana", "image": "i", "env": env}
+
+dashboard_sidecar(env) := {"name": "grafana-sc-dashboard", "image": "i", "env": array.concat([{"name": "FOLDER", "value": "/tmp/dashboards"}], env)}
+
+good_grafana := grafana_deployment([
+	dashboard_sidecar([{"name": "METHOD", "value": "WATCH"}]),
+	grafana_container([
+		{"name": "GF_SECURITY_ADMIN_USER", "valueFrom": {"secretKeyRef": {"name": "grafana-admin", "key": "admin-user"}}},
+		{"name": "GF_SECURITY_ADMIN_PASSWORD", "valueFrom": {"secretKeyRef": {"name": "grafana-admin", "key": "admin-password"}}},
+		{"name": "GF_PATHS_DATA", "value": "/var/lib/grafana/"},
+	]),
+])
+
+test_grafana_deployment_accepted if {
+	count(hosted.deny) == 0 with input as good_grafana
+}
+
+test_grafana_settings_from_the_environment_rejected if {
+	every name in [
+		"GF_AUTH_BASIC_ENABLED",
+		"GF_SECURITY_DISABLE_USERNAME_LOGIN_PROTECTION",
+		"GF_SECURITY_DISABLE_IP_ADDRESS_LOGIN_PROTECTION",
+		"GF_SECURITY_DISABLE_BRUTE_FORCE_LOGIN_PROTECTION",
+		"GF_AUTH_ANONYMOUS_ENABLED",
+		"GF_AUTH_ANONYMOUS_HIDE_VERSION",
+	] {
+		doc := grafana_deployment([grafana_container([{"name": name, "value": "false"}])])
+		count(hosted.deny) == 1 with input as doc
+		says(doc, sprintf("sets %s, which Grafana takes over", [name]))
+	}
+	says(grafana_deployment([grafana_container([{"name": "GF_AUTH_BASIC_ENABLED", "valueFrom": {"configMapKeyRef": {"name": "x", "key": "y"}}}])]), "sets GF_AUTH_BASIC_ENABLED")
+	says(grafana_deployment([object.union(grafana_container([]), {"envFrom": [{"secretRef": {"name": "grafana-env"}}]})]), "takes envFrom")
+}
+
+# The chart's reload calls, with skipReload left at its default.
+test_grafana_reload_call_rejected if {
+	reload := {"name": "REQ_URL", "value": "http://localhost:3000/api/admin/provisioning/dashboards/reload"}
+	doc := grafana_deployment([dashboard_sidecar([reload]), grafana_container([])])
+	count(hosted.deny) == 1 with input as doc
+	says(doc, "that reload needs basic auth")
+}
+
+# The chart's datasource sidecar and its init container, whatever label they read, and a ConfigMap left for them.
+test_grafana_datasources_written_while_it_runs_rejected if {
+	writer := {"name": "grafana-sc-datasources", "image": "i", "env": [{"name": "LABEL", "value": "other"}, {"name": "FOLDER", "value": "/etc/grafana/provisioning/datasources"}]}
+	says(grafana_deployment([writer, grafana_container([])]), "writes Grafana's datasources")
+	init := {"kind": "Deployment", "metadata": {"name": "kps-grafana", "namespace": "monitoring"}, "spec": {"template": {"spec": {
+		"serviceAccountName": "kps-grafana",
+		"initContainers": [object.union(writer, {"name": "grafana-init-sc-datasources"})],
+		"containers": [grafana_container([])],
+	}}}}
+	says(init, "container \"grafana-init-sc-datasources\" writes Grafana's datasources")
+	labelled := {"kind": "ConfigMap", "metadata": {"name": "loki-datasource", "namespace": "monitoring", "labels": {"grafana_datasource": "1"}}, "data": {}}
+	count(hosted.deny) == 1 with input as labelled
+	says(labelled, "is labelled grafana_datasource, and nothing reads that label")
+}
+
+test_grafana_as_another_account_rejected if {
+	says(json.patch(good_grafana, [{"op": "replace", "path": "/spec/template/spec/serviceAccountName", "value": "default"}]), "runs as ServiceAccount \"default\"")
+	says(json.remove(good_grafana, ["spec/template/spec/serviceAccountName"]), "runs as ServiceAccount \"default\"")
+}
+
+grafana_role(rules) := {"apiVersion": "rbac.authorization.k8s.io/v1", "kind": "Role", "metadata": {"name": "kps-grafana", "namespace": "monitoring"}, "rules": rules}
+
+configmaps_rule := {"apiGroups": [""], "resources": ["configmaps"], "verbs": ["get", "list", "watch"]}
+
+test_grafana_role_reading_configmaps_accepted if {
+	count(hosted.deny) == 0 with input as grafana_role([configmaps_rule])
+	count(hosted.deny) == 0 with input as grafana_role([{"apiGroups": [""], "resources": ["configmaps"], "verbs": ["watch", "get", "list"]}])
+}
+
+# The chart's own Role, and anything else past ConfigMaps.
+test_grafana_role_reading_more_rejected if {
+	every rules in [
+		[{"apiGroups": [""], "resources": ["configmaps", "secrets"], "verbs": ["get", "watch", "list"]}],
+		[configmaps_rule, {"apiGroups": [""], "resources": ["secrets"], "verbs": ["get"]}],
+		[{"apiGroups": ["*"], "resources": ["configmaps"], "verbs": ["get", "list", "watch"]}],
+		[{"apiGroups": [""], "resources": ["*"], "verbs": ["get", "list", "watch"]}],
+		[{"apiGroups": [""], "resources": ["configmaps"], "verbs": ["*"]}],
+		[{"apiGroups": [""], "resources": ["configmaps"], "verbs": ["get", "list", "watch", "update"]}],
+		[object.union(configmaps_rule, {"nonResourceURLs": ["*"]})],
+		[],
+	] {
+		says(grafana_role(rules), "and must be exactly")
+	}
+	says(json.remove(grafana_role([]), ["rules"]), "and must be exactly")
+}
+
+grafana_role_binding(ref) := {
+	"kind": "RoleBinding",
+	"metadata": {"name": "kps-grafana", "namespace": "monitoring"},
+	"roleRef": ref,
+	"subjects": [{"kind": "ServiceAccount", "name": "kps-grafana", "namespace": "monitoring"}],
+}
+
+test_grafana_role_binding_accepted if {
+	count(hosted.deny) == 0 with input as grafana_role_binding({"apiGroup": "rbac.authorization.k8s.io", "kind": "Role", "name": "kps-grafana"})
+}
+
+test_grafana_bound_to_anything_else_rejected if {
+	says(grafana_role_binding({"apiGroup": "rbac.authorization.k8s.io", "kind": "ClusterRole", "name": "kps-grafana"}), "roleRef is")
+	says(grafana_role_binding({"apiGroup": "rbac.authorization.k8s.io", "kind": "Role", "name": "other"}), "roleRef is")
+	cluster_wide := {
+		"kind": "ClusterRoleBinding",
+		"metadata": {"name": "kps-grafana-clusterrolebinding"},
+		"roleRef": {"apiGroup": "rbac.authorization.k8s.io", "kind": "ClusterRole", "name": "kps-grafana-clusterrole"},
+		"subjects": [{"kind": "ServiceAccount", "name": "kps-grafana", "namespace": "monitoring"}],
+	}
+	count(hosted.deny) == 1 with input as cluster_wide
+	says(cluster_wide, "binds Grafana's ServiceAccount")
+	elsewhere := json.patch(grafana_role_binding({"apiGroup": "rbac.authorization.k8s.io", "kind": "Role", "name": "reader"}), [
+		{"op": "replace", "path": "/metadata/name", "value": "reader"},
+		{"op": "replace", "path": "/metadata/namespace", "value": "plane-prod"},
+	])
+	count(hosted.deny) == 1 with input as elsewhere
+	says(elsewhere, "binds Grafana's ServiceAccount")
+}
+
+test_other_accounts_bindings_ignored if {
+	other := json.patch(grafana_role_binding({"apiGroup": "rbac.authorization.k8s.io", "kind": "Role", "name": "reader"}), [
+		{"op": "replace", "path": "/metadata/name", "value": "reader"},
+		{"op": "replace", "path": "/subjects/0/name", "value": "alloy"},
+	])
+	count(hosted.deny) == 0 with input as other
+	count(hosted.deny) == 0 with input as json.patch(other, [{"op": "replace", "path": "/subjects/0", "value": {"kind": "ServiceAccount", "name": "kps-grafana", "namespace": "other"}}])
+}

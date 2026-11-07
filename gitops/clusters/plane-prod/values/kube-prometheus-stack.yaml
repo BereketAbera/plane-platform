@@ -220,7 +220,7 @@ grafana:
   # A Role in its own namespace, where the chart default is cluster-wide. The chart writes that Role with configmaps and secrets, and this is
   # the one pod on the internet, so its token would read every Secret in monitoring. The dashboard sidecar below reads ConfigMaps alone. So
   # useExistingRole stops the chart's Role, and extraObjects writes it with configmaps only. By the same name, because a new one would
-  # change the RoleBinding's roleRef, which the API server refuses on a running cluster.
+  # change the RoleBinding's roleRef, which the API server refuses on a running cluster. policy/hosted.rego holds it to that.
   rbac:
     namespaced: true
     useExistingRole: kps-grafana
@@ -258,6 +258,7 @@ grafana:
       allow_org_create: false
     # Off, because it answers on every path, where the limit on POST /login does not reach, and each failure writes the name it was given to
     # the database, at any length. Nothing here needs it: the dashboard sidecar below makes no reload call, and nothing writes datasources.
+    # policy/hosted.rego holds this, auth.anonymous below and the three login protections in security above to these values.
     auth.basic:
       enabled: false
     # hide_version takes the version and commit out of /api/health and most of /login. One field of /login still holds the version.
@@ -309,7 +310,8 @@ grafana:
         allowUiUpdates: false
     # Grafana reads datasources only when it starts, or on a reload call, which would need basic auth. So nothing writes them while it runs:
     # they are in datasources below, which the chart puts in ConfigMap kps-grafana, and that ConfigMap's checksum is on the pod. So a changed
-    # datasource rolls the pod. From a sidecar, or a ConfigMap labelled for one, it would sit unread until something replaced the pod.
+    # datasource rolls the pod. From a sidecar, or a ConfigMap labelled for one, it would sit unread until something replaced the pod, and
+    # policy/hosted.rego refuses both.
     datasources:
       enabled: false
   # The three the chart's datasource ConfigMap held, as it held them. Dashboards in monitoring-extras pin these uids. timeInterval is

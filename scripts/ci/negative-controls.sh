@@ -357,6 +357,16 @@ YAML
 }
 plant_hosted_chart_as_a_node_port() { yq -i '.service.spec.type = "NodePort"' gitops/clusters/plane-prod/values/traefik.yaml; }
 plant_hosted_chart_image_without_digest() { yq -i 'del(.image.digest)' gitops/clusters/plane-prod/values/traefik.yaml; }
+# What guards Grafana's login and its token, each undone in the chart's values, where a revert would be made.
+GRAFANA_VALUES=gitops/clusters/plane-prod/values/kube-prometheus-stack.yaml
+plant_hosted_grafana_basic_auth_on() { yq -i '.grafana."grafana.ini"."auth.basic".enabled = true' "$GRAFANA_VALUES"; }
+plant_hosted_grafana_count_per_username() { yq -i '.grafana."grafana.ini".security.disable_username_login_protection = false' "$GRAFANA_VALUES"; }
+plant_hosted_grafana_version_shown() { yq -i '.grafana."grafana.ini"."auth.anonymous".hide_version = false' "$GRAFANA_VALUES"; }
+plant_hosted_grafana_role_reading_secrets() { yq -i '.grafana.extraObjects[0].rules[0].resources += ["secrets"]' "$GRAFANA_VALUES"; }
+plant_hosted_grafana_chart_role_back() { yq -i 'del(.grafana.rbac.useExistingRole) | del(.grafana.extraObjects)' "$GRAFANA_VALUES"; }
+plant_hosted_grafana_without_its_role() { yq -i 'del(.grafana.extraObjects)' "$GRAFANA_VALUES"; }
+plant_hosted_grafana_reload_call() { yq -i '.grafana.sidecar.dashboards.skipReload = false' "$GRAFANA_VALUES"; }
+plant_hosted_grafana_datasource_sidecar() { yq -i '.grafana.sidecar.datasources.enabled = true | .grafana.sidecar.datasources.skipReload = true' "$GRAFANA_VALUES"; }
 plant_hosted_local_marker() { printf '#!/usr/bin/env bash\n# reads git://plane-git/plane-platform.git\n' >scripts/hosted/planted.sh; }
 plant_hosted_marker_in_the_tree() {
   plant_in_hosted_tree config.yaml <<'YAML'
@@ -529,6 +539,14 @@ control hosted-render-drift validate-manifests.sh "render is up to date: hosted 
 control hosted-dump-after-the-migrator validate-manifests.sh "must run before the migrator" plant_hosted_dump_after_the_migrator
 CONTROL_SKIP_CHARTS=no control hosted-chart-as-a-node-port validate-manifests.sh "no NodePort Service" plant_hosted_chart_as_a_node_port
 CONTROL_SKIP_CHARTS=no control hosted-chart-image-without-digest validate-manifests.sh "a platform chart image must be pinned" plant_hosted_chart_image_without_digest
+CONTROL_SKIP_CHARTS=no control hosted-grafana-basic-auth-on validate-manifests.sh "grafana.ini sets [auth.basic] enabled = true" plant_hosted_grafana_basic_auth_on
+CONTROL_SKIP_CHARTS=no control hosted-grafana-count-per-username validate-manifests.sh "disable_username_login_protection = false, and it must be true" plant_hosted_grafana_count_per_username
+CONTROL_SKIP_CHARTS=no control hosted-grafana-version-shown validate-manifests.sh "hide_version = false, and it must be true" plant_hosted_grafana_version_shown
+CONTROL_SKIP_CHARTS=no control hosted-grafana-role-reading-secrets validate-manifests.sh "so Grafana's token reads no Secret" plant_hosted_grafana_role_reading_secrets
+CONTROL_SKIP_CHARTS=no control hosted-grafana-chart-role-back validate-manifests.sh "so Grafana's token reads no Secret" plant_hosted_grafana_chart_role_back
+CONTROL_SKIP_CHARTS=no control hosted-grafana-without-its-role validate-manifests.sh "and Role monitoring/kps-grafana is not" plant_hosted_grafana_without_its_role
+CONTROL_SKIP_CHARTS=no control hosted-grafana-reload-call validate-manifests.sh "that reload needs basic auth" plant_hosted_grafana_reload_call
+CONTROL_SKIP_CHARTS=no control hosted-grafana-datasource-sidecar validate-manifests.sh "writes Grafana's datasources" plant_hosted_grafana_datasource_sidecar
 control hosted-local-marker check-cluster-separation.sh "a local marker in the hosted trees" plant_hosted_local_marker
 control hosted-marker-in-the-tree check-cluster-separation.sh "a local marker in the hosted trees" plant_hosted_marker_in_the_tree
 control hosted-bare-kubectl check-cluster-separation.sh "kubectl with no --kubeconfig and --context" plant_hosted_bare_kubectl
