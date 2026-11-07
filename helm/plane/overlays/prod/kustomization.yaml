@@ -28,20 +28,20 @@ components:
 # the first promotion they hold the null digest, and no Application reads this render. The other five are the same index
 # digests as the local overlays.
 images:
-- digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+- digest: sha256:c8edb3cbabedf7bace4137ad7c431ec0be1c5483dc2eeb2547816bfb45e0b177
   name: artifacts.plane.so/makeplane/plane-admin
   newName: ghcr.io/bereketabera/wayline/admin
-- digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+- digest: sha256:9df47b8afbd642288902044d0ec434e6c219a5f210be1b0cc9598f3d365fe8e2
   name: artifacts.plane.so/makeplane/plane-backend
   newName: ghcr.io/bereketabera/wayline/backend
-- digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+- digest: sha256:2389044368df01dba95e4599efab8e30bcfab6947919065b8118115146b678ab
   name: artifacts.plane.so/makeplane/plane-frontend
   newName: ghcr.io/bereketabera/wayline/web
 - digest: sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e
   name: artifacts.plane.so/makeplane/plane-live
   newName: docker.io/makeplane/plane-live
   newTag: v1.4.3
-- digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+- digest: sha256:a0cf0e9a719765a9f3daa8024f08a133206a7cb729422a30061cf22366dca7fa
   name: artifacts.plane.so/makeplane/plane-space
   newName: ghcr.io/bereketabera/wayline/space
 - digest: sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
