@@ -45,7 +45,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: nginx
-          image: ghcr.io/bereketabera/rillmark/web:PLACEHOLDER@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          image: ghcr.io/bereketabera/rillmark/web:d6447e38ac40@sha256:0641c33402a5eb2bce5dd185b9cdd6cf905057074c70ddaf4b81b8a73025de80
           ports:
             - name: http
               containerPort: 8080
