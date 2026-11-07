@@ -98,6 +98,7 @@ A number with no measurement behind it says "estimate" and how it was derived. P
 | [disaster-recovery.md](disaster-recovery.md) | What can be recovered, and from what? |
 | [monitoring.md](monitoring.md) | What is scraped, what alerts, and how is delivery tested? |
 | [monitoring-new-app.md](monitoring-new-app.md) | On hosted production, what does a new app get for free, and what does it add? |
+| [hosted-apps.md](hosted-apps.md) | On hosted production, how are Rillmark, Awushi Cloudgarden and Frameflow deployed, promoted, rolled back and fixed? |
 | [runbooks/](runbooks/) | What do I do when a specific thing breaks? Hosted production adds its own [rollback](runbooks/hosted-rollback.md), [restore](runbooks/hosted-restore.md) and [lockout](runbooks/hosted-lockout.md) runbooks |
 
 ### Security and limits
