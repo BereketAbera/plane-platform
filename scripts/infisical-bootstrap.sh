@@ -9,7 +9,9 @@
 # (`make restore-clean` runs it). It keeps every credential, refreshes the cluster CA through Terraform,
 # republishes the identity Secrets and writes no secret value. It refuses instead of repairing: a
 # fresh instance, a token the server rejects, Terraform wanting to create or delete anything, or a
-# missing secret all mean this database and these local files are not a pair. Idempotent.
+# missing secret all mean this database and these local files are not a pair. Idempotent. On hosted
+# production, a database older than an app's own project reads that way too, and
+# HOSTED_RESTORE_WITHOUT_APPS=yes restores prod's alone first: scripts/hosted/target.sh.
 #
 # A token that has expired, or a file that is gone, is another matter: it says nothing about the pair. On an
 # initialized instance this signs in with the first admin's password and mints another, or takes one a person
@@ -166,7 +168,7 @@ tf() { # Subshell, so the token lives only in the environment of this one terraf
 # A restore may only update what is stored about the old cluster, which is the CA in Kubernetes Auth.
 # Saved plan, so what is applied is exactly what was checked.
 apply_restored() {
-  local rc=0 plan unexpected
+  local rc=0 plan unexpected hint=""
   [[ -s "$TF_STATE_DIR/terraform.tfstate" ]] \
     || die "no Terraform state at $TF_STATE_DIR, and creating what the restored database already holds would fail. Restore it with: scripts/restore.sh infisical <backup-id> CONFIRM=yes"
   tf plan -lock-timeout=10m -input=false -detailed-exitcode -out="$IA_TMP/restored.tfplan" || rc=$?
@@ -182,8 +184,15 @@ apply_restored() {
   unexpected="$(jq -r '[.resource_changes[]?
       | select(.change.actions != ["no-op"] and .change.actions != ["read"] and .change.actions != ["update"])
       | "\(.address) (\(.change.actions | join("+")))"] | join(", ")' <<<"$plan")"
+  # Hosted production holds an environment for each app beside Wayline too (scripts/hosted/target.sh). Two ways one of those ends up here
+  # are named, because neither means the state and the database are not a pair.
+  if [[ -n "${WAYLINE_TARGET:-}" && "${HOSTED_RESTORE_WITHOUT_APPS:-}" == yes ]]; then
+    hint=". If those are deletes in an app's environment, this database holds it, and HOSTED_RESTORE_WITHOUT_APPS=yes left it out: run this again without that"
+  elif [[ -n "${WAYLINE_TARGET:-}" ]]; then
+    hint=". If those are creates in an app's environment and none in prod's, this database is older than that app's project: HOSTED_RESTORE_WITHOUT_APPS=yes restores prod's alone first, as scripts/hosted/target.sh says"
+  fi
   [[ -z "$unexpected" ]] \
-    || die "Terraform wants to change more than an update in place: $unexpected. The state and the restored database are not a pair, so nothing was applied. Restore them together with: scripts/restore.sh infisical <backup-id> CONFIRM=yes"
+    || die "Terraform wants to change more than an update in place: $unexpected. The state and the restored database are not a pair, so nothing was applied. Restore them together with: scripts/restore.sh infisical <backup-id> CONFIRM=yes$hint"
   tf apply -lock-timeout=10m -input=false "$IA_TMP/restored.tfplan"
 }
 
@@ -272,6 +281,9 @@ if [[ "$RESTORED" == yes ]]; then
   [[ "$IA_STATUS" == 200 ]] \
     || die "the restored instance answers HTTP $IA_STATUS to the admin token in $ADMIN_FILE: $(ia_error). The token, AUTH_SECRET and the database must come from the same set. See infisical/README.md, section Recovery."
   ok "the restored instance accepts the admin token"
+  if [[ "${HOSTED_RESTORE_WITHOUT_APPS:-}" == yes ]]; then
+    warn "HOSTED_RESTORE_WITHOUT_APPS=yes: this restores $WAYLINE_ENVIRONMENTS alone, and leaves every app's environment as the database has it"
+  fi
 fi
 # Public. Stored in Kubernetes Auth, and it changes whenever the cluster is recreated.
 KUBE_CA="$(kc -n infisical get configmap kube-root-ca.crt -o jsonpath='{.data.ca\.crt}')"
@@ -312,3 +324,6 @@ for env_name in ${WAYLINE_ENVIRONMENTS:-dev prod-sim}; do
   publish_identity "$env_name"
 done
 ok "Infisical is ready. InfisicalAuth turns Ready within seconds, and a Plane sync already in backoff moves on at its next retry, up to 5 minutes later."
+if [[ "${HOSTED_RESTORE_WITHOUT_APPS:-}" == yes ]]; then
+  warn "the apps' environments were left out. A plain run, with neither INFISICAL_RESTORED nor HOSTED_RESTORE_WITHOUT_APPS, makes any that this database lacks, as a first bootstrap does: docs/hosted-apps.md, Frameflow: backups and restore"
+fi
