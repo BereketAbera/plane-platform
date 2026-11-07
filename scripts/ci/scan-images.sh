@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Scan the images this platform runs for known vulnerabilities, and report all of it.
 #
-#   scripts/ci/scan-images.sh                  everything: rendered Plane, platform manifests and
-#                                              charts including Argo CD, and Wayline builds if any exist
-#   SCAN_ONLY=built scripts/ci/scan-images.sh  only what .build/digests.tsv names, for CI after a push
+#   scripts/ci/scan-images.sh                   everything: rendered Plane, platform manifests and
+#                                               charts including Argo CD, and Wayline builds if any exist
+#   SCAN_ONLY=built scripts/ci/scan-images.sh   only what .build/digests.tsv names, for CI after a push
+#   SCAN_ONLY=hosted scripts/ci/scan-images.sh  what hosted production runs: every line of policy/hosted-images.txt,
+#                                               and every image in its render, gitops/environments/prod/manifests.yaml
 #
 # Trivy reads each image directly from its registry for PLATFORM, so nothing is loaded into Docker. The default is
 # linux/arm64, what the laptop's kind node runs. images.yml sets linux/amd64, what the VPS runs. --platform only chooses a child
@@ -12,6 +14,15 @@
 # needs SCAN_ALSO_PLATFORM=linux/amd64, to say those plain manifests are meant. SCAN_ONLY=built takes no such thing.
 # Docker Hub images come through mirror.gcr.io where it has them, so a full scan spends no Hub quota
 # while the cluster may need it. Digests make any mirror safe. Expect a few GiB of transfer.
+#
+# SCAN_ONLY=hosted reads registries alone and never the cluster, so it scans what this checkout says hosted production runs.
+# validate-manifests.sh holds policy/hosted-images.txt to what the hosted tree and its charts name, and the render holds the
+# rest, Wayline's own among them. The VPS is one x86-64 node, so each image is read for linux/amd64 and an index for its
+# linux/amd64 child: PLATFORM may only be that, and SCAN_ALSO_PLATFORM does not apply. Wayline's images there are private
+# packages on GHCR, which trivy reads with Docker's login, as it does after a push in images.yml. So this needs docker login
+# ghcr.io with a token holding read:packages, which is the login scripts/ci/copy-to-local-registry.sh makes, and
+# scan-hosted.yml logs in with its own GITHUB_TOKEN under packages: read. There is no lockfile row, because .build/plane-src
+# is whatever this machine last built, and production runs what CI built.
 #
 # The web, admin and space clients are bundled into static files with no package metadata, so no image
 # scan can see their dependencies. So the lockfiles of the Wayline source in .build/plane-src are scanned
@@ -25,11 +36,11 @@
 # findings would hold CI red over something no commit here can change, and a check that stays red gets
 # ignored. They are not hidden: .trivyignore is not read here, and the raw JSON keeps every finding.
 #
-# Raw results go to .local/evidence-raw/scan-images-<UTC start>/. Copying them to docs/evidence is a
-# deliberate step, as for all evidence. It refuses to start with less than SCAN_MIN_FREE_GIB free (15).
-# Between images it stops, reporting the rest as not scanned, below SCAN_FLOOR_GIB (the same unless
-# set). Each image's temp space comes back after that image, so the floor may sensibly be lower.
-# SCAN_TIMEOUT limits each image (30m), and SCAN_OUTPUT_DIR moves the results.
+# Raw results go to .local/evidence-raw/scan-images-<UTC start>/, or scan-images-hosted-<UTC start>/ for SCAN_ONLY=hosted,
+# with the report this prints in report.txt. Copying them to docs/evidence is a deliberate step, as for all evidence.
+# It refuses to start with less than SCAN_MIN_FREE_GIB free (15). Between images it stops, reporting the rest as not
+# scanned, below SCAN_FLOOR_GIB (the same unless set). Each image's temp space comes back after that image, so the floor
+# may sensibly be lower. SCAN_TIMEOUT limits each image (30m), and SCAN_OUTPUT_DIR moves the results.
 # shellcheck source=../lib/common.sh
 source "$(dirname "$0")/../lib/common.sh"
 # shellcheck source=lib-manifests.sh
@@ -38,26 +49,33 @@ source "$(dirname "$0")/lib-manifests.sh"
 MIN_FREE="${SCAN_MIN_FREE_GIB:-15}"
 FLOOR="${SCAN_FLOOR_GIB:-$MIN_FREE}"
 SCAN_ONLY="${SCAN_ONLY:-}"
-[[ -z "$SCAN_ONLY" || "$SCAN_ONLY" == built ]] || die "SCAN_ONLY may only be built, got '$SCAN_ONLY'"
+[[ -z "$SCAN_ONLY" || "$SCAN_ONLY" == built || "$SCAN_ONLY" == hosted ]] || die "SCAN_ONLY may only be built or hosted, got '$SCAN_ONLY'"
+if [[ "$SCAN_ONLY" == hosted ]]; then
+  [[ -z "${PLATFORM:-}" || "$PLATFORM" == linux/amd64 ]] || die "SCAN_ONLY=hosted reads what the VPS runs, which is linux/amd64, so PLATFORM cannot be '$PLATFORM'"
+  PLATFORM=linux/amd64
+fi
 PLATFORM="${PLATFORM:-linux/arm64}"
 [[ "$PLATFORM" =~ ^linux/(amd64|arm64)$ ]] || die "PLATFORM must be linux/amd64 or linux/arm64, got '$PLATFORM'"
 SCAN_ALSO_PLATFORM="${SCAN_ALSO_PLATFORM:-}"
 [[ -z "$SCAN_ALSO_PLATFORM" || "$SCAN_ALSO_PLATFORM" =~ ^linux/(amd64|arm64)$ ]] || die "SCAN_ALSO_PLATFORM must be linux/amd64 or linux/arm64, got '$SCAN_ALSO_PLATFORM'"
 [[ -z "$SCAN_ALSO_PLATFORM" || "$SCAN_ONLY" != built ]] || die "SCAN_ONLY=built reads what was just built, which must be $PLATFORM, so SCAN_ALSO_PLATFORM does not apply"
+[[ -z "$SCAN_ALSO_PLATFORM" || "$SCAN_ONLY" != hosted ]] || die "SCAN_ONLY=hosted reads what the VPS runs, which is linux/amd64 alone, so SCAN_ALSO_PLATFORM does not apply"
 guard_disk "$MIN_FREE"
 log "Disk limits for this run: ${MIN_FREE} GiB free to start, ${FLOOR} GiB free to keep going. $(free_disk_gib) GiB free now."
 log "Reading each image for $PLATFORM${SCAN_ALSO_PLATFORM:+, and allowing a plain manifest of $SCAN_ALSO_PLATFORM}"
 cd "$ROOT"
 
-if [[ "$SCAN_ONLY" == built ]]; then
-  "$ROOT/scripts/install-tools.sh" trivy >/dev/null
-else
-  "$ROOT/scripts/install-tools.sh" trivy helm kustomize yq >/dev/null
-fi
+case "$SCAN_ONLY" in
+  built) "$ROOT/scripts/install-tools.sh" trivy >/dev/null ;;
+  hosted) "$ROOT/scripts/install-tools.sh" trivy yq >/dev/null ;;
+  *) "$ROOT/scripts/install-tools.sh" trivy helm kustomize yq >/dev/null ;;
+esac
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-OUT="${SCAN_OUTPUT_DIR:-$LOCAL_DIR/evidence-raw/scan-images-$(date -u +%Y%m%dT%H%M%SZ)}"
+RESULTS_NAME=scan-images
+[[ "$SCAN_ONLY" != hosted ]] || RESULTS_NAME=scan-images-hosted
+OUT="${SCAN_OUTPUT_DIR:-$LOCAL_DIR/evidence-raw/$RESULTS_NAME-$(date -u +%Y%m%dT%H%M%SZ)}"
 mkdir -p "$OUT/images"
 printf '%s\n' "$PLATFORM" ${SCAN_ALSO_PLATFORM:+"$SCAN_ALSO_PLATFORM"} >"$OUT/platform.txt"
 RAW_LIST="$WORK/images"
@@ -95,6 +113,14 @@ registry_wayline_images() {
 
 if [[ "$SCAN_ONLY" == built ]]; then
   built_images | add_images built
+elif [[ "$SCAN_ONLY" == hosted ]]; then
+  log "Listing what hosted production runs, as this checkout says"
+  [[ -s "$HOSTED_IMAGE_LIST" ]] || die "$HOSTED_IMAGE_LIST is missing or empty"
+  [[ -s "$HOSTED_ENVIRONMENT/manifests.yaml" ]] || die "$HOSTED_ENVIRONMENT/manifests.yaml is missing or empty: run make render"
+  { grep -vE '^(#|$)' "$HOSTED_IMAGE_LIST" || true; } | add_images hosted-list
+  # The same reading of the render as the list's own check, so the two cannot disagree on what an image is.
+  images_named_in "$HOSTED_ENVIRONMENT/manifests.yaml" | add_images hosted-render
+  grep -q '/wayline/' "$RAW_LIST" || warn "the hosted render names no Wayline image, so none is scanned"
 else
   log "Listing what this platform runs"
   images_in gitops/environments/dev/manifests.yaml gitops/environments/prod-sim/manifests.yaml | add_images plane
@@ -113,7 +139,7 @@ else
 fi
 
 WAYLINE_SOURCE=.build/plane-src
-[[ ! -s "$RAW_LIST" || ! -d "$WAYLINE_SOURCE" ]] || printf 'wayline-source-lockfiles\twayline\n' >>"$RAW_LIST"
+[[ "$SCAN_ONLY" == hosted || ! -s "$RAW_LIST" || ! -d "$WAYLINE_SOURCE" ]] || printf 'wayline-source-lockfiles\twayline\n' >>"$RAW_LIST"
 
 if [[ ! -s "$RAW_LIST" ]]; then
   [[ "$SCAN_ONLY" == built ]] || die "found no images at all, which cannot be right"
@@ -194,6 +220,8 @@ while IFS=$'\t' read -r image _ file; do
   # One retry, for a dropped connection. What it reports on each try stays in scan.log.
   if ! scan "$image" "$json" </dev/null >>"$OUT/scan.log" 2>&1 && ! scan "$image" "$json" </dev/null >>"$OUT/scan.log" 2>&1; then
     warn "could not scan $image. See ${OUT#"$ROOT"/}/scan.log"
+    # Wayline's packages on GHCR are private, and trivy has nothing but Docker's login to read them with.
+    [[ "$image" != ghcr.io/* ]] || warn "trivy reads GHCR with Docker's login, which needs docker login ghcr.io with a token holding read:packages"
     rm -f "$json"
     printf '%s\ttrivy failed twice\n' "$image" >>"$OUT/not-scanned.txt"
   fi
