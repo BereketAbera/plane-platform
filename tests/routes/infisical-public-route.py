@@ -5,10 +5,11 @@ Run by tests/routes/infisical-public-route.sh, which starts that Traefik. Standa
 HTTP client tidies a path before it sends it, and that tidying is what this exists to try without. --selftest checks this file's own
 verdicts with no Docker, no Traefik and no Infisical, so CI can run it.
 
-Each row says who answered. A refused path passes when Traefik answers it, and fails when it reaches the backend. With the echo server
-behind Traefik, that means the request got through in any shape, which is the proof that nothing refused arrives. With a real Infisical
-behind it, that one of its handlers ran: any answer but its router's own "Route <method>:<url> not found", a handler's 404 included. That
-run shows what Fastify makes of what does arrive, and it cannot see what Traefik forwarded, so it does not stand in for the echo run.
+Each row says who answered. A refused path passes when Traefik answers it. With the echo server behind Traefik, one that arrives fails when
+fastify_reads, this file's model of find-my-way, reads what arrived as the refused path, and passes otherwise, so that run shows what Traefik
+forwards and leaves the rest to the model. With a real Infisical behind it, one fails when a handler ran: any answer but its router's own
+"Route <method>:<url> not found", a handler's 404 included, unless it is a 401 or 403 that the same model reads as another route. That run
+cannot see what Traefik forwarded, so neither run stands in for the other. A row that could not be asked reads BLOCKED, which is no pass.
 """
 from __future__ import annotations
 
