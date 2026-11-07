@@ -13,8 +13,9 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `tunnel.sh` | SSH tunnel, 127.0.0.1:16443 to the node's 6443. Started by `lib.sh` when needed | `remote-tunnel` |
 | `kubeconfig.sh` | Fetch K3s's kubeconfig, rewrite it for the tunnel, and print the UID for `target.yaml` | `remote-kubeconfig` |
 | `status.sh` | Read-only summary | `remote-status` |
-| `bootstrap.sh` | Deploy key, port 80, Terraform, backup folders, restic password, secret zero, Infisical, alerts, bundle | `remote-bootstrap` |
-| `ui.sh` | Port-forward an admin UI, which has no public route | `remote-ui` |
+| `bootstrap.sh` | Deploy key, Grafana's login, port 80, Terraform, backup folders, restic password, secret zero, Infisical, alerts, bundle | `remote-bootstrap` |
+| `ui.sh` | Port-forward an admin UI. None has a public route but Grafana, which this also reaches when that route is down | `remote-ui` |
+| `grafana-admin.sh` | Make Grafana's admin login once and write its Secret (`apply`), or print the URL and username and copy the password (`login`) | `remote-grafana-admin` |
 | `alerts.sh` | Render `alertmanager.yaml` from the owner's files into a Secret, and say COMPLETE or INCOMPLETE | `remote-alerts` |
 | `bundle.sh` | The age-encrypted recovery bundle, proved by decrypting it again | `remote-bundle` |
 | `backup.sh` | Run tonight's backups now, from the CronJobs | `remote-backup` |
@@ -23,7 +24,7 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `restore-test.sh` | Restore into an isolated namespace, prove it, and remove it, on the VPS or in kind | `remote-restore-test` |
 | `smoke.sh` | `tests/e2e/smoke.py --env hosted --mode verify` on an existing account, asked at a hidden prompt | `remote-smoke` |
 | `test-hosted.sh` | The hosted test suite. Exits 0, 1 or 2, and says BLOCKED or INCOMPLETE plainly | `remote-test` |
-| `scrub-values.sh` | Keep the values of its Secrets in a file, for `scripts/publish-evidence.sh` to scrub, which reaches no cluster here | `remote-publish-evidence` |
+| `scrub-values.sh` | Keep the values of its Secrets, and Grafana's admin password from its file, in a file for `scripts/publish-evidence.sh` to scrub, which reaches no cluster here | `remote-publish-evidence` |
 | `target.sh` | The opt-in shared scripts source when `WAYLINE_TARGET` is set: `scripts/secret-zero.sh`, `infisical-bootstrap.sh`, `infisical-seed.sh`, `test-netpol.sh`, `infisical/tests/rendered-secrets.sh`. It needs `CONFIRM=plane-prod` too, so a leaked variable aims nothing | `remote-netpol`, and through `remote-bootstrap` and `remote-test` |
 
 Local state lives in `.local/hosted/plane-prod/`, mode 0700, and never in Git. Bash 3.2, because macOS ships it.
@@ -33,7 +34,7 @@ Local state lives in `.local/hosted/plane-prod/`, mode 0700, and never in Git. B
 cert-manager's self-check goes through the CoreDNS rewrite and never leaves the node, so it passes behind a closed firewall. cert-manager
 then asks Let's Encrypt, whose connection to port 80 is dropped, and the order fails. The next try is an hour away, doubling up to 32, and
 opening the firewall retriggers nothing. So `bootstrap.sh` opens port 80 before Argo CD starts. If an order failed anyway, then with port
-80 open, this removes the backoff, and cert-manager tries again at once:
+80 open, this removes the backoff, and cert-manager tries again at once. For Grafana's the namespace is `monitoring` and the name `grafana-tls`:
 
 ```
 .tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod -n plane-prod patch certificate wayline-tls \
@@ -42,6 +43,9 @@ opening the firewall retriggers nothing. So `bootstrap.sh` opens port 80 before 
 
 That is read from cert-manager v1.21.3's `shouldBackoffReissuingOnFailure` and has not run on this cluster. Moving `issuerRef` from
 staging to production also tries at once, because the next request no longer matches the Certificate.
+
+`grafana-tls` can fail one way more: DNS. The zone's wildcard answers for any name with no record of its own, and that points at Vercel, so its
+A record has to be live before Argo CD first sees that Certificate.
 
 ## After a rollback: the database does not go back
 

@@ -138,7 +138,7 @@ ci: ## Run every CI check locally, the same scripts as GitHub Actions. Runs them
 # ---- hosted production ----------------------------------------------------------------------
 # Nothing above reaches it, and these reach nothing else. Each needs TARGET=plane-prod, and what changes something needs
 # CONFIRM=plane-prod as well, not yes. Reads and writes .local/hosted/plane-prod. See scripts/hosted/.
-.PHONY: remote-guard remote-tunnel remote-kubeconfig remote-status remote-bootstrap remote-ui remote-smoke remote-test remote-netpol remote-backup remote-pull-setup remote-pull-backups remote-backup-dest remote-restore-test remote-alerts remote-bundle remote-publish-evidence
+.PHONY: remote-guard remote-tunnel remote-kubeconfig remote-status remote-bootstrap remote-ui remote-grafana-admin remote-smoke remote-test remote-netpol remote-backup remote-pull-setup remote-pull-backups remote-backup-dest remote-restore-test remote-alerts remote-bundle remote-publish-evidence
 remote-guard:
 	@[[ "$(TARGET)" == plane-prod ]] || { echo "this reaches hosted production, so it needs TARGET=plane-prod" >&2; exit 2; }
 
@@ -154,8 +154,11 @@ remote-status: remote-guard ## Hosted: node, Argo CD, pods, certificate, backups
 remote-bootstrap: remote-guard ## Hosted: deploy key, Terraform, restic password, secret zero, Infisical, alerts: make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod
 	@./scripts/hosted/bootstrap.sh
 
-remote-ui: remote-guard ## Hosted: port-forward an admin UI, which has no public route: make remote-ui TARGET=plane-prod UI=argocd|grafana|prometheus|alertmanager|infisical [PORT=<local port>]
+remote-ui: remote-guard ## Hosted: port-forward an admin UI, none of which has a public route but Grafana: make remote-ui TARGET=plane-prod UI=argocd|grafana|prometheus|alertmanager|infisical [PORT=<local port>]
 	@./scripts/hosted/ui.sh "$(UI)" $(PORT)
+
+remote-grafana-admin: remote-guard ## Hosted: Grafana's admin login. VERB=login prints the URL and username and copies the password; CONFIRM=plane-prod VERB=apply makes it and writes its Secret: make remote-grafana-admin TARGET=plane-prod VERB=apply|login
+	@./scripts/hosted/grafana-admin.sh "$(VERB)"
 
 remote-smoke: remote-guard ## Hosted: smoke over https on an existing account, asked at a hidden prompt, removing what it makes: make remote-smoke TARGET=plane-prod [SMOKE_WORKSPACE=<slug>] [SMOKE_ALLOW_STAGING=yes]
 	@./scripts/hosted/smoke.sh
