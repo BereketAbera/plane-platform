@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox
+  labels: { app.kubernetes.io/name: blackbox-exporter }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: blackbox-exporter }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: blackbox-exporter }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534 # the image has no USER
+        runAsGroup: 65534
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: blackbox
+          image: quay.io/prometheus/blackbox-exporter:v0.29.1@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13
+          imagePullPolicy: IfNotPresent
+          args: [--config.file=/config/blackbox.yml]
+          ports:
+            - { name: http, containerPort: 9115 }
+          readinessProbe:
+            httpGet: { path: /-/healthy, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /-/healthy, port: http }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { cpu: 100m, memory: 48Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - { name: config, mountPath: /config, readOnly: true }
+      volumes:
+        - name: config
+          configMap: { name: blackbox-config }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blackbox
+  labels: { app.kubernetes.io/name: blackbox-exporter }
+spec:
+  selector: { app.kubernetes.io/name: blackbox-exporter }
+  ports:
+    - { name: http, port: 9115, targetPort: http }

@@ -1,0 +1,29 @@
+# The only certificate on this cluster, and cert-manager its only owner: the Plane chart's createIssuer and generateCerts stay off,
+# and Traefik has no ACME resolver. It must share the namespace of the route that names it, so its solver pods run in plane-prod too.
+#
+# No renewBefore: cert-manager renews at two thirds of the lifetime, and Let's Encrypt is shortening that lifetime in 2027 and 2028.
+#
+# ignore-healthcheck: a closed firewall or a Let's Encrypt limit would otherwise hold every later wave. The certificate rules in
+# monitoring-extras report it, and nothing in this cluster needs the Secret to start: Traefik serves it once it appears.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wayline-tls
+  namespace: plane-prod
+  annotations:
+    argocd.argoproj.io/ignore-healthcheck: "true"
+spec:
+  secretName: wayline-tls
+  dnsNames:
+    - wayline.bereket.dev
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  revisionHistoryLimit: 3
+  # Staging first, because production allows 5 certificates per week for one name. To move to production, change this name to
+  # letsencrypt-production and merge. cert-manager sees the mismatch and reissues.
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+    group: cert-manager.io

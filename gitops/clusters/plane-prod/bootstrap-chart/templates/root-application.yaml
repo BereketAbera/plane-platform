@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  # The name monitoring rules read: ArgoRootSyncStuck and the name!="root" filters beside it.
+  name: root
+  namespace: "{{ .Release.Namespace }}"
+  # No resources-finalizer. Removing this release (terraform destroy) must not cascade through every child Application
+  # and delete production's data.
+spec:
+  project: platform
+  source:
+    repoURL: "{{ .Values.gitRepoURL }}"
+    targetRevision: "{{ .Values.targetRevision }}"
+    path: gitops/clusters/plane-prod/applications
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: "{{ .Release.Namespace }}"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    # A Degraded child fails this sync, and a child is often briefly Degraded on first boot. A finite limit would leave the
+    # later waves unsynced until the next commit, so retry without limit. refresh makes each retry read the newest commit,
+    # so a fix to an Application manifest lands while this loops. A root that is waiting on a child never retries, so it
+    # needs terminating: infrastructure/terraform/README.md.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

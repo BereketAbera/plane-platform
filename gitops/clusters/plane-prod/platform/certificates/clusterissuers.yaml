@@ -1,0 +1,49 @@
+# Let's Encrypt, over HTTP-01 through Traefik's Ingress provider. No email: Let's Encrypt ended expiry notices, and the certificate
+# rules in monitoring-extras watch this instead. The account keys are Secrets in namespace cert-manager, made by cert-manager.
+#
+# serviceType ClusterIP, because the default of NodePort would open a port on the node. The router annotation binds the solver's
+# Ingress to the web entrypoint, whose redirect allowACMEByPass leaves out of this path.
+#
+# ignore-healthcheck: Argo CD reads an issuer that cannot reach Let's Encrypt as Degraded, which would fail root's sync at this wave
+# and leave monitoring and Infisical waiting on an outside service. The rules report it instead.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  annotations:
+    argocd.argoproj.io/ignore-healthcheck: "true"
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-staging-account
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik
+            serviceType: ClusterIP
+            ingressTemplate:
+              metadata:
+                annotations:
+                  traefik.ingress.kubernetes.io/router.entrypoints: web
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+  annotations:
+    argocd.argoproj.io/ignore-healthcheck: "true"
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-production-account
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik
+            serviceType: ClusterIP
+            ingressTemplate:
+              metadata:
+                annotations:
+                  traefik.ingress.kubernetes.io/router.entrypoints: web

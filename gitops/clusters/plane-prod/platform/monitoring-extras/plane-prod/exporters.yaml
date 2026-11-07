@@ -1,0 +1,130 @@
+# Credentials: postgres-exporter reads the plane-pgdb Secret the Infisical operator already syncs
+# into this namespace. No new InfisicalStaticSecret, no new Infisical path, and no change to the
+# environment's machine identity, so Plane's identity is not widened in any way. The cost is that
+# the exporter connects as POSTGRES_USER, a superuser, because a pg_monitor role would need a
+# bootstrap step and a rotation path with no owner today. Blast radius stays the namespace: the
+# pod has no API token, and only Prometheus reaches it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-exporter
+  labels: { app.kubernetes.io/name: postgres-exporter }
+  annotations:
+    # monitoring-extras syncs at wave -5, but plane-pgdb only exists after the first promotion
+    # adds the Plane Application, and the root app gates each wave on health. Without this the pod
+    # waits in CreateContainerConfigError, the app never turns Healthy, and the Plane wave never
+    # starts. Kubelet retries, so the pod comes up on its own once the Secret appears.
+    argocd.argoproj.io/ignore-healthcheck: "true"
+    # The password reaches this pod through env vars, which a running pod never re-reads. Without a
+    # restart after a rotation, the exporter's next reconnection gets pg_up 0, and critical
+    # PlanePostgresDown fires on a healthy Postgres.
+    secrets.infisical.com/auto-reload: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: postgres-exporter }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: postgres-exporter }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: postgres-exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_DB
+              valueFrom: { secretKeyRef: { name: plane-pgdb, key: POSTGRES_DB } }
+            - name: DATA_SOURCE_URI
+              value: plane-pgdb:5432/$(POSTGRES_DB)?sslmode=disable
+            - name: DATA_SOURCE_USER
+              valueFrom: { secretKeyRef: { name: plane-pgdb, key: POSTGRES_USER } }
+            - name: DATA_SOURCE_PASS
+              valueFrom: { secretKeyRef: { name: plane-pgdb, key: POSTGRES_PASSWORD } }
+          ports:
+            - { name: metrics, containerPort: 9187 }
+          # The landing page, not /metrics: a failing database must show as pg_up 0 on a Ready
+          # exporter rather than as a missing target.
+          readinessProbe:
+            httpGet: { path: /, port: metrics }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /, port: metrics }
+            periodSeconds: 30
+          # No CPU limit: a scrape is a burst of about 200ms every 30s, 1m on average, and a 100m
+          # quota throttled 32% of its periods, which fires CPUThrottlingHigh for nothing.
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { memory: 48Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-exporter
+  labels: { app.kubernetes.io/name: postgres-exporter }
+spec:
+  selector: { app.kubernetes.io/name: postgres-exporter }
+  ports:
+    - { name: metrics, port: 9187, targetPort: metrics }
+---
+# Valkey has no password in this deployment (the contract's REDIS_URL carries none), so this
+# exporter holds no credentials at all.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-exporter
+  labels: { app.kubernetes.io/name: redis-exporter }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: redis-exporter }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: redis-exporter }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 59000 # the image's own user
+        runAsGroup: 59000
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: redis-exporter
+          image: docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: REDIS_ADDR, value: "redis://plane-redis:6379" }
+          ports:
+            - { name: metrics, containerPort: 9121 }
+          readinessProbe:
+            httpGet: { path: /health, port: metrics }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: metrics }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 5m, memory: 12Mi }
+            limits: { cpu: 100m, memory: 32Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-exporter
+  labels: { app.kubernetes.io/name: redis-exporter }
+spec:
+  selector: { app.kubernetes.io/name: redis-exporter }
+  ports:
+    - { name: metrics, port: 9121, targetPort: metrics }

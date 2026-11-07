@@ -1,0 +1,40 @@
+# scripts/ci/promote-prod.sh copies this file to applications/plane-prod.yaml on the first promotion, so root reads nothing here
+# until then, and the platform comes up first. It is copied as it stands, so it holds no placeholders.
+#
+# Rendered plain manifests: no Helm or Kustomize at sync time. No finalizer, deliberately: deleting this Application, or removing
+# its file from Git, orphans every object instead of deleting the workloads. The data PVCs come from volumeClaimTemplates with
+# no retention policy set, so Argo CD does not track them and Kubernetes keeps them either way. PruneLast applies removals only
+# after the new state is healthy. allowEmpty stays false, so an empty render cannot prune everything.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: plane-prod
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: plane-prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: plane-prod
+  source:
+    repoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
+    targetRevision: deploy/plane-prod
+    path: gitops/environments/prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - PruneLast=true
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

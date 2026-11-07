@@ -1,0 +1,10 @@
+# Everything that watches Plane from its own namespace. These exist before the first promotion, and the exporter that needs Plane's
+# Secret waits for it. The rules in rules-hosted-plane.yaml stay quiet until the plane-prod Application exists.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: plane-prod
+resources:
+  - exporters.yaml
+  - rabbitmq-metrics.yaml
+  - service-monitors.yaml
+  - probes.yaml

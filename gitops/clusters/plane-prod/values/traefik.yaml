@@ -1,0 +1,102 @@
+# traefik 42.3.0 from https://traefik.github.io/charts. Release traefik, namespace traefik.
+# A copy of the local values, changed for a public node. Same chart and digest, so a chart bump reaches here only by editing here.
+image:
+  registry: docker.io
+  repository: traefik
+  digest: sha256:68ae5fe5b64ca166704b746a9e8afcd385e36b3f569a5691401bf652d57b3748
+# The chart cannot derive the version from a digest, and its feature gates need one.
+versionOverride: v3.7.17
+
+# hostPort is the only way in, so this Service stays inside the cluster, for CoreDNS's rewrite of the public host. The host
+# firewall runs before portmap's DNAT, and that portmap does not masquerade, so Traefik sees the client's own address.
+service:
+  spec:
+    type: ClusterIP
+
+# A second pod could not bind the same hostPorts on one node, and the chart's default of surge 1 and unavailable 0 would stall.
+# The cost is a brief outage on each Traefik rollout.
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 0
+    maxUnavailable: 1
+
+ports:
+  web:
+    hostPort: 80
+    # An entrypoint redirect covers every host. allowACMEByPass takes the challenge path out of it, and sniStrict below would
+    # refuse the handshake that Let's Encrypt would otherwise be redirected into.
+    allowACMEByPass: true
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    hostPort: 443
+    transport:
+      respondingTimeouts:
+        # The default of 60s includes the request body, so it would cut a 5 MiB upload below about 85 KB/s. A guess, not measured.
+        readTimeout: 180s
+
+# No certificatesResolvers and no certResolver: cert-manager is the only certificate owner.
+tlsOptions:
+  default:
+    minVersion: VersionTLS12
+    sniStrict: true
+
+providers:
+  kubernetesCRD:
+    enabled: true
+    # Plane's route, and the namespace that holds the TLSOption above. Nothing else here publishes anything.
+    namespaces: [plane-prod, traefik]
+    # So a default TLSOption in plane-prod cannot lower the minimum version.
+    defaultTLSResourcesNamespace: traefik
+  # Only for cert-manager's HTTP-01 solver, which makes a temporary Ingress and has no IngressRoute shim. Every route is still an
+  # IngressRoute, and policy/hosted.rego refuses an Ingress in Git.
+  kubernetesIngress:
+    enabled: true
+    ingressClass: traefik
+    namespaces: [plane-prod]
+    # The status it would copy is empty on a ClusterIP Service, and cert-manager does not read it.
+    publishedService:
+      enabled: false
+
+ingressClass:
+  enabled: true
+  isDefaultClass: false
+  name: traefik
+
+# The record of who reached this node, read from Loki for 168h. Query strings stay out: a presigned upload URL carries its
+# signature in the query. User-Agent stays in so Alloy can drop Blackbox's lines, as it does the api's.
+accessLog:
+  enabled: true
+  format: json
+  fields:
+    queryParameters:
+      defaultMode: drop
+    headers:
+      defaultMode: drop
+      names:
+        User-Agent: keep
+
+metrics:
+  prometheus:
+    # A dedicated Service, port 9100, for a ServiceMonitor in monitoring-extras. Not the chart's
+    # serviceMonitor: this app syncs at wave -9 and the CRD arrives at -7, so it would fail the sync
+    # and block the wave that brings the CRD.
+    service:
+      enabled: true
+
+global:
+  # Egress is default-deny, so the check could only time out and log an error.
+  checkNewVersion: false
+
+# Starting values: TLS and access logs cost more than the local plain HTTP, whose limit was 192Mi. Re-measure on the node.
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+  limits:
+    memory: 256Mi

@@ -1,0 +1,76 @@
+# infisical-standalone 1.12.0, repo https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+# tgz sha256 9e2d2619a596f2b56dd4517886b7edd7ddfe36f8f0f96f42693d233fcf4b3864
+#
+# Postgres, Redis and this chart's ServiceAccount live in gitops/clusters/plane-prod/platform/infisical,
+# which the infisical Application carries as a second path source.
+
+infisical:
+  # Without this the Service is <release>-infisical-standalone-infisical. The operator dials
+  # http://infisical.infisical.svc.cluster.local:8080.
+  fullnameOverride: infisical
+  replicaCount: 1
+  # true stamps `updatedAt` into the pod template on every render, which rolls pods on each Argo CD
+  # regeneration. Consequence: restart by hand after changing infisical-secrets.
+  rolloutOnEveryRender: false
+  # The chart's bootstrap Job would put the admin token in a cluster Secret. Bootstrap runs from
+  # the laptop instead, through a port-forward (scripts/infisical-bootstrap.sh).
+  autoBootstrap:
+    enabled: false
+  # Created by scripts/secret-zero.sh, never in Git: ENCRYPTION_KEY, AUTH_SECRET, DB_CONNECTION_URI,
+  # REDIS_URL. Argo CD does not manage it.
+  kubeSecretRef: infisical-secrets
+
+  # The pod template has no automount switch, so point at an SA from platform/infisical that sets
+  # automountServiceAccountToken: false. Kubernetes Auth uses the client's JWT as reviewer, so this
+  # pod never needs a token of its own.
+  serviceAccount:
+    create: false
+    name: infisical-server
+
+  image:
+    repository: docker.io/infisical/infisical
+    # The chart concatenates repository:tag, so the digest travels in the tag.
+    tag: "v0.167.6@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c"
+    pullPolicy: IfNotPresent
+
+  extraEnv:
+    # The image bakes --max-old-space-size=2048. Above the 1Gi limit V8 grows past the cgroup and is
+    # OOMKilled rather than collecting.
+    - name: NODE_OPTIONS
+      value: "--max-old-space-size=640"
+    # Token review goes through safeRequest, which rejects private IPs, and kubernetes.default.svc
+    # is 10.96.0.1. It also relaxes SSRF protection globally. Bounded here by the default-deny egress
+    # of platform/network-policies/infisical.yaml, which allows only its database, Redis and the API server.
+    - name: ALLOW_INTERNAL_IP_CONNECTIONS
+      value: "true"
+    # No public route: reached through the SSH tunnel with a port-forward. scripts/hosted/ui.sh uses this port first.
+    - name: SITE_URL
+      value: "http://localhost:18100"
+    - name: TELEMETRY_ENABLED
+      value: "false"
+    - name: DISABLE_UPDATE_CHECK
+      value: "true"
+
+  # The chart exposes only a readiness probe. No liveness probe is possible through values, and none
+  # is wanted during the first boot: the migrations run in-process and must not be killed.
+  #
+  # The same as the local values, which were measured on arm64: first boot peaked at 807 MiB, a later
+  # boot at 822 MiB, idle at 650 to 730 MiB. Not yet measured on this node.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 768Mi
+    limits:
+      cpu: 1500m
+      memory: 1Gi
+
+# Bundled subcharts stay off: ingress-nginx is retired and the Bitnami images are frozen legacy
+# builds with default passwords. Literal bundle env also overrides kubeSecretRef (infisical#7241).
+ingress:
+  enabled: false
+  nginx:
+    enabled: false
+postgresql:
+  enabled: false
+redis:
+  enabled: false

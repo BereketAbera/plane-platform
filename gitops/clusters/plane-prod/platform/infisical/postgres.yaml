@@ -1,0 +1,138 @@
+# Dedicated to Infisical and never shared with Plane, so the secret store does not depend on what it
+# protects. Credentials come from Secret infisical-db, created by scripts/secret-zero.sh.
+# A copy of the local manifest with this cluster's storage class, which keeps the data if the claim goes.
+apiVersion: v1
+kind: Service
+metadata:
+  name: infisical-postgres
+  namespace: infisical
+  labels:
+    app.kubernetes.io/name: infisical-postgres
+    app.kubernetes.io/part-of: infisical
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: infisical-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: infisical-postgres
+  namespace: infisical
+  labels:
+    app.kubernetes.io/name: infisical-postgres
+    app.kubernetes.io/part-of: infisical
+  annotations:
+    # Ahead of the chart's Deployment, which fails its migrations until the database answers.
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  serviceName: infisical-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: infisical-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: infisical-postgres
+        app.kubernetes.io/part-of: infisical
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        # UID and GID 70 are the postgres user in the alpine image (image history), not 999 as on Debian.
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+          # Infisical's pool defaults to 10 connections, so 30 is room to spare at a 256Mi limit.
+          # The lock table holds max_locks_per_transaction x MaxBackends, and MaxBackends is 52 here: max_connections
+          # plus 22 of the server's own. A backup's scratch restore held 3422 locks at once, one statement alone
+          # 3384, which at the default of 64 and its 3328 slots ran on spare shared memory, and the partitions behind
+          # that only grow. Running out fails the backup or the restore, so 128 gives 6656. Measured cost: see
+          # .local/evidence-raw/dr-locks-*.txt, and one Postgres restart.
+          args:
+            - -c
+            - shared_buffers=32MB
+            - -c
+            - max_connections=30
+            - -c
+            - max_locks_per_transaction=128
+          env:
+            # A subdirectory, because initdb must own and chmod its directory and non-root cannot
+            # do that to a volume root.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          envFrom:
+            - secretRef:
+                name: infisical-db
+          ports:
+            - name: postgres
+              containerPort: 5432
+          # Generous: initdb runs on first boot. The temporary initdb server listens only on the
+          # socket, so probing 127.0.0.1 cannot report ready until the real server is up.
+          startupProbe:
+            exec:
+              command: ["sh", "-c", 'pg_isready -q -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", 'pg_isready -q -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", 'pg_isready -q -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            # The entrypoint logs "chmod: /var/run/postgresql: Operation not permitted" at every start.
+            # It is harmless: the emptyDir is root's, fsGroup 70 gives the group write, and the socket works.
+            - name: run
+              mountPath: /var/run/postgresql
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: run
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path-retain
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 2Gi
