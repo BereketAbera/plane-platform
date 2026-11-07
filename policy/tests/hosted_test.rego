@@ -684,6 +684,33 @@ test_an_app_rate_limit_on_anything_but_the_address_rejected if {
 	}
 }
 
+# Argo CD puts one of these that names no namespace in its Application's destination, an app's namespace among them, where the rules that
+# hold it to that namespace would not have read it.
+test_what_is_held_to_its_namespace_names_one if {
+	every doc in [
+		middleware("rillmark", "planted", {"forwardAuth": {"address": "http://plane-minio.plane-prod.svc.cluster.local:9000/"}}),
+		app_limit("rillmark", {"ipStrategy": {"depth": 0}}),
+		app_certificate("rillmark"),
+		site_service("rillmark"),
+		frameflow_web_service(web_selector, "http"),
+	] {
+		every bare in [
+			json.remove(doc, ["metadata/namespace"]),
+			json.patch(doc, [{"op": "replace", "path": "/metadata/namespace", "value": ""}]),
+			json.patch(doc, [{"op": "replace", "path": "/metadata/namespace", "value": null}]),
+		] {
+			says(bare, "names no namespace, so Argo CD would put it in its Application's")
+		}
+	}
+
+	# A limit the apps may hold is refused too, because nothing then says whose namespace it is in.
+	count(hosted.deny) == 1 with input as json.remove(app_limit("rillmark", {"ipStrategy": {"depth": 0}}), ["metadata/namespace"])
+	count(hosted.deny) == 1 with input as json.remove(site_service("rillmark"), ["metadata/namespace"])
+
+	# A Service no route may name keeps to its own rules, as the charts' do, which Helm renders with no namespace.
+	count(hosted.deny) == 0 with input as json.remove(app_service("frameflow", "iso-frameflow-controller-manager-metrics-service", {"control-plane": "controller-manager"}, [{"port": 8443}]), ["metadata/namespace"])
+}
+
 # A Service as platform/<app>/service.yaml writes it, in an app's namespace.
 app_service(namespace, name, selector, ports) := {
 	"apiVersion": "v1",

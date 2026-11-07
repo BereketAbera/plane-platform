@@ -751,6 +751,24 @@ app_rate_limit(spec) if {
 	object.get(spec.rateLimit, "sourceCriterion", {}) == app_rate_limit_source
 }
 
+# Argo CD puts an object that names no namespace in its Application's destination, and an app's own Application has the app's namespace
+# for one. The rules here that hold a Middleware, a Certificate or a Service a route may name to an app's namespace read the namespace the
+# object names, so each of these names one. A blank, a null or anything else that is not a string is none to Argo CD, as in
+# policy/plane.rego.
+deny contains msg if {
+	held_to_its_namespace
+	not data.plane.states_a_namespace
+	msg := sprintf("%s: names no namespace, so Argo CD would put it in its Application's, and no rule here that holds a %s to its namespace would have read it", [identity, input.kind])
+}
+
+held_to_its_namespace if input.kind in {"Middleware", "Certificate"}
+
+held_to_its_namespace if {
+	input.kind == "Service"
+	some app in app_routes
+	app.backends[input.metadata.name]
+}
+
 # A route names a Service, and the Service decides which pods, and which of their ports, that reaches. So each Service an app's route may
 # name selects the pods of its own component, the ones its NetworkPolicy and Traefik's egress are written for, and sends the route's port
 # to theirs. Without this, a frameflow-web that selected Silo's pods would give the general route all of Silo's API, which the rule above
