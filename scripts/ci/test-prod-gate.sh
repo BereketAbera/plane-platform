@@ -840,8 +840,9 @@ check_refuses_shallow_history() {
   expect "it says so" said 'shallow clone'
 }
 check_status_3_from_a_tool_is_a_refusal() {
-  # jq exits 3 when it cannot compile a program. That must not read as not promoted, which would release this commit.
-  printf '#!/bin/sh\nexit 3\n' >"$REPO/.tools/bin/jq"
+  # jq exits 3 when it cannot compile a program. That must not read as not promoted, which would release this commit. The real
+  # one for -e, because is_true has its own refusal for this, and the point here is a status nothing else catches.
+  printf '#!/bin/sh\ncase " $* " in *" -e "*) exec %s "$@" ;; esac\nexit 3\n' "$(command -v jq)" >"$REPO/.tools/bin/jq"
   chmod +x "$REPO/.tools/bin/jq"
   check
   expect "exit 1, and it exited $STATUS" equal "$STATUS" 1
