@@ -1,0 +1,39 @@
+# What a browser and a stranger get at Infisical's public route: the same TLS, certificate and route, without leaving the node, because
+# CoreDNS rewrites this name to Traefik's Service too. /login is a page, and neither of these paths is under a limit of the route's.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: infisical
+spec:
+  jobName: infisical-http
+  interval: 30s
+  scrapeTimeout: 10s
+  module: http_infisical_login
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://infisical.bereket.dev/login
+      labels: { probe: infisical }
+---
+# Sign-up closed and an admin claimed, as the anonymous config a sign-in page reads says, through the route a stranger would use. Sign-up
+# closes in the database, at the bootstrap call, and nothing but that call and a super admin's setting moves it.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: infisical-claimed
+spec:
+  jobName: infisical-http
+  interval: 30s
+  scrapeTimeout: 10s
+  module: http_infisical_claimed
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://infisical.bereket.dev/api/v1/admin/config
+      labels: { probe: infisical-claimed }
