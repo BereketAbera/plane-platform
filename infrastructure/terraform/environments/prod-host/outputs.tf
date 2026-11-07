@@ -11,6 +11,11 @@ output "instance" {
 }
 
 output "dns_record" {
-  description = "The one DNS record this root owns."
+  description = "Wayline's DNS record."
   value       = "${vercel_dns_record.wayline.name}.${vercel_dns_record.wayline.domain} ${vercel_dns_record.wayline.type} ${vercel_dns_record.wayline.value}"
+}
+
+output "grafana_dns_record" {
+  description = "Grafana's DNS record."
+  value       = "${vercel_dns_record.grafana.name}.${vercel_dns_record.grafana.domain} ${vercel_dns_record.grafana.type} ${vercel_dns_record.grafana.value}"
 }

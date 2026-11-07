@@ -51,10 +51,11 @@ module "foundation" {
     }
   }
 
-  # The Plane API dials its own public host, and blackbox and cert-manager's self-check read it too. Inside a pod that must reach
-  # Traefik's Service, not go out through the host firewall and back.
+  # The Plane API dials its own public host, and blackbox and cert-manager's self-check read it and Grafana's too. Inside a pod that
+  # must reach Traefik's Service, not go out through the host firewall and back.
   k3s_coredns_rewrites = {
-    (local.target.domain) = "traefik.traefik.svc.cluster.local"
+    (local.target.domain)         = "traefik.traefik.svc.cluster.local"
+    (local.target.grafana_domain) = "traefik.traefik.svc.cluster.local"
   }
 
   depends_on = [terraform_data.right_cluster]
