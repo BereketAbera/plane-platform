@@ -58,10 +58,12 @@ Around it:
   key is refused by its header on every call of the API route, so the bootstrap's 90-day instance admin token, the operator's tokens and any token
   made later work only inside the cluster.
 - **Exact words in policy.** [`policy/hosted.rego`](../../policy/hosted.rego) allows these four routes and two limits in their words and no others,
-  keeps Argo CD, Prometheus, Alertmanager and the storage consoles refused, and refuses any Infisical image but the one the route was read
-  from, digest and all, until the route has been read again for it. It holds the server's values for the route, the four Probes and their
-  blackbox modules, and every NetworkPolicy that admits anything into namespace infisical, and
-  [`policy/hosted_combined.rego`](../../policy/hosted_combined.rego) wants both limits and every Probe wherever the route is.
+  and keeps Argo CD, Prometheus, Alertmanager and the storage consoles refused. Any container whose image is of repository
+  `infisical/infisical`, under any registry, must run the one reference the route was read from, digest and all, until the route has been read
+  again for another, and must set the server's four values for the route. The same server published under another repository name meets
+  neither rule, and only the list of hosted images, [`policy/hosted-images.txt`](../../policy/hosted-images.txt), makes that change a diff a
+  person reads. Policy also holds the four Probes and their blackbox modules, and every NetworkPolicy that admits anything into namespace
+  infisical, and [`policy/hosted_combined.rego`](../../policy/hosted_combined.rego) wants both limits and every Probe wherever the route is.
 - **Proved against the pinned Traefik.** [`tests/routes/infisical-public-route.sh`](../../tests/routes/infisical-public-route.sh) starts the
   Traefik image and flags hosted production pins, in Docker, with `route.yaml`, and asks every anonymous and machine route, and the named ones in
   49 spellings each: trailing and doubled slashes, case, percent-encoding once and twice, encoded slashes and dots, dot segments, semicolons,
