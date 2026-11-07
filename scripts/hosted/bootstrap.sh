@@ -249,4 +249,4 @@ secret_zero
 infisical
 alerts
 bundle
-ok "bootstrap finished. Read: make remote-status TARGET=plane-prod. Next: the first promotion, then make remote-test TARGET=plane-prod CONFIRM=plane-prod"
+ok "bootstrap finished. Read: make remote-status TARGET=plane-prod. Next: Infisical's two-factor, through the tunnel, before scripts/hosted/edge.sh open puts its sign-in on the internet (scripts/hosted/README.md, section Two-factor for Infisical's admin). Then the first promotion, then make remote-test TARGET=plane-prod CONFIRM=plane-prod"

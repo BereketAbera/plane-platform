@@ -113,8 +113,10 @@ EOF
     claimed) ;;
     unclaimed) die "Infisical has no admin yet, and its bootstrap call makes one for whoever posts first. Run scripts/hosted/bootstrap.sh at stage http, which makes it through a port-forward, then open." ;;
     open-to-sign-up) die "Infisical reads open to sign-up, so anyone could make an account on the secret store. Close it first: scripts/hosted/README.md, section Infisical reads open." ;;
-    *) die "Infisical's config did not answer, so nothing says it has its admin and is closed to sign-up. Read: make remote-status TARGET=plane-prod" ;;
+    *) die "Infisical's config did not answer, so nothing says it has its admin and is closed to sign-up, and Plane stays off the internet with it until it does. Read: make remote-status TARGET=plane-prod. Meanwhile edge.sh owner <your ipv4> reaches the site from one address" ;;
   esac
+  # Nothing here can read whether the admin has two-factor, so this says it. Opening 443 puts Infisical's sign-in on the internet.
+  printf 'note Infisical signs in at its public route from here on. If its admin has not set up two-factor yet, do that through the tunnel first: scripts/hosted/README.md, section Two-factor for Infisical'"'"'s admin\n' >&2
 fi
 
 rendered="$(TEMPLATE="$HOSTED/edge.nft.tmpl" RULES="$rules" python3 -I -c '
