@@ -1,7 +1,8 @@
 # The rules only hosted production has, in gitops/clusters/plane-prod/platform/monitoring-extras/shared. Run by promtool from
 # scripts/ci/validate-manifests.sh, which writes each PrometheusRule's spec beside a copy of this file as rules-<name>.yaml.
 #
-# Each number here is the hosted design's: disk 20% and 10%, certificate 21 days, served certificate 14 days, backup 26 hours.
+# Each number here is the hosted design's: disk 20% and 10%, certificate 21 days, served certificate 14 days, a static site 2 minutes,
+# backup 26 hours.
 rule_files:
   - rules-hosted.yaml
   - rules-hosted-plane.yaml
@@ -101,6 +102,10 @@ tests:
         values: '1x40'
       - series: 'certmanager_certificate_ready_status{namespace="infisical",name="infisical-tls",condition="True"}'
         values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="rillmark",name="rillmark-tls",condition="True"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="awushi-cloudgarden",name="devops-tls",condition="True"}'
+        values: '1x40'
     alert_rule_test:
       - { eval_time: 29m, alertname: CertificateNotReady, exp_alerts: [] }
       - eval_time: 31m
@@ -109,7 +114,7 @@ tests:
           - exp_labels: { namespace: plane-prod, name: wayline-tls, condition: "False", severity: critical, component: certificate }
             exp_annotations: { summary: "Certificate plane-prod/wayline-tls has not been Ready for 30m" }
       - { eval_time: 31m, alertname: CertificateNotWatched, exp_alerts: [] }
-  - name: cert-manager reporting nothing for any of the three certificates fires, because the rules above would stay silent
+  - name: cert-manager reporting nothing for any of the five certificates fires, because the rules above would stay silent
     interval: 1m
     input_series:
       - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="another",condition="True"}'
@@ -125,6 +130,10 @@ tests:
             exp_annotations: { summary: "cert-manager reports nothing for grafana-tls, so the certificate alerts cannot fire" }
           - exp_labels: { name: infisical-tls, severity: warning, component: certificate }
             exp_annotations: { summary: "cert-manager reports nothing for infisical-tls, so the certificate alerts cannot fire" }
+          - exp_labels: { name: rillmark-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "cert-manager reports nothing for rillmark-tls, so the certificate alerts cannot fire" }
+          - exp_labels: { name: devops-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "cert-manager reports nothing for devops-tls, so the certificate alerts cannot fire" }
   - name: with only infisical-tls missing, the same rule names it alone
     interval: 1m
     input_series:
@@ -132,12 +141,33 @@ tests:
         values: '1x40'
       - series: 'certmanager_certificate_ready_status{namespace="monitoring",name="grafana-tls",condition="True"}'
         values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="rillmark",name="rillmark-tls",condition="True"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="awushi-cloudgarden",name="devops-tls",condition="True"}'
+        values: '1x40'
     alert_rule_test:
       - eval_time: 31m
         alertname: CertificateNotWatched
         exp_alerts:
           - exp_labels: { name: infisical-tls, severity: warning, component: certificate }
             exp_annotations: { summary: "cert-manager reports nothing for infisical-tls, so the certificate alerts cannot fire" }
+  - name: with only the static sites' certificates missing, the same rule names each of them, and the three it watched before stay quiet
+    interval: 1m
+    input_series:
+      - series: 'certmanager_certificate_ready_status{namespace="plane-prod",name="wayline-tls",condition="True"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="monitoring",name="grafana-tls",condition="True"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_ready_status{namespace="infisical",name="infisical-tls",condition="True"}'
+        values: '1x40'
+    alert_rule_test:
+      - eval_time: 31m
+        alertname: CertificateNotWatched
+        exp_alerts:
+          - exp_labels: { name: rillmark-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "cert-manager reports nothing for rillmark-tls, so the certificate alerts cannot fire" }
+          - exp_labels: { name: devops-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "cert-manager reports nothing for devops-tls, so the certificate alerts cannot fire" }
   - name: infisical-tls fires like any other certificate, under the namespace it lives in
     interval: 1m
     input_series:
@@ -156,6 +186,24 @@ tests:
         exp_alerts:
           - exp_labels: { namespace: infisical, name: infisical-tls, severity: warning, component: certificate }
             exp_annotations: { summary: "Certificate infisical/infisical-tls expires in 13d 23h 59m 0s, so renewal is failing" }
+  - name: the static sites' certificates fire like any other, each under the namespace it lives in
+    interval: 1m
+    input_series:
+      - series: 'certmanager_certificate_ready_status{namespace="rillmark",name="rillmark-tls",condition="False"}'
+        values: '1x40'
+      - series: 'certmanager_certificate_expiration_timestamp_seconds{namespace="awushi-cloudgarden",name="devops-tls"}'
+        values: '1209600x40'
+    alert_rule_test:
+      - eval_time: 31m
+        alertname: CertificateNotReady
+        exp_alerts:
+          - exp_labels: { namespace: rillmark, name: rillmark-tls, condition: "False", severity: critical, component: certificate }
+            exp_annotations: { summary: "Certificate rillmark/rillmark-tls has not been Ready for 30m" }
+      - eval_time: 1m
+        alertname: CertificateExpiringSoon
+        exp_alerts:
+          - exp_labels: { namespace: awushi-cloudgarden, name: devops-tls, severity: warning, component: certificate }
+            exp_annotations: { summary: "Certificate awushi-cloudgarden/devops-tls expires in 13d 23h 59m 0s, so renewal is failing" }
   - name: grafana-tls fires like any other certificate, under the namespace it lives in
     interval: 1m
     input_series:
@@ -231,6 +279,22 @@ tests:
         exp_alerts:
           - exp_labels: { namespace: frameflow, severity: critical, component: certificate }
             exp_annotations: { summary: "The certificate served for frameflow expires in 13d 23h 59m 0s" }
+  - name: the certificate served at a static site fires under that site's namespace, with the other site's and Plane's healthy
+    interval: 1m
+    input_series:
+      - series: 'probe_ssl_earliest_cert_expiry{namespace="awushi-cloudgarden",instance="https://devops.bereket.dev/",probe="cloudgarden"}'
+        values: '1209660x10'
+      - series: 'probe_ssl_earliest_cert_expiry{namespace="rillmark",instance="https://rillmark.bereket.dev/",probe="rillmark"}'
+        values: '2592000x10'
+      - series: 'probe_ssl_earliest_cert_expiry{namespace="plane-prod",instance="https://wayline.bereket.dev/",probe="frontend"}'
+        values: '2592000x10'
+    alert_rule_test:
+      - { eval_time: 0m, alertname: ServedCertificateExpiringSoon, exp_alerts: [] }
+      - eval_time: 2m
+        alertname: ServedCertificateExpiringSoon
+        exp_alerts:
+          - exp_labels: { namespace: awushi-cloudgarden, severity: critical, component: certificate }
+            exp_annotations: { summary: "The certificate served for awushi-cloudgarden expires in 13d 23h 59m 0s" }
   - name: Grafana's route failing its probe warns after 5 minutes, and no probe at all says so after 15
     interval: 1m
     input_series:
@@ -369,6 +433,57 @@ tests:
           - exp_labels: { namespace: infisical, probe: infisical-claimed, instance: "https://infisical.bereket.dev/api/v1/admin/config", severity: warning, component: infisical }
             exp_annotations: { summary: "The config at https://infisical.bereket.dev/api/v1/admin/config has not answered for 10m, so InfisicalOpenToClaim cannot fire" }
       - { eval_time: 14m, alertname: InfisicalOpenToClaim, exp_alerts: [] }
+  - name: Rillmark failing its probe is critical after 2 minutes, and the other site, answering, stays quiet
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="rillmark",probe="rillmark",instance="https://rillmark.bereket.dev/"}'
+        values: '1x4 0x20'
+      - series: 'probe_success{namespace="awushi-cloudgarden",probe="cloudgarden",instance="https://devops.bereket.dev/"}'
+        values: '1x25'
+    alert_rule_test:
+      - { eval_time: 4m, alertname: RillmarkDown, exp_alerts: [] }
+      - { eval_time: 6m, alertname: RillmarkDown, exp_alerts: [] }
+      - eval_time: 8m
+        alertname: RillmarkDown
+        exp_alerts:
+          - exp_labels: { namespace: rillmark, probe: rillmark, instance: "https://rillmark.bereket.dev/", severity: critical, component: rillmark }
+            exp_annotations: { summary: "https://rillmark.bereket.dev has failed its probe for 2m" }
+      - { eval_time: 8m, alertname: CloudgardenDown, exp_alerts: [] }
+      - { eval_time: 16m, alertname: RillmarkNotWatched, exp_alerts: [] }
+      - { eval_time: 16m, alertname: CloudgardenNotWatched, exp_alerts: [] }
+  - name: Cloudgarden failing its probe is critical after 2 minutes too, under its own namespace, and clears once it answers
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="awushi-cloudgarden",probe="cloudgarden",instance="https://devops.bereket.dev/"}'
+        values: '1x4 0x5 1x10'
+    alert_rule_test:
+      - { eval_time: 6m, alertname: CloudgardenDown, exp_alerts: [] }
+      - eval_time: 8m
+        alertname: CloudgardenDown
+        exp_alerts:
+          - exp_labels: { namespace: awushi-cloudgarden, probe: cloudgarden, instance: "https://devops.bereket.dev/", severity: critical, component: cloudgarden }
+            exp_annotations: { summary: "https://devops.bereket.dev has failed its probe for 2m" }
+      - { eval_time: 12m, alertname: CloudgardenDown, exp_alerts: [] }
+      - { eval_time: 8m, alertname: RillmarkDown, exp_alerts: [] }
+  - name: with no probe of either static site running, the rules that say so fire
+    interval: 1m
+    input_series:
+      - series: 'probe_success{namespace="plane-prod",probe="frontend"}'
+        values: '1x40'
+    alert_rule_test:
+      - { eval_time: 14m, alertname: RillmarkNotWatched, exp_alerts: [] }
+      - { eval_time: 14m, alertname: CloudgardenNotWatched, exp_alerts: [] }
+      - eval_time: 16m
+        alertname: RillmarkNotWatched
+        exp_alerts:
+          - exp_labels: { probe: rillmark, severity: warning, component: rillmark }
+            exp_annotations: { summary: "The probe of https://rillmark.bereket.dev is not running, so RillmarkDown cannot fire" }
+      - eval_time: 16m
+        alertname: CloudgardenNotWatched
+        exp_alerts:
+          - exp_labels: { probe: cloudgarden, severity: warning, component: cloudgarden }
+            exp_annotations: { summary: "The probe of https://devops.bereket.dev is not running, so CloudgardenDown cannot fire" }
+      - { eval_time: 16m, alertname: RillmarkDown, exp_alerts: [] }
   - name: a backup older than 26 hours fires, in either namespace, and other CronJobs do not count
     interval: 1h
     input_series:

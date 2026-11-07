@@ -1,0 +1,20 @@
+# What a browser gets at Awushi Cloudgarden's public route: the same TLS, certificate and route, without leaving the node, because CoreDNS
+# rewrites this name to Traefik's Service too. The home page, the game's one HTML page. CloudgardenDown in shared/rules-hosted.yaml
+# reads this.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: cloudgarden
+spec:
+  jobName: cloudgarden-http
+  interval: 30s
+  scrapeTimeout: 10s
+  module: http_html
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://devops.bereket.dev/
+      labels: { probe: cloudgarden }
