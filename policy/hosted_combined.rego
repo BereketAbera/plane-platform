@@ -200,6 +200,19 @@ config_file(c) := substring(flags[0], count(config_flag), -1) if {
 	flags := [arg | some arg in object.get(c, "args", []); contains(arg, "config.file")]
 	count(flags) == 1
 	startswith(flags[0], config_flag)
+	clean_absolute(substring(flags[0], count(config_flag), -1))
+}
+
+# Kubernetes expands $(VAR) in args and not in mountPath, the exporter opens a relative path from the container's workingDir, and a ".."
+# moves the directory, so only an absolute path with none of those is the file the mounts below hold.
+clean_absolute(path) if {
+	not contains(path, "$(")
+	segments := split(path, "/")
+	count(segments) > 1
+	segments[0] == ""
+	every segment in array.slice(segments, 1, count(segments)) {
+		not segment in {"", ".", ".."}
+	}
 }
 
 # The ConfigMap and key that file comes from: a configMap volume mounted at the file's directory, whole or with items that name the file. A
