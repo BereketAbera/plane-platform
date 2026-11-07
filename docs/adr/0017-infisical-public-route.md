@@ -40,7 +40,8 @@ A route at `https://infisical.bereket.dev`, in four parts that share no path,
 1. The sign-in, two-factor and password endpoints, under a limit per client address of a burst of 10 and one more every 6 seconds. That is
    no cap of 10 a minute: Traefik forgets an address after about 7 seconds with no request from it and starts it again with a full burst, so
    a client that waits about 8 seconds between bursts of 10 gets about 70 tries a minute.
-2. The session endpoints, select-organization, token refresh, logout and the two-factor checks, under a wider limit of 30 a minute.
+2. The session endpoints, select-organization, token refresh, logout and the two-factor checks, under a wider limit of 30 a minute. By
+   the same rule Traefik forgets an idle address after about 3 seconds there, so it is looser than 30 a minute too; that was not measured.
 3. **An allow list** for the rest of the API: the families the web client calls, and in them a list of refusals for what takes a credential and
    no browser needs. A family a later version adds is refused until someone reads it. Any request carrying a machine's credential is refused too.
 4. Pages, which are one `index.html` whatever the path: a clean path only, and a list of refusals for sign-up, account recovery, shared secrets and
