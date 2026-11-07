@@ -1,5 +1,7 @@
 # What a browser and a stranger get at Infisical's public route: the same TLS, certificate and route, without leaving the node, because
-# CoreDNS rewrites this name to Traefik's Service too. /login is a page, and neither of these paths is under a limit of the route's.
+# CoreDNS rewrites this name to Traefik's Service too. The first two read paths under no limit of the route's. The last two read one path
+# under each limit, twice a minute, which leaves blackbox's own address well inside both. policy/hosted.rego holds each Probe and its
+# blackbox module to these words, because the alerts in shared/rules-hosted.yaml read them.
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
 metadata:
@@ -37,3 +39,43 @@ spec:
       static:
         - https://infisical.bereket.dev/api/v1/admin/config
       labels: { probe: infisical-claimed }
+---
+# The route's sign-in part, under its limit of guesses: a two-factor call with no token, which Infisical's MFA router refuses 401 before
+# anything is read. A missing infisical-guess-limit makes Traefik answer every sign-in 404, and only this would say so.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: infisical-sign-in
+spec:
+  jobName: infisical-http
+  interval: 30s
+  scrapeTimeout: 10s
+  module: http_infisical_no_bearer_post
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://infisical.bereket.dev/api/v2/auth/mfa/send
+      labels: { probe: infisical-sign-in }
+---
+# The route's session part, under its wider limit, asked the same way. A missing infisical-session-limit breaks select-organization and token
+# refresh, and only this would say so.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: infisical-session
+spec:
+  jobName: infisical-http
+  interval: 30s
+  scrapeTimeout: 10s
+  module: http_infisical_no_bearer
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://infisical.bereket.dev/api/v2/auth/mfa/check/totp
+      labels: { probe: infisical-session }

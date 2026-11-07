@@ -68,6 +68,25 @@ modules:
       fail_if_not_ssl: true
       valid_status_codes: [200]
       fail_if_body_json_not_matches_cel: "body.config.initialized == true && body.config.allowSignUp == false"
+  # Infisical's MFA router, which answers a call with no bearer token 401 in its own hook, before any handler or the database. One of its
+  # paths sits under each of the route's two limits, and a route whose Middleware is missing gets Traefik's 404, so this reads that as down.
+  http_infisical_no_bearer:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+      fail_if_not_ssl: true
+      valid_status_codes: [401]
+      fail_if_body_not_matches_regexp: ['"error":\s*"Missing bearer token"']
+  http_infisical_no_bearer_post:
+    prober: http
+    timeout: 5s
+    http:
+      method: POST
+      preferred_ip_protocol: ip4
+      fail_if_not_ssl: true
+      valid_status_codes: [401]
+      fail_if_body_not_matches_regexp: ['"error":\s*"Missing bearer token"']
   # A connection that must not succeed: see the denied-prometheus Probe.
   tcp_denied:
     prober: tcp
