@@ -596,9 +596,9 @@ To replace it, as after a leak:
    ```
 2. Paste it as the new value of `OWNER_TOKEN_SHA256` in Infisical, project `frameflow-prod`, environment `prod`, through
    `make remote-ui TARGET=plane-prod UI=infisical`. The seed writes only what is missing, so this is how a value changes.
-3. Within a minute the operator writes Secret `frameflow-app` again, and auto-reload restarts the API and the worker, which read it when
-   they start. The API is down for those seconds, because it rolls out by `Recreate`, and the worker finishes the task it runs before it
-   stops. From then on the old key signs in no more.
+3. Within a minute the operator writes Secret `frameflow-app` again, and auto-reload restarts the API, which reads it when it starts and
+   is the one pod that holds the owner's keys. The API is down for those seconds, because it rolls out by `Recreate`, and a video in
+   processing goes on, because the worker reads neither key. From then on the old key signs in no more.
 4. `make remote-bundle TARGET=plane-prod`, and put the new key in your password manager.
 
 A session signed in before stays valid until it ends, up to 12 hours, because the session is signed with `OWNER_SESSION_SECRET` and not the
@@ -615,7 +615,9 @@ and `restic-password`, from `make remote-bootstrap`. cert-manager writes `framef
 
 | Secret | Holds | Read by | Made by |
 |---|---|---|---|
-| `frameflow-app` | `WORKER_CALLBACK_SECRET`, `OWNER_TOKEN_SHA256`, `OWNER_SESSION_SECRET`, and the app user's `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`, under the same names in Infisical | The API, the worker and the CronJobs. The web server reads no Secret | The seed, in hex, but `OWNER_TOKEN_SHA256`, from the owner's file |
+| `frameflow-app` | `WORKER_CALLBACK_SECRET`, `OWNER_TOKEN_SHA256`, `OWNER_SESSION_SECRET`, and the app user's `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`, under the same names in Infisical | The API alone, which alone sets `AUTH_MODE=owner`: whoever holds the owner's keys can sign in as the owner. The web server reads no Secret | The seed, in hex, but `OWNER_TOKEN_SHA256`, from the owner's file |
+| `frameflow-worker` | `WORKER_CALLBACK_SECRET`, and the app user's `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` | The worker, which runs FFmpeg on every upload and is given no key to sign in with. Frameflow refuses the owner's keys in a role without `AUTH_MODE=owner`, so a worker given them would not start | The seed, from the same keys as `frameflow-app` |
+| `frameflow-maintenance` | The app user's `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` | The two CronJobs, and a restore's `objects` step | The seed, from the same keys |
 | `frameflow-silo-root` | `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`, from `SILO_ROOT_USER` and `SILO_ROOT_PASSWORD` | Silo alone | The seed |
 | `frameflow-silo-setup` | Root's two, and `APP_ACCESS_KEY`, `APP_SECRET_KEY`, `BACKUP_ACCESS_KEY` and `BACKUP_SECRET_KEY`, from the app user's and the backup user's keys | The setup Job alone | The seed |
 | `frameflow-silo-backup` | The read-only backup user's `S3_BACKUP_ACCESS_KEY_ID` and `S3_BACKUP_SECRET_ACCESS_KEY` | The backup | The seed |
@@ -657,8 +659,8 @@ it at its next run, and Postgres and Silo, which carry no auto-reload, read thei
   the new one over it in Infisical. Once the API and the worker have restarted with it, revoke the old one in the dashboard, under Settings,
   API Tokens. A database restored from before a token was minted has no row for it, and Hatchet refuses it: mint another the same way.
 - **`GHCR_PULL_TOKEN`** changes with the static sites' and Plane's: [Image pulls](#image-pulls-secret-ghcr-pull).
-- **`WORKER_CALLBACK_SECRET`** is read by the API and the worker alike, and auto-reload restarts both. Change it while no video is
-  processing: a report the worker sends while the two disagree is refused, and fails its task.
+- **`WORKER_CALLBACK_SECRET`** is read by the API and the worker alike, from `frameflow-app` and `frameflow-worker`, and auto-reload
+  restarts both. Change it while no video is processing: a report the worker sends while the two disagree is refused, and fails its task.
 
 ### Frameflow: deploying a new version
 
@@ -964,8 +966,8 @@ Job below ran in Docker on this machine, with stand-ins for the pinned images, s
                - {name: RCLONE_CONFIG_DST_PROVIDER, value: Minio}
                - {name: RCLONE_CONFIG_DST_ENDPOINT, value: "http://frameflow-silo:9000"}
                - {name: RCLONE_CONFIG_DST_NO_CHECK_BUCKET, value: "true"}
-               - {name: RCLONE_CONFIG_DST_ACCESS_KEY_ID, valueFrom: {secretKeyRef: {name: frameflow-app, key: S3_ACCESS_KEY_ID}}}
-               - {name: RCLONE_CONFIG_DST_SECRET_ACCESS_KEY, valueFrom: {secretKeyRef: {name: frameflow-app, key: S3_SECRET_ACCESS_KEY}}}
+               - {name: RCLONE_CONFIG_DST_ACCESS_KEY_ID, valueFrom: {secretKeyRef: {name: frameflow-maintenance, key: S3_ACCESS_KEY_ID}}}
+               - {name: RCLONE_CONFIG_DST_SECRET_ACCESS_KEY, valueFrom: {secretKeyRef: {name: frameflow-maintenance, key: S3_SECRET_ACCESS_KEY}}}
              volumeMounts:
                - {name: work, mountPath: /work}
                - {name: tmp, mountPath: /tmp}

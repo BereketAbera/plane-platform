@@ -1,10 +1,11 @@
-# What the backend image's roles read, the API, the worker and the two CronJobs, and nothing secret: that is Secret frameflow-app, from
-# infisical.yaml. Each takes all of it with envFrom, because Frameflow checks the whole set in every role, and the worker and the CLIs
-# refuse the owner's keys without AUTH_MODE=owner, as the API does.
+# What the backend image's roles read, the API, the worker and the two CronJobs, and nothing secret: each has a Secret of its own in
+# infisical.yaml, with only the keys it uses. Each takes all of this with envFrom, because Frameflow checks the whole set in every role.
+# AUTH_MODE is not here: AUTH_MODE=owner makes a role want the owner's keys when it starts, and only the API signs anyone in, so the API
+# sets it itself (api.yaml), beside the keys. Frameflow refuses those keys in a role without it.
 #
-# Each is set even where Frameflow's default is the same, because several of its defaults are wrong for a public host: with AUTH_MODE
-# unset every visitor acts as the owner, and the worker runs two tasks at once and as many videos as there are. The web server reads none
-# of these: its address and port are in web.yaml, and the API's address is built into its image.
+# Each is set even where Frameflow's default is the same, because several of its defaults are wrong for a public host: the worker runs two
+# tasks at once and as many videos as there are. The web server reads none of these: its address and port are in web.yaml, and the API's
+# address is built into its image.
 #
 # None of these names is one that policy/hosted.rego or policy/plane.rego holds to Plane's value in every workload: WEB_URL,
 # CORS_ALLOWED_ORIGINS, MINIO_ENDPOINT_SSL, ENABLE_SIGNUP and AWS_S3_BUCKET_NAME.
@@ -43,10 +44,6 @@ data:
 
   # Unset, the worker skips its status callbacks silently, and no video's status ever moves.
   STATUS_CALLBACK_BASE_URL: http://frameflow-api:4000
-
-  # Visitors browse and watch, and only the holder of the owner's access key uploads, edits or deletes. The user the owner acts as.
-  AUTH_MODE: owner
-  OWNER_USER_ID: local-development
 
   # One video at a time, and one rendition of it, with FFmpeg on 3 threads inside the worker's 3 CPUs. A second video waits in Hatchet's
   # queue, for up to the schedule timeout, and so does the second rendition, so neither wait counts against an encode's own timeout.

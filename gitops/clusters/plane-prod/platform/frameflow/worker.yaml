@@ -16,8 +16,8 @@ metadata:
   annotations:
     # After the token's Secret at 3, which it reads, and with the API it reports to.
     argocd.argoproj.io/sync-wave: "4"
-    # Must sit on the workload, not the pod template. It restarts the worker when frameflow-app or hatchet-client-token changes, and the
-    # restart drains as below.
+    # Must sit on the workload, not the pod template. It restarts the worker when frameflow-worker or hatchet-client-token changes, and
+    # the restart drains as below.
     secrets.infisical.com/auto-reload: "true"
 spec:
   replicas: 1
@@ -55,12 +55,13 @@ spec:
           image: ghcr.io/bereketabera/frameflow/backend:83f693d81006@sha256:15eb8058f40ebae5d2b2f2a97b67264e80f1c7f3cd858b6b97cca94370f92688
           # args and no command, so the image's tini stays in front, as Frameflow's README asks of every role.
           args: [node, --import, tsx, src/worker.ts]
-          # As the API's: the worker checks the owner's keys too, and uses the callback secret, Silo's app user and the token.
+          # Its settings, the callback secret and Silo's app user, and the token. Not the owner's keys: it signs no one in, and FFmpeg
+          # reads every upload here (infisical.yaml says why that matters). With no AUTH_MODE, Frameflow wants none of them.
           envFrom:
             - configMapRef:
                 name: frameflow-env
             - secretRef:
-                name: frameflow-app
+                name: frameflow-worker
             - secretRef:
                 name: hatchet-client-token
           ports:
