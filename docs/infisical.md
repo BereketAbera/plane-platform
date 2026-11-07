@@ -354,7 +354,7 @@ as it stands. None of it has run on hosted production yet.
 
 | Route | What | Limit, per client address |
 |---|---|---|
-| Guesses | `POST` sign-in, the two-factor code and recovery code, a step-up code, password change and setup | 10 a minute. One correct sign-in with an authenticator app makes 2, and each mistake one more |
+| Guesses | `POST` sign-in, the two-factor code and recovery code, a step-up code, password change and setup | A burst of 10, then one every 6 seconds, which is no cap of 10 a minute, as below. One correct sign-in with an authenticator app makes 2, and each mistake one more |
 | Sessions | `POST` select-organization, token refresh and logout, `GET` the two-factor checks | 30 a minute. One correct sign-in makes 4, and each page load 1 |
 | API | The 71 families the web client calls, and its calls that set up a machine identity's logins, less what in them takes a credential and no browser needs, and less any request that carries a machine's credential | None |
 | Pages | Every page and file of the web client, with a clean path, less sign-up, account recovery, shared secrets and the SSO, LDAP and CLI logins | None |
@@ -362,6 +362,12 @@ as it stands. None of it has run on hosted production yet.
 Both limits count the connection's address and trust no header, as Grafana's login does, and they are the only limits: this version registers its
 own rate limiter only for Infisical Cloud (`server/app.ts`). Infisical reads the same address as Traefik since `TRUSTED_PROXY_CIDRS` is the pods'
 range. Without it, a sign-in through the route recorded whatever `CF-Connecting-IP` the client sent.
+
+Traefik forgets an address after about 1 + 60/n seconds with no request from it, for a limit of n a minute, and starts it again with a full
+burst, as measured against the pinned Traefik v3.7.17 in Docker. For the guesses that is about 7 seconds: 10 tries got 200, a try 5 s later got
+429, and a burst 9 s later got 10 more 200s. So a client that waits about 8 s between bursts of 10 gets about 70 sign-in tries a minute per
+address. The password is 48 random hex characters and two-factor stands behind it, and Infisical asks for no captcha without `CAPTCHA_SECRET`,
+which is not set ([known limitations](known-limitations.md#infisicals-public-route-the-risk-that-stays)).
 
 **Why an allow list.** The server registers 3746 API routes in 98 families. Its OpenAPI document leaves out 1186 of them, the sign-in, two-factor,
 sign-up and SCIM among them, so it could not be the list to work from: the routes were read from the running server as it registered them. Asked
