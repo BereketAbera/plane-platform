@@ -429,6 +429,23 @@ plant_hosted_k3s_image_unlisted() {
   python3 -B -c 'p="policy/hosted-system-images.txt"; s=open(p).read().splitlines(True); t=[l for l in s if "/mirrored-pause:" not in l]; assert len(t) == len(s) - 1; open(p, "w").write("".join(t))'
 }
 plant_hosted_k3s_image_listed_and_gone() { printf 'docker.io/rancher/klipper-lb:v0.4.17@sha256:%s\n' "$(printf '9%.0s' {1..64})" >>policy/hosted-system-images.txt; }
+# A digest of zeros that the manifest and the list both name, as an image not built yet leaves them, so the list check passes it.
+plant_hosted_placeholder_digest() {
+  local image
+  image="ghcr.io/bereketabera/planted/web:PLACEHOLDER@sha256:$(printf '0%.0s' {1..64})"
+  printf '%s\n' "$image" >>policy/hosted-images.txt
+  plant_in_hosted_tree pod.yaml <<YAML
+apiVersion: v1
+kind: Pod
+metadata:
+  name: planted
+  namespace: monitoring
+spec:
+  containers:
+    - name: planted
+      image: $image
+YAML
+}
 plant_hosted_alloy_without_the_scrub() {
   python3 -B -c 'import re; p="gitops/clusters/plane-prod/values/alloy.yaml"; s=open(p).read(); t,c=re.subn(r"stage\.replace \{.*?\n\s*\}\n", "", s, count=1, flags=re.S); assert c==1; open(p,"w").write(t)'
 }
@@ -658,6 +675,7 @@ CONTROL_SKIP_CHARTS=no control hosted-image-listed-and-gone validate-manifests.s
 control hosted-probe-image-unlisted validate-manifests.sh "they are not in policy/hosted-system-images.txt, so the hosted scan would miss them" plant_hosted_probe_image_unlisted
 CONTROL_SKIP_CHARTS=no control hosted-k3s-image-unlisted validate-manifests.sh "K3s runs these, and they are not in policy/hosted-system-images.txt" plant_hosted_k3s_image_unlisted
 CONTROL_SKIP_CHARTS=no control hosted-k3s-image-listed-and-gone validate-manifests.sh "and neither K3s nor a probe runs them" plant_hosted_k3s_image_listed_and_gone
+control hosted-placeholder-digest validate-manifests.sh "hosted tree: no placeholder digest FAILED" plant_hosted_placeholder_digest
 control hosted-values-outside-the-trees validate-manifests.sh 'they must come from $values/gitops/clusters/plane-prod' plant_hosted_values_outside_the_trees
 control hosted-base-outside-the-trees validate-manifests.sh "does not build from the two hosted trees alone" plant_hosted_base_outside_the_trees
 control hosted-alloy-without-the-scrub validate-manifests.sh "no stage.replace ahead of what goes to Loki" plant_hosted_alloy_without_the_scrub

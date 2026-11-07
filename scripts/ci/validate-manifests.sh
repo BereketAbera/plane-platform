@@ -114,6 +114,7 @@ if has_yaml "$WORK/hosted"; then
   check "hosted tree stands alone" hosted_tree_stands_alone "$WORK/hosted-alone"
   check "hosted tree: every image is listed" hosted_images_listed some "$WORK"/hosted/*.yaml
   check "hosted system images: every probe image is listed" hosted_probe_images_listed
+  check "hosted tree: no placeholder digest" no_placeholder_digest "$HOSTED_TREE" "$HOSTED_IMAGE_LIST"
   check "hosted Alloy scrubs a Telegram bot token" alloy_scrubs_the_telegram_token "$HOSTED_TREE/values/alloy.yaml"
 fi
 # A few seconds, and offline. negative-controls.sh sets SKIP_FLOWS, as for the promotion flows below, because none of its defects are in
