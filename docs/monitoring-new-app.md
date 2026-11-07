@@ -5,8 +5,9 @@ For an app on hosted production's cluster, in a namespace of its own. Everything
 
 Rillmark and Awushi Cloudgarden follow steps 3 and 5: each has a Probe in `monitoring-extras/rillmark/` or
 `monitoring-extras/awushi-cloudgarden/`, and its rules in `shared/rules-hosted.yaml`. They export no metrics, so they need neither step 1 nor 2.
-The examples below use Frameflow, which is not deployed yet and will need the metrics steps too, so its names, labels and port in them are
-placeholders. The apps here select pods by `app.kubernetes.io/component`. [hosted-apps.md](hosted-apps.md) is the runbook for all three.
+The examples below are Frameflow's, which takes the metrics steps too, for its Silo: its Probe, ServiceMonitor and rules are in
+`monitoring-extras/frameflow/`, and its policies in `network-policies/frameflow.yaml`. The apps here select pods by
+`app.kubernetes.io/component`. [hosted-apps.md](hosted-apps.md) is the runbook for all three.
 
 ## What is automatic
 
@@ -36,47 +37,56 @@ Each of these lives in `gitops/clusters/plane-prod/platform/`. Monitoring object
 listed in its `kustomization.yaml`, as `monitoring-extras/plane-prod/` does for Plane.
 
 **1. A way in for Prometheus.** Every namespace here starts at default deny, so a scrape is refused until both halves exist. Its row goes in
-`tests/network-policy-matrix-plane-prod.yaml` too. Beside the app's other policies, in `network-policies/`:
+`tests/network-policy-matrix-plane-prod.yaml` too. Beside the app's other policies, in `network-policies/`. Frameflow's Silo serves its
+metrics on its S3 port, so Prometheus is one more source in that component's policy, `s3` in `frameflow.yaml`, shown here alone:
 
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-prometheus
+  name: s3
   namespace: frameflow
 spec:
-  podSelector: { matchLabels: { app.kubernetes.io/name: frameflow } }
+  podSelector: { matchLabels: { app.kubernetes.io/component: s3 } }
   policyTypes: [Ingress]
   ingress:
     - from:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
           podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
       ports:
-        - { protocol: TCP, port: 9090 } # the app's metrics port
+        - { protocol: TCP, port: 9000 } # the port its metrics are on
 ```
 
-And in `network-policies/monitoring.yaml`, under Prometheus's egress:
+And in `network-policies/monitoring.yaml`, under Prometheus's egress, naming the same pods and port, never the whole namespace:
 
 ```yaml
     - to:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: frameflow } }
+          podSelector: { matchLabels: { app.kubernetes.io/component: s3 } }
       ports:
-        - { protocol: TCP, port: 9090 }
+        - { protocol: TCP, port: 9000 }
 ```
 
 **2. A ServiceMonitor for its own metrics,** if it has any. Without one you see its pods from the outside and nothing about what it is doing.
+It selects the Service by a label only that Service carries, and names the Service's port by name. Frameflow's reads Silo's bucket metrics,
+which `FrameflowBucketNearQuota` compares with the bucket's quota, and also scrapes `/minio/v2/metrics/cluster`, with a `metrics_path`
+label to keep the two apart:
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: frameflow
+  name: frameflow-silo
   namespace: frameflow
 spec:
   selector:
-    matchLabels: { app.kubernetes.io/name: frameflow }
+    matchLabels: { app.kubernetes.io/name: frameflow-silo }
   endpoints:
-    - { port: metrics, interval: 30s }
+    - port: api
+      path: /minio/v2/metrics/bucket
+      interval: 60s
+      relabelings:
+        - { sourceLabels: [__metrics_path__], targetLabel: metrics_path }
 ```
 
 **3. A Probe for uptime.** This is what tells you the app answers users, through Traefik and its certificate. Its host needs a line in
@@ -118,7 +128,7 @@ loads within about 30 seconds, with no restart. A datasource of its own is diffe
   for: 2m
   labels: { severity: critical, component: frameflow }
   annotations:
-    summary: Frameflow has failed its probe for 2m
+    summary: https://frameflow.bereket.dev has failed its probe for 2m
 ```
 
 A public route is a separate change. `policy/hosted.rego` allows Plane's, Grafana's and Infisical's, and one host for each app in its

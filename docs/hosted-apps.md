@@ -3,8 +3,9 @@
 Three apps run on hosted production beside Wayline, on the same K3s node and the same platform services, each in a namespace,
 AppProject and Argo CD Application of its own. This is how each is deployed, promoted, rolled back, checked and fixed.
 
-**Status.** This was written with the change that adds the two static sites, before it was applied, so nothing below has run on the VPS
-yet. Frameflow is not deployed: its sections say what already exists for it and are marked to be completed by the change that deploys it.
+**Status.** This was written with the changes that add the two static sites and Frameflow, before either was applied, so nothing below has
+run on the VPS yet. What Frameflow's Hatchet, Silo and Silo's setup Job do was run in Docker on this machine with the pinned images, and is
+marked so where it is used.
 
 Commands below run from the root of the checkout that holds `.local/hosted/plane-prod/`, which is the main one, because Terraform's state
 and the kubeconfig live there and nowhere else. The raw `kubectl` lines use this helper, as [scripts/hosted/README.md](../scripts/hosted/README.md)
@@ -20,12 +21,12 @@ make remote-tunnel TARGET=plane-prod     # if it is not up. Every script and ses
 | | Rillmark | Awushi Cloudgarden | Frameflow |
 |---|---|---|---|
 | What it is | The documentation site and playground of the Rillmark React design system: a static Vite build | "Awushi's DevOps World", a browser 3D game on a simulated delivery stack: a static Vite build | Video upload and processing: a Next.js web app, an API, Hatchet workers running FFmpeg, its own Silo and Hatchet |
-| Code and CI | [BereketAbera/rillmark](https://github.com/BereketAbera/rillmark): `ci.yml` checks, `images.yml` builds the image | [BereketAbera/awushi-cloudgarden](https://github.com/BereketAbera/awushi-cloudgarden): the same two workflows | [BereketAbera/frameflow](https://github.com/BereketAbera/frameflow): to be completed when it deploys |
+| Code and CI | [BereketAbera/rillmark](https://github.com/BereketAbera/rillmark): `ci.yml` checks, `images.yml` builds the image | [BereketAbera/awushi-cloudgarden](https://github.com/BereketAbera/awushi-cloudgarden): the same two workflows | [BereketAbera/frameflow](https://github.com/BereketAbera/frameflow): `ci.yml` runs its tests with FFmpeg, `images.yml` builds and checks both images |
 | Images | `ghcr.io/bereketabera/rillmark/web` | `ghcr.io/bereketabera/awushi-cloudgarden/web` | `ghcr.io/bereketabera/frameflow/web` and `/backend` |
-| Host | <https://rillmark.bereket.dev> | <https://devops.bereket.dev> | <https://frameflow.bereket.dev>, not serving yet |
-| Namespace, AppProject, Application | `rillmark`, all three. Wave 1, with a finalizer | `awushi-cloudgarden`, all three. Wave 1, with a finalizer | `frameflow`. Wave 2, no finalizer, `PruneLast=true`, when it deploys |
-| Certificate and its Secret | `rillmark-tls` | `devops-tls` | `frameflow-tls`, when it deploys |
-| Runs | One nginx-unprivileged pod, `web`, on 8080, behind Service `rillmark` on 80 | The same, behind Service `awushi-cloudgarden` | To be completed when it deploys |
+| Host | <https://rillmark.bereket.dev> | <https://devops.bereket.dev> | <https://frameflow.bereket.dev> |
+| Namespace, AppProject, Application | `rillmark`, all three. Wave 1, with a finalizer | `awushi-cloudgarden`, all three. Wave 1, with a finalizer | `frameflow`, all three. Wave 2, no finalizer, `PruneLast=true`. Its Infisical operator is Application `infisical-operator-frameflow`, wave 1, under `platform` |
+| Certificate and its Secret | `rillmark-tls` | `devops-tls` | `frameflow-tls` |
+| Runs | One nginx-unprivileged pod, `web`, on 8080, behind Service `rillmark` on 80 | The same, behind Service `awushi-cloudgarden` | Web, API, worker and two CronJobs from its two images, beside its own Hatchet, Hatchet's Postgres and its own Silo: [Frameflow](#frameflow) |
 
 Each app's code and CI stay in its own repository, and nothing there can change this one. What runs where is configuration here.
 
@@ -43,6 +44,8 @@ Each app's code and CI stay in its own repository, and nothing there can change 
 | DNS A record | `vercel_dns_record.rillmark` in `infrastructure/terraform/environments/prod-host` | `vercel_dns_record.cloudgarden` | Terraform, through `scripts/hosted/host-terraform.sh` |
 | Image pins | the manifest, and the same line in `policy/hosted-images.txt` | the same | a promotion pull request |
 
+Frameflow's are in [Frameflow: where its pieces live](#frameflow-where-its-pieces-live).
+
 Each AppProject deploys to its own namespace only, may create nothing cluster-scoped, and may not create a NetworkPolicy, ResourceQuota,
 LimitRange or any of cert-manager's kinds, so an app cannot widen what contains it or ask for another host's certificate. Its certificate
 comes from the `certificates` Application instead. `policy/hosted.rego`'s `app_routes` table binds each host to its namespace and its
@@ -58,9 +61,9 @@ any two apps.
 | Traefik | One IngressRoute per host, on `websecure` only. TLS 1.2 and up, with `sniStrict`, so a host with no certificate is refused at the handshake. `readTimeout: 180s` covers a request's body | The namespace in both of Traefik's provider lists, `gitops/clusters/plane-prod/values/traefik.yaml`. Changing those rolls Traefik once, a brief outage of every host |
 | cert-manager | Its certificate from `letsencrypt-production`, by HTTP-01 through Traefik, renewed by itself | DNS first, the CoreDNS rewrite, the solver's policies and quota room: see [Certificates](#certificates) |
 | Argo CD | One Application, reading `platform/<app>/` from `deploy/plane-prod`, under the app's own AppProject | The namespace and the AppProject, from Terraform, before the Application exists |
-| Infisical | Nothing, for the static sites, which have no secrets. Frameflow gets its own project | To be completed when Frameflow deploys |
-| Monitoring | Logs, pod metrics and the generic alerts with nothing added, and a Probe with `RillmarkDown` or `CloudgardenDown` (critical, 2m) and a `...NotWatched` rule. `CertificateNotWatched` names both certificates. [monitoring-new-app.md](monitoring-new-app.md) | The host's CoreDNS rewrite, because blackbox reaches only Traefik's Service |
-| Backups | Nothing, for the static sites: see [Backups and recovery](#backups-and-recovery) | To be completed when Frameflow deploys |
+| Infisical | Nothing, for the static sites, which have no secrets. Frameflow gets project `frameflow-prod`, read by an operator of its own, `iso-frameflow`, in its namespace alone: [Frameflow: secrets](#frameflow-secrets) | The project, its identity and its values, from `make remote-bootstrap`, before Frameflow's Application exists |
+| Monitoring | Logs, pod metrics and the generic alerts with nothing added, and a Probe with `RillmarkDown` or `CloudgardenDown` (critical, 2m) and a `...NotWatched` rule. `CertificateNotWatched` names both certificates, and Frameflow's. Frameflow adds `FrameflowDown`, `FrameflowApiUnavailable`, `FrameflowWorkerUnavailable`, `HatchetUnavailable`, `FrameflowBucketNearQuota` and `FrameflowBucketFull`, two `...NotWatched` rules, and Silo's metrics. Its backup is in `BackupTooOld`, `BackupNeverSucceeded` and `PlaneBackupFailed`. [monitoring-new-app.md](monitoring-new-app.md) | The host's CoreDNS rewrite, because blackbox reaches only Traefik's Service |
+| Backups | Nothing, for the static sites: see [Backups and recovery](#backups-and-recovery). Frameflow's SQLite file, Hatchet's database and its bucket, nightly, sealed on the node by restic, and pulled off it by hand: [Frameflow: backups and restore](#frameflow-backups-and-restore) | Folder `/srv/wayline/backups/frameflow` and Secret `restic-password` in `frameflow`, from `make remote-bootstrap` |
 | DNS | An A record to the VPS, TTL 60, in Vercel's `bereket.dev` zone | `infrastructure/terraform/environments/prod-host`, applied from this machine. The zone's wildcard otherwise points every name at Vercel |
 | The edge firewall | 80 and 443, which are open per port and not per host, so no change | Nothing |
 | CoreDNS | A rewrite of the host to Traefik's Service, so pods reach it without leaving the node | `k3s_coredns_rewrites` in `infrastructure/terraform/environments/prod/main.tf` |
@@ -182,6 +185,9 @@ two merges runs from this machine.
    then both sites at 1. Each Probe syncs before its site, so a first deploy can page once before its route answers.
 6. **Verify**, as the next section says, and with `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY="outside psa netpol"`.
 
+Frameflow's first deploy takes the same two merges, with more in each, and then a third, after a token is minted by hand:
+[Frameflow: the first deploy](#frameflow-the-first-deploy).
+
 ## Checking status
 
 ```bash
@@ -272,7 +278,8 @@ down. blackbox verifies certificates, so a staging certificate reads as down too
 ## Image pulls: Secret ghcr-pull
 
 The packages are private. Each static site's namespace holds Secret `ghcr-pull`, of type `kubernetes.io/dockerconfigjson`, which
-ServiceAccount `web` names in `imagePullSecrets`. `scripts/hosted/pull-secrets.sh` makes it from the owner's token file,
+ServiceAccount `web` names in `imagePullSecrets`. Frameflow's `ghcr-pull` comes from Infisical instead, because it has an operator anyway:
+[Frameflow: secrets](#frameflow-secrets). `scripts/hosted/pull-secrets.sh` makes it from the owner's token file,
 `.local/hosted/plane-prod/ghcr-pull-token`, through files and stdin and never an argument, and `make remote-bootstrap` runs it. It is not
 in Git, which may hold no Secret, and not in Infisical, because an operator for each site would add a pod and cluster-scoped RBAC to
 deliver one token.
@@ -282,8 +289,9 @@ That token is a classic token with `read:packages`, so it reads every private pa
 1. Make the new token, and save it at a hidden prompt: `scripts/hosted/owner-inputs.sh ghcr`.
 2. `make remote-pull-secrets TARGET=plane-prod CONFIRM=plane-prod`, which writes both sites' Secrets again.
 3. `make remote-bundle TARGET=plane-prod`, because the bundle holds the token file.
-4. Plane's copy comes from `GHCR_PULL_TOKEN` in Infisical, which the seed never overwrites. Change it there, through
-   `make remote-ui TARGET=plane-prod UI=infisical`, and only then revoke the old token, or Plane's next pull fails.
+4. Plane's copy comes from `GHCR_PULL_TOKEN` in Infisical, and Frameflow's from the same key in project `frameflow-prod`, and the seed
+   overwrites neither. Change both there, through `make remote-ui TARGET=plane-prod UI=infisical`, and only then revoke the old token, or
+   the next pull of either fails.
 
 A running pod keeps the image it has. The next pull, on a new pod or after the node frees the image, reads the new Secret.
 
@@ -291,9 +299,11 @@ A running pod keeps the image it has. The next pull, on a new pod or after the n
 
 The static sites have none: they are files, with nothing to sign in to and nothing to keep. Their namespaces hold `ghcr-pull` and the
 certificate's Secret, which cert-manager writes, and `scripts/hosted/scrub-values.sh` reads both namespaces, so those values stay out of
-published evidence.
+published evidence. Frameflow's are in [Frameflow: secrets](#frameflow-secrets).
 
 ## Backups and recovery
+
+Frameflow's are in [Frameflow: backups and restore](#frameflow-backups-and-restore).
 
 **The static sites have nothing to back up.** Each is its image, built from its repository, and what a visitor saves lives in that
 browser's local storage. So they are in no nightly backup, no `BACKUP_NAMESPACES` and no restore test, and should not be added: with no
@@ -377,39 +387,779 @@ until the owner asks for them to go, after the VPS versions are verified. Before
 
 ## Frameflow
 
-> **To be completed by the change that deploys Frameflow.** This section says only what exists for it now.
+Frameflow takes an uploaded MP4, makes 360p and 720p HLS renditions of it with FFmpeg, and plays them back. It is a Next.js web server, an
+API and a Hatchet worker, from two images of its own, beside its own Hatchet, Hatchet's own Postgres and its own Silo, all in namespace
+`frameflow`. Unlike the static sites it holds data, its secrets come from Infisical, and its first deploy reaches the cluster in two
+releases, with a token minted by hand between them.
 
-What is already in place, shared with the static sites' change:
+### Frameflow: what runs, and why
 
-- Namespace `frameflow`, PSA `restricted`, with a quota of `pods: "0"`, so nothing can start there yet, not even a certificate's solver.
-- NetworkPolicy `default-deny` alone, in `network-policies/frameflow.yaml`, and Traefik's egress rules to its web on 3000, to Silo's S3
-  port 9000 for the upload route, and to its solver on 8089, which nothing in the namespace admits yet.
-- AppProject `frameflow`, its row in `policy/hosted.rego`'s `app_routes`, and the namespace in both of Traefik's provider lists, so its
-  deploy rolls nothing in Traefik. The row already holds its two Services to their pods: `frameflow-web` on port 3000 to component `web`
-  on 3000 or `http`, and `frameflow-silo` on 9000 to component `s3` on 9000 or `api`. Its Certificate must be the one
-  `platform/certificates` would write for its host, and Pod Security is asked about its namespace by `make remote-test`.
-- Its DNS record and CoreDNS rewrite. Once that record is applied, `frameflow.bereket.dev` resolves to the VPS: http redirects to https,
-  and https fails at the handshake, because it has no certificate yet. It no longer reaches Vercel.
+| Component, and its `app.kubernetes.io/component` | What it is | Ports | Storage |
+|---|---|---|---|
+| `frameflow-web`, `web` | Deployment, 1 replica, rolling with surge 1. Next.js's server: the pages, and a proxy of the API's public routes | 3000 | emptyDirs at `/tmp` and `/app/.next/cache` |
+| `frameflow-api`, `api` | Deployment, 1 replica, `Recreate`. The `backend` image's default command, Fastify: it signs uploads, queues each video with Hatchet, takes the worker's reports and serves playback | 4000 | PVC `frameflow-data`, 1Gi, holding the SQLite file `/data/app.db` |
+| `frameflow-worker`, `worker` | Deployment, 1 replica, `Recreate`. The `backend` image as a Hatchet worker, running FFmpeg | 8001, its health, for the kubelet alone | emptyDir `/scratch`, 8Gi |
+| `frameflow-cleanup` and `frameflow-reconcile`, `maintenance` | CronJobs, hourly and every 10 minutes, from the `backend` image | none | `frameflow-data` |
+| `frameflow-silo`, `s3` | StatefulSet, 1. The Silo image and digest Plane's render runs | 9000 S3, 9090 console | PVC 25Gi, for bucket `frameflow-media`, held to 12GiB |
+| `frameflow-silo-setup`, `s3-setup` | Job, an Argo CD Sync hook, so it runs again at every sync of `frameflow`, with `pgsty/mc` | none | none |
+| `hatchet`, `hatchet` | Deployment, 1 replica, `Recreate`. hatchet-lite v0.114.2: the engine, its REST API and its dashboard in one process | 7070 gRPC, 8080 REST, 8888 dashboard with the REST API under `/api`, 8733 health for the kubelet | `/config`, in memory, 16Mi |
+| `hatchet-postgres`, `postgres` | StatefulSet, 1. Postgres 16.15: Hatchet's database, and its queue | 5432 | PVC 5Gi |
+| `plane-backup`, `backup` | CronJob, nightly at 02:47 UTC, in Application `backup`: [backups](#frameflow-backups-and-restore) | none | PVC `backups`, 24Gi, and an emptyDir of 20Gi |
+| `iso-frameflow` | Infisical's operator, for this namespace alone, as plane-prod has `iso-prod`: Application `infisical-operator-frameflow` | none | none |
 
-Each part below is to be completed when it deploys, and says what it has to cover:
+Every pod runs as a user that is not root, with no capability, as the namespace's Pod Security level, `restricted`, requires, and on a
+read-only root filesystem. The images of Hatchet, Silo, `mc` and Postgres set no such user, so the manifests name one: 65532 for Hatchet,
+1000 for Silo and `mc`, as Frameflow's own images do, and 70, the alpine image's postgres, for Postgres.
 
-### Frameflow: components and how they are deployed
+Why it is built this way:
 
-> To be completed: web, API, worker, the maintenance CronJobs, Silo and its setup Job, Hatchet and its Postgres, and the operator. Their
-> waves, their promotion (`web` and `backend`, one at a time, because both share `promote/frameflow`), and which images are not this
-> app's own.
+- **Its own Silo, not Wayline's.** Wayline's Silo is part of Plane's render, moves with Plane's promotion, and Plane's pods hold its root
+  keys, so a bucket of Frameflow's there would be open to anything that broke into Plane, and one backup would hold two apps. Frameflow's
+  runs the same image with root keys of its own, which only Silo and the setup Job read. The app holds an app user's keys, for its one
+  bucket, and the backup a read-only user's. The setup Job makes the bucket, its quota, both users and their policies at every sync,
+  because Silo's users are in no backup. In Docker, with these images, running it four times over changed nothing that was already
+  right, and the app user could do nothing outside its bucket.
+- **hatchet-lite, with Postgres as its queue.** The engine, the REST API and the dashboard in one pod, and no RabbitMQ: what Hatchet
+  supports for low volume, and the least to run on one node. Every start runs Hatchet's migrations and its seed, so it rolls out by
+  `Recreate` and two never run together. Its Postgres is its own, on the 16.15 image Infisical's runs, so no database or credential is
+  shared with Wayline or Infisical. Its keysets come from Infisical, and hatchet-lite writes `/config` again from them at every start, so
+  nothing there needs keeping. In Docker it ran that way, as 65532 with no capability, and wrote nothing but `/config`.
+- **SQLite on a volume, with one API.** Frameflow keeps its catalogue of videos, comments and profiles in one SQLite file, and one process
+  writes it, so the API runs once and rolls out by `Recreate`. The CronJobs open the same file, on the same ReadWriteOnce volume, on the
+  one node. The worker never opens it: it reports each step to the API over HTTP.
+
+The images that are not Frameflow's own, hatchet-lite, Silo, `mc` and Postgres, and the backup's Python, rclone and restic, are pinned by
+digest in the manifests and in `policy/hosted-images.txt`, and move only by an ordinary pull request that changes both. `promote-app.yml`
+moves `web` and `backend` alone, which nothing outside `platform/frameflow/` names: the backup reads SQLite with the platform's Python.
+
+### Frameflow: what the internet reaches
+
+| A request to frameflow.bereket.dev | Reaches | Who can |
+|---|---|---|
+| Any, but the upload below | `frameflow-web:3000`, which proxies `/api/auth`, `/api/videos`, `/api/health`, `/api/social` and `/streams` to the API, `frameflow-api:4000`, and nothing else of it | Anyone. A `POST` to `/api/auth/session`, where the owner signs in, passes Middleware `frameflow-login-limit` first: 10 a minute from one client address, with a burst of 10, and Traefik's 429 past those |
+| A `PUT` under `/frameflow-media/videos/`, from release B | `frameflow-silo:9000`, for one presigned upload | Whoever holds a URL the API signed, for 15 minutes |
+
+- **Writes are the owner's alone.** With `AUTH_MODE=owner`, a visitor reads the feed, watch pages, profiles and the streams of public and
+  unlisted videos, and adds to nothing but a video's view count. Uploading, editing, deleting, commenting, liking, saving and every private
+  video need the owner, who signs in at `/studio` with the access key. The API answers with a signed session cookie, `HttpOnly`, `Secure`
+  and `SameSite=Lax`, for 12 hours: [the owner access key](#frameflow-the-owner-access-key). A new upload is private until the owner
+  changes that in the studio.
+- **The upload route is one method under one prefix.** `policy/hosted.rego` holds a route to Silo to exactly
+  ``Host(`frameflow.bereket.dev`) && Method(`PUT`) && PathPrefix(`/frameflow-media/videos/`)``, with no Middleware, and holds each Service
+  a route names to its own pods and port, so the rest of Silo's API, its listings and its admin calls get no route. The URL is signed for
+  that host, its object key, `Content-Type: video/mp4` and its expiry, and Traefik passes the Host header on as it came: in Docker, such a
+  URL answered 403 `SignatureDoesNotMatch` to any other Host, and to any other content type. The signature is in the query string, which
+  `values/traefik.yaml` keeps out of Traefik's access log.
+- **No buffering on it.** A buffering Middleware would hold whole videos in Traefik, whose memory limit is 256Mi. The size limit is the
+  API's: it checks the size an upload declares before it signs, and the size Silo then holds before it queues the video.
+- **Playback goes through the API**, at `/streams/<video>/...`, which serves a completed video's master playlist, its two rendition
+  playlists and their segments to whoever may see that video. The bucket itself is private, with no anonymous access.
+- **Nothing else answers.** Not the API's own port, nor its `/internal/*`, where the worker reports, which the web server does not proxy
+  and `WORKER_CALLBACK_SECRET` guards. Not Silo's console, Hatchet's gRPC, REST API or dashboard, nor either database. People reach the
+  two consoles by port-forward: [consoles](#frameflow-consoles).
+
+### Frameflow: where its pieces live
+
+| Piece | Where | Owner |
+|---|---|---|
+| Workloads, Services, routes, the Infisical CRs | `gitops/clusters/plane-prod/platform/frameflow/`, which its `kustomization.yaml` builds: Argo CD applies what that lists, and nothing else there | Argo CD, Application `frameflow` |
+| The Applications | `.../applications/frameflow.yaml`, and `.../applications/infisical-operator-frameflow.yaml` with `.../values/infisical-operator-frameflow.yaml` | Argo CD's root |
+| NetworkPolicies | `.../platform/network-policies/frameflow.yaml`, one policy per component, and the other halves in `traefik.yaml`, `monitoring.yaml` and `infisical.yaml` beside it | Argo CD, `network-policies` |
+| Certificate | `.../platform/certificates/frameflow-tls.yaml` | Argo CD, `certificates` |
+| Probe, rules, Silo's ServiceMonitor | `.../platform/monitoring-extras/frameflow/` | Argo CD, `monitoring-extras` |
+| Backup: PV `backups-frameflow`, PVC `frameflow/backups`, CronJob `frameflow/plane-backup` | `.../platform/backup/storage.yaml` and `frameflow.yaml` | Argo CD, `backup` |
+| The operator's right to review its own login | `plane-infisical-auth` in `frameflow`, a subject in `.../platform/infisical/token-reviewer.yaml` | Argo CD, `infisical` |
+| Namespace, quota `budget`, LimitRange `defaults`, AppProject, DNS record, CoreDNS rewrite | As the static sites' | Terraform, through `make remote-bootstrap` and `host-terraform.sh` |
+| Infisical project `frameflow-prod`, its identity and its values | `scripts/hosted/target.sh` names it, `infisical/terraform` makes it, `scripts/infisical-seed.sh` fills it | `make remote-bootstrap` |
+| The owner access key, its sha256 and Hatchet's three keysets | `.local/hosted/plane-prod/frameflow/`, made once by `make remote-frameflow-inputs` | This machine, and the recovery bundle |
+| Image pins | The manifests, and the same lines in `policy/hosted-images.txt` | `promote-app.yml` for `web` and `backend`, a pull request for the rest |
+
+### Frameflow: the first deploy
+
+It keeps the order of [The first deploy](#the-first-deploy): what Terraform and the bootstrap read merges first and is applied from this
+machine, and only then the manifests Argo CD acts on. Those then reach the cluster in two releases, because Hatchet must run before its
+client token can exist, and the token's InfisicalStaticSecret reads Degraded until it does. Argo CD's root holds every later change to an
+Application while a child has an operation open (`values/argocd.yaml`), so one release with everything would stop Frameflow's first sync
+at that CR, retrying it, and hold root with it. Release A brings up Hatchet, its Postgres, Silo and the web server. Release B adds the
+token's CR, then the API, the worker and the CronJobs, and the upload route.
+
+1. **The images.** The pins name the two digests Frameflow's `images.yml` recorded for its commit `83f693d81006`, in run 42383037982, which
+   pushed, pulled back, checked and scanned them. Check them before the merge as
+   [Frameflow: deploying a new version](#frameflow-deploying-a-new-version) says.
+2. **The owner's inputs, on this machine.** The owner access key and its sha256, and Hatchet's three keysets, which hatchet-admin v0.114.2
+   makes in Docker with no network, into 0600 files under `.local/hosted/plane-prod/frameflow/`. A file that exists is never made again:
+   the keysets must outlive every database Hatchet writes with them. Docker needs to be running. The image is public, so where Docker's
+   credential helper hangs, run this with `DOCKER_CONFIG` naming a folder whose `config.json` is `{"auths":{}}`.
+   ```bash
+   make remote-frameflow-inputs TARGET=plane-prod
+   ```
+   Put the access key in your password manager, as it says.
+3. **The first merge: what Terraform and the bootstrap read.** Beside the static sites' part of it: Frameflow's quota and LimitRange in
+   `infrastructure/hosted/plane-prod/capacity.yaml`, its Infisical environment in `scripts/hosted/target.sh` and the scripts that make and
+   fill it, its backup folder and restic Secret in `scripts/hosted/bootstrap.sh`, its files in `bundle.sh`'s list, and the two Frameflow
+   scripts and their make targets. `platform/frameflow/` comes with the next merge, so the Infisical bootstrap warns that nothing here says
+   yet what its `InfisicalAuth` references, and binds the names that folder uses: Secret `plane-infisical-identity` and ServiceAccount
+   `plane-infisical-auth`, in `frameflow`. Then pull `main` into this checkout.
+4. **DNS, the cluster and Infisical.** DNS as for the sites: the same apply adds Frameflow's record, so wait for
+   `dig +short frameflow.bereket.dev` too. Read a plan of the prod root first, as for the sites: Frameflow's quota and LimitRange change,
+   and nothing is destroyed. Infisical's Terraform can be read the same way, with Infisical forwarded, as
+   `make remote-ui TARGET=plane-prod UI=infisical` does, in another terminal. It should add Frameflow's five resources and change nothing of
+   `prod`'s:
+   ```bash
+   WAYLINE_TARGET=plane-prod CONFIRM=plane-prod PLAN_ONLY=yes INFISICAL_URL=http://127.0.0.1:<port> scripts/infisical-bootstrap.sh
+   ```
+   Then apply, and bundle what changed:
+   ```bash
+   make remote-bootstrap TARGET=plane-prod CONFIRM=plane-prod
+   make remote-bundle TARGET=plane-prod
+   ```
+   Bootstrap gives Frameflow its quota, makes `/srv/wayline/backups/frameflow` and Secret `restic-password` in the namespace, and runs
+   Infisical's bootstrap. That adds project `frameflow-prod`, its read-only identity and its Kubernetes Auth, bound to namespace
+   `frameflow` alone, and the seed writes each Frameflow value that is missing, generated or from the owner's files. The identity's id
+   goes into Secret `plane-infisical-identity` in the namespace, where `InfisicalAuth` reads it. Before the next merge:
+   ```bash
+   kc -n frameflow get resourcequota budget -o jsonpath='{.spec.hard.pods}{"\n"}'       # 16, where it was 0
+   kc -n frameflow get secret plane-infisical-identity restic-password
+   ```
+5. **The second merge: release A**, with the static sites' manifests. For Frameflow: `platform/frameflow/` and the lines of
+   `policy/hosted-images.txt` it names, the two Applications, its NetworkPolicies, its Certificate, its Probe and rules, its backup, and the
+   token reviewer's new subject. Root syncs `network-policies` and `backup` at wave -10, `certificates` at -7, `monitoring-extras` at -5,
+   `infisical` at -4, `infisical-operator-frameflow` at 1 and `frameflow` at 2. Inside `frameflow`, in waves: the ServiceAccounts and
+   `InfisicalConnection` (-3), `InfisicalAuth` (-2), the InfisicalStaticSecrets but the token's (-1), the ConfigMap and the Services (0),
+   Hatchet's Postgres and Silo (1), Hatchet and Silo's setup Job (2), the web server (3), and its route (4). The Probe syncs before the
+   route, so `FrameflowDown` can page once before the site answers, as the sites' Probes can. The API's and the worker's rules stay quiet
+   until their Deployments exist. Watch it:
+   ```bash
+   kc -n argocd get application infisical-operator-frameflow frameflow \
+     -o custom-columns='NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status,MESSAGE:.status.operationState.message'
+   kc -n frameflow get infisicalstaticsecrets,pods,pvc
+   kc -n frameflow rollout status deployment/hatchet --timeout=10m
+   kc -n frameflow logs job/frameflow-silo-setup
+   ```
+   The site then shows its pages, and every call they make to the API fails, until release B. So does the nightly backup, whose pod
+   mounts the API's volume: take release B the same day, or `PlaneBackupFailed` says so the next morning. `make remote-test` can run now
+   too, and its matrix rows that dial `frameflow-api` read INCONCLUSIVE until release B.
+6. **The token.** With `hatchet` Ready, from this machine:
+   ```bash
+   make remote-frameflow-token TARGET=plane-prod CONFIRM=plane-prod
+   make remote-backup TARGET=plane-prod CONFIRM=plane-prod ONLY=infisical     # so a dump holds it
+   ```
+   It runs `/hatchet-admin token create` in Hatchet's pod, for the default tenant and for 87600 hours, takes off the newline Hatchet ends it
+   with, and writes it to Infisical as `HATCHET_CLIENT_TOKEN`, through stdin and the port-forward, never printing it. It prints the
+   token's name, `frameflow-<time>`, which is how the dashboard lists it.
+7. **The third merge: release B.** In `platform/frameflow/kustomization.yaml`, move the five files its release B comment lists into its
+   `resources`, and add the backend image's line to `policy/hosted-images.txt`, the pin those files name: the list holds only what Argo
+   CD is given, and release A runs no backend. Only `frameflow` syncs, because no Application file changes: the token's
+   InfisicalStaticSecret at wave 3, then the API with its volume, the worker, the CronJobs and the upload route at 4.
+8. **Verify.** Hatchet's dashboard lists `frameflow-worker` under Workers ([consoles](#frameflow-consoles)). Sign in at
+   <https://frameflow.bereket.dev/studio>, upload an MP4 of at least 1280x720, and watch it play. Make one, if FFmpeg is here, with
+   `ffmpeg -f lavfi -i testsrc2=size=1280x720:rate=30 -t 10 -c:v libx264 -pix_fmt yuv420p test.mp4`, and one at `640x360` to see
+   `SOURCE_TOO_SMALL`. Then:
+   ```bash
+   curl -sS https://frameflow.bereket.dev/api/health/ready      # the API's own check of SQLite and Silo, through the web server
+   make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY="outside psa netpol"
+   make remote-netpol TARGET=plane-prod CONFIRM=plane-prod FROM_NS=frameflow
+   make remote-backup TARGET=plane-prod CONFIRM=plane-prod ONLY=frameflow
+   make remote-restore-test TARGET=plane-prod CONFIRM=plane-prod ONLY=frameflow
+   ```
+   Once that backup has sealed, a pull request adds `frameflow` to `BACKUP_NAMESPACES` in `scripts/hosted/lib-restic.sh`, and only then
+   does `make remote-pull-backups` take an off-server copy of it: [backups and restore](#frameflow-backups-and-restore).
+
+### Frameflow: the owner access key
+
+It is the one credential that writes to Frameflow. `make remote-frameflow-inputs` made it from 32 random bytes, in base64 with no newline,
+into `.local/hosted/plane-prod/frameflow/owner-access-key`, and wrote its sha256 beside it, in `OWNER_TOKEN_SHA256`. Infisical holds only
+that sha256, under the same name, and so does the API. The key belongs in your password manager, and the recovery bundle holds the file
+while it is here. Once the key is in the password manager the file may go: nothing reads it again.
+
+To sign in, open <https://frameflow.bereket.dev/studio> and paste the key, which this copies without printing it:
+
+```bash
+pbcopy < .local/hosted/plane-prod/frameflow/owner-access-key
+```
+
+The browser keeps the session cookie and never the key. A script sends the key as a bearer token instead, from the file and never in an
+argument:
+
+```bash
+printf 'Authorization: Bearer %s\n' "$(cat .local/hosted/plane-prod/frameflow/owner-access-key)" |
+  curl -sS -H @- https://frameflow.bereket.dev/api/auth/me
+```
+
+To replace it, as after a leak:
+
+1. Make a new key and its sha256. The keysets beside them stay as they are:
+   ```bash
+   rm -f .local/hosted/plane-prod/frameflow/owner-access-key .local/hosted/plane-prod/frameflow/OWNER_TOKEN_SHA256
+   make remote-frameflow-inputs TARGET=plane-prod
+   pbcopy < .local/hosted/plane-prod/frameflow/OWNER_TOKEN_SHA256
+   ```
+2. Paste it as the new value of `OWNER_TOKEN_SHA256` in Infisical, project `frameflow-prod`, environment `prod`, through
+   `make remote-ui TARGET=plane-prod UI=infisical`. The seed writes only what is missing, so this is how a value changes.
+3. Within a minute the operator writes Secret `frameflow-app` again, and auto-reload restarts the API and the worker, which read it when
+   they start. The API is down for those seconds, because it rolls out by `Recreate`, and the worker finishes the task it runs before it
+   stops. From then on the old key signs in no more.
+4. `make remote-bundle TARGET=plane-prod`, and put the new key in your password manager.
+
+A session signed in before stays valid until it ends, up to 12 hours, because the session is signed with `OWNER_SESSION_SECRET` and not the
+key. To end them all now, replace that the same way, with at least 32 characters: `openssl rand -hex 32 | tr -d '\n' | pbcopy`.
 
 ### Frameflow: secrets
 
-> To be completed: Infisical project `frameflow-prod` and its operator `iso-frameflow`, the static secrets and their waves, minting and
-> writing the Hatchet client token, and `ghcr-pull` from Infisical.
+All of them are in Infisical project `frameflow-prod`, environment `prod`, at `/`, which only Frameflow's identity reads, and only its
+operator, `iso-frameflow`, logs in as it, from its own namespace. Each Kubernetes Secret below is written by an InfisicalStaticSecret of
+the same name, from a template whose `secretFrom` lines say which Infisical key each of its keys comes from, and the operator reads them
+again every 60 seconds. None is in Git, and `scripts/hosted/scrub-values.sh` reads the namespace, so their values stay out of published
+evidence. Two Secrets there come from this machine instead: `plane-infisical-identity`, the identity's id, from the Infisical bootstrap,
+and `restic-password`, from `make remote-bootstrap`. cert-manager writes `frameflow-tls`.
+
+| Secret | Holds | Read by | Made by |
+|---|---|---|---|
+| `frameflow-app` | `WORKER_CALLBACK_SECRET`, `OWNER_TOKEN_SHA256`, `OWNER_SESSION_SECRET`, and the app user's `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`, under the same names in Infisical | The API, the worker and the CronJobs. The web server reads no Secret | The seed, in hex, but `OWNER_TOKEN_SHA256`, from the owner's file |
+| `frameflow-silo-root` | `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`, from `SILO_ROOT_USER` and `SILO_ROOT_PASSWORD` | Silo alone | The seed |
+| `frameflow-silo-setup` | Root's two, and `APP_ACCESS_KEY`, `APP_SECRET_KEY`, `BACKUP_ACCESS_KEY` and `BACKUP_SECRET_KEY`, from the app user's and the backup user's keys | The setup Job alone | The seed |
+| `frameflow-silo-backup` | The read-only backup user's `S3_BACKUP_ACCESS_KEY_ID` and `S3_BACKUP_SECRET_ACCESS_KEY` | The backup | The seed |
+| `hatchet-db` | `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB`, from `HATCHET_PG_USER`, `HATCHET_PG_PASSWORD` and `HATCHET_PG_DB` | Hatchet's Postgres, the init container in Hatchet's pod that waits for it, and the backup | The seed: user and database `hatchet`, the password in hex |
+| `hatchet-server` | `DATABASE_URL`, built from the three `HATCHET_PG_*` keys, which is why the password is hex: nothing URL-encodes it. `SERVER_AUTH_COOKIE_SECRETS`, `SERVER_ENCRYPTION_MASTER_KEYSET`, `SERVER_ENCRYPTION_JWT_PRIVATE_KEYSET`, `SERVER_ENCRYPTION_JWT_PUBLIC_KEYSET` and `ADMIN_PASSWORD`, from `HATCHET_COOKIE_SECRETS`, `HATCHET_MASTER_KEYSET`, `HATCHET_JWT_PRIVATE_KEYSET`, `HATCHET_JWT_PUBLIC_KEYSET` and `HATCHET_ADMIN_PASSWORD` | Hatchet, and the backup, for a truncated hash of the master keyset | The keysets from the owner's files, the rest by the seed |
+| `hatchet-client-token` | `HATCHET_CLIENT_TOKEN`, in its own CR at wave 3, which release B adds | The API, the worker and the reconcile CronJob | `make remote-frameflow-token`, once Hatchet runs |
+| `ghcr-pull` | The pull Secret, from `GHCR_PULL_TOKEN` | The accounts of the pods that run Frameflow's own images, `web`, `api`, `worker` and `maintenance`. Every other image here is public | The seed, from `.local/hosted/plane-prod/ghcr-pull-token`, as for Plane |
+
+A change in Infisical reaches its Secret within a minute. Auto-reload then restarts the Deployments that read it, a Job or CronJob reads
+it at its next run, and Postgres and Silo, which carry no auto-reload, read theirs only as below. What changing each takes:
+
+- **The app user's and the backup user's keys.** Silo names a user by its access key, so change only the secret key: a new access key
+  would make a second user at the next sync and leave the first one able to sign in. Then sync `frameflow` in Argo CD's UI
+  (`make remote-ui TARGET=plane-prod UI=argocd`), so the setup Job gives the user its new secret: `mc admin user add` on a user that exists
+  keeps its policy and replaces its secret, and the old one is refused from then on. The API and the worker restart with the new key by
+  themselves, and Silo refuses them until the Job has run.
+- **Silo's root keys.** Silo reads them when it starts, so a change takes `kc -n frameflow delete pod frameflow-silo-0`, and then a sync for
+  the Job. Not tried.
+- **Hatchet's Postgres password.** `POSTGRES_PASSWORD` acts only on an empty data directory, so a new value in Infisical alone locks Hatchet
+  out of the database it has. Change it in Postgres first, at psql's hidden prompt, then the same in Infisical, which restarts Hatchet with
+  the new `DATABASE_URL`. Hex, as the seed makes it: `openssl rand -hex 24 | tr -d '\n' | pbcopy`. Not tried.
+  ```bash
+  kc -n frameflow exec -it hatchet-postgres-0 -- psql -U hatchet -d hatchet -c '\password hatchet'
+  ```
+- **Hatchet's three keysets: never.** The JWT keysets are encrypted under the master keyset, every token Hatchet has minted is signed with
+  them, and what Hatchet encrypts in its database is under the master keyset. They change only with the database: a restore puts back a
+  dump written under the same three, which are in Infisical, in this machine's files and in the bundle. If all three are lost, Hatchet
+  needs a new, empty database, a new set and a new token. Its runs and their history go with it, and Frameflow's videos do not: they are in
+  SQLite and Silo.
+- **Hatchet's cookie secrets**, `HATCHET_COOKIE_SECRETS`, sign the dashboard's sessions, so a new value only signs everyone out of it. It is
+  two keys with one space between, each of 32 hex characters, which
+  `printf '%s %s' "$(openssl rand -hex 16)" "$(openssl rand -hex 16)" | pbcopy` copies. A key of 64 characters stops Hatchet at start, with
+  `secrets must be 16/24/32 bytes`, as Docker showed.
+- **Hatchet's admin password.** Hatchet's seed makes the admin only when there is none, so a new value changes nothing for the admin who
+  exists. Change the password in the dashboard, which lets a user change their own, and then the same in `HATCHET_ADMIN_PASSWORD`, so the
+  two agree.
+- **The Hatchet client token** lasts ten years. It names `SERVER_URL`, and Hatchet checks every token against it, its keysets and its own
+  database, which is why `SERVER_URL` never changes. To replace it, as after a leak, run `make remote-frameflow-token` again, which writes
+  the new one over it in Infisical. Once the API and the worker have restarted with it, revoke the old one in the dashboard, under Settings,
+  API Tokens. A database restored from before a token was minted has no row for it, and Hatchet refuses it: mint another the same way.
+- **`GHCR_PULL_TOKEN`** changes with the static sites' and Plane's: [Image pulls](#image-pulls-secret-ghcr-pull).
+- **`WORKER_CALLBACK_SECRET`** is read by the API and the worker alike, and auto-reload restarts both. Change it while no video is
+  processing: a report the worker sends while the two disagree is refused, and fails its task.
+
+### Frameflow: deploying a new version
+
+Its two images come from one run of Frameflow's `images.yml`, on its `main`. It builds `web` and `backend` for linux/amd64 alone, pushes
+them tagged with the commit's first 12 characters, pulls each back by digest, runs its FFmpeg check and its smoke test on exactly those
+digests, scans them with trivy, and only then records them, in the job summary and in `digests.txt` in the run's `image-digests`
+artifact. Each is a plain image manifest and not an index, so the digest it records is the one to promote. Check it before the merge, with
+your own logins, as [Checking a digest](#checking-a-digest) does for the sites:
+
+```bash
+gh run list -R BereketAbera/frameflow -w images.yml -b main -L 5
+dir="$(mktemp -d)" && gh run download <run id> -R BereketAbera/frameflow -n image-digests -D "$dir" && cat "$dir/digests.txt"
+gh run view <run id> -R BereketAbera/frameflow --json headSha -q '.headSha[0:12]'          # the tag
+docker buildx imagetools inspect ghcr.io/bereketabera/frameflow/backend@sha256:<its digest>  # one linux/amd64 manifest, no list
+```
+
+Then promote each, one at a time, because both share branch `promote/frameflow`, and a second dispatch replaces the first one's change:
+
+```bash
+gh workflow run promote-app.yml -R BereketAbera/plane-platform -f app=frameflow -f component=backend \
+  -f digest=sha256:<backend's digest> -f tag=<the commit's first 12 characters>
+```
+
+Merge it, and then the same with `-f component=web`. The backend goes first, because the pages call the API, and newer pages may call what
+an older API does not have. `make promote-app APP=frameflow COMPONENT=backend DIGEST=... TAG=...` does the same here. Before release B
+the list holds no `backend` line, so a promotion of it is refused until release B adds one.
+
+What each does once Argo CD has synced it:
+
+- **`backend`.** The API stops and then starts, by `Recreate`, so for some seconds whatever the site asks it fails, and it applies any new
+  migration of its SQLite file as it starts. The worker gets SIGTERM, takes no new task, and finishes the one it runs, for up to 600
+  seconds, and only then does the new one start. Videos wait in Hatchet's queue meanwhile. The CronJobs run the new image from their
+  next run.
+- **`web`.** It rolls with surge 1, so the old pod serves until the new one is ready.
+
+Hatchet, Silo, `mc` and Postgres move by an ordinary pull request that changes the manifest and the line in `policy/hosted-images.txt`
+together. Back up before a new Hatchet, because it migrates its database when it starts, and going back takes the dump from before:
+`make remote-backup TARGET=plane-prod CONFIRM=plane-prod ONLY=frameflow`.
+
+### Frameflow: rolling back
+
+Revert the promotion's commit, as [Rolling back](#rolling-back) says for the sites. What that leaves:
+
+- **The SQLite schema.** The API applies its migrations when it starts and has none that undo one. If the older image runs on the newer
+  file, stop there. If it does not, restore from the nightly before the promotion, as
+  [Frameflow: backups and restore](#frameflow-backups-and-restore) says. What was uploaded since is then still in Silo, and in no record.
+- **Hatchet's schema**, after a new Hatchet: an older hatchet-lite on a newer database is not supported. Restore Hatchet's database from
+  the dump before the upgrade, with the same keysets.
+- **Videos.** Those the newer worker processed stay as they are: their renditions in Silo, their records in SQLite.
+
+### Frameflow: consoles
+
+Neither has a public route. Each is a port-forward through the tunnel, from this machine, and runs until Ctrl-C:
+
+```bash
+make remote-ui TARGET=plane-prod UI=hatchet          # Hatchet's dashboard, at http://localhost:18888 and no other port
+make remote-ui TARGET=plane-prod UI=frameflow-silo   # Silo's console, at http://localhost:18110 or the next port free
+```
+
+**Hatchet's dashboard.** Sign in as `admin@frameflow.local`, with the password this copies without printing it:
+
+```bash
+kc -n frameflow get secret hatchet-server -o jsonpath='{.data.ADMIN_PASSWORD}' | base64 -d | pbcopy
+```
+
+Open it as `http://localhost:18888`, not 127.0.0.1: its session cookie is for `localhost` alone, and in Docker a sign-in at 127.0.0.1 did
+not hold. The port is the one `SERVER_URL` names, so `ui.sh` takes no other, and says so when something else holds it. Sign-up is off, and
+so is making another tenant. It shows each run of the last 7 days with its tasks, attempts and errors, and the workers that are
+registered, and it can cancel a run.
+
+**Silo's console.** Its root user and password are in Secret `frameflow-silo-root`, keys `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD`, read
+the same way. Root can change anything. Whatever the setup Job sets, it sets again at the next sync: the bucket, its anonymous access of
+none, its quota, the two users and their policies. Whatever else is changed there stays. To only look, sign in with the backup user's keys
+from `frameflow-silo-backup` instead: that user can list and read the bucket and nothing more.
+
+### Frameflow: processing limits and retention
+
+| Limit | Value | Why |
+|---|---|---|
+| Videos at once | 1, `FRAMEFLOW_MAX_CONCURRENT_VIDEOS=1`. The rest wait in Hatchet's queue, for up to 12 hours, `FRAMEFLOW_SCHEDULE_TIMEOUT` | The node is Wayline's too |
+| Renditions at once | 1, `FRAMEFLOW_WORKER_SLOTS=1` and `MAX_CONCURRENT_ENCODES=1`: 360p and 720p one after the other, the second waiting in Hatchet's queue and not inside its own timeout | |
+| The worker's CPU and memory | Requests 500m and 1Gi, limits 3 CPU and 3Gi, and FFmpeg's `FFMPEG_THREADS=3` | The limit caps an encode, and Wayline's larger requests keep its share when the CPU is contended |
+| Scratch | emptyDir `/scratch` of 8Gi, in an ephemeral-storage limit of 10Gi. Past either, the kubelet evicts the pod, and the Deployment starts another with an empty scratch | One disk holds everything on the node |
+| Upload size | 100 MiB, `MAX_UPLOAD_BYTES=104857600` | One PUT must finish within Traefik's `readTimeout` of 180s, which every host shares, and 100 MiB takes about 4.7 Mbit/s of upload to do so |
+| Upload URL | 15 minutes, `S3_PRESIGNED_UPLOAD_TTL_SECONDS=900` | |
+| Source | MP4, at least 1280x720 | The probe fails a smaller one, with `SOURCE_TOO_SMALL` |
+| Task timeouts | validate 2m, probe 15m, each encode 30m, publish 15m, complete 2m. The probe, the encodes and publish retry twice | |
+| Stopping | `terminationGracePeriodSeconds: 600` | A stopping worker finishes its task first. Ten minutes covers an encode of a 100 MiB source on 3 threads, and one cut off is retried |
+
+The studio's own text says up to 500 MB, and checks that much in the browser. The API's 100 MiB is the limit, and above it the upload
+stops with `The declared upload exceeds the configured size limit.` Raising it takes a faster uplink, or a longer `readTimeout` for every
+host.
+
+What removes what:
+
+- `frameflow-cleanup`, at 23 past each hour, expires each upload that was never completed, its object too, and deletes what is left in
+  staging of each video that has finished or failed.
+- Each task deletes its own scratch when it ends, on success or failure, and the worker clears what a killed one left when it starts.
+- Hatchet drops runs after 7 days, `SERVER_LIMITS_DEFAULT_TENANT_RETENTION_PERIOD=168h`. Frameflow's own record of each video stays.
+- Silo drops an incomplete multipart upload after 24 hours, at a sweep every 6, as this release does by default and as Docker showed.
+- The bucket's quota is 12GiB, and past it Silo refuses every write, the worker's renditions among them. `FrameflowBucketNearQuota` warns
+  at 80% and `FrameflowBucketFull` pages at 95%.
+- Nothing deletes the owner's videos: sources, renditions and failed videos stay until deleted in the studio. When the bucket fills,
+  delete some there, or raise the quota, in the setup Job and in the two rules together, and within Silo's 25Gi volume and the backup's
+  20Gi of scratch, which holds the whole bucket each night.
 
 ### Frameflow: backups and restore
 
-> To be completed: the nightly `plane-backup` CronJob in `frameflow` (SQLite, Hatchet's Postgres and the media bucket, sealed by restic
-> with `--host frameflow`), the pull off the VPS, and the restore steps, with which copy is local and which is off-server.
+Two copies, which survive different things:
 
-### Frameflow: rollback, consoles and troubleshooting
+| | The local copy, on the VPS | The off-server copy, on this machine |
+|---|---|---|
+| Where | restic repository `/srv/wayline/backups/frameflow/restic`, on the node's one disk | `.local/hosted/plane-prod/offsite-restic/frameflow` |
+| Made by | CronJob `frameflow/plane-backup`, nightly at 02:47 UTC, or `make remote-backup` now | `make remote-pull-backups TARGET=plane-prod`, by hand: nothing schedules it, so nothing leaves the VPS while this machine is off |
+| Kept | 7 daily, 4 weekly and 3 monthly snapshots | 90 days, by time |
+| Survives | a bad deploy, a deleted video, a broken database | losing the VPS, or its disk |
+| Does not survive | losing the node: it is on the disk it backs up | losing this machine with the VPS, unless the bundle and the copy are somewhere else too |
 
-> To be completed: what a rollback leaves in the database, the Hatchet dashboard and Silo console through `make remote-ui`, uploads
-> against Traefik's 180-second `readTimeout`, the worker's limits, and failed or cancelled jobs.
+Each snapshot holds the SQLite file, copied with `VACUUM INTO` and checked with `integrity_check`, with its row counts; Hatchet's database,
+from `pg_dump -Fc`, restored into a scratch database to count each table; every object in `frameflow-media` but the staging of videos in
+flight, read as the backup user; a manifest, with the first 16 hex characters of the master keyset's sha256, so a restore can tell the
+dump's keysets from others; and `SHA256SUMS`. restic seals it as `--host frameflow --tag wayline`. Until the API has made its database
+there is nothing to keep, and the night says so and succeeds. What is not in it, and where it comes from instead:
+
+- Silo's users and policies, which the setup Job makes again at every sync.
+- Every secret, Hatchet's keysets among them, which are in Infisical, and Infisical's own nightly backup holds project `frameflow-prod`.
+  The keysets and the owner access key are also in this machine's files and the recovery bundle.
+- Hatchet's `/config`, which it writes at every start, and the worker's scratch, which no one needs.
+
+```bash
+make remote-backup TARGET=plane-prod CONFIRM=plane-prod ONLY=frameflow        # one now, from the CronJob, with its logs kept as evidence
+make remote-restore-test TARGET=plane-prod CONFIRM=plane-prod ONLY=frameflow  # restore the newest into an isolated namespace and prove it
+make remote-pull-backups TARGET=plane-prod                                     # the off-server copy, over the read-only SFTP user
+make remote-backup-dest TARGET=plane-prod VERB=verify                          # restore the newest copy here, and check every hash
+```
+
+The restore test proves the files against their hashes, restores Hatchet's dump into an empty Postgres, reads the SQLite copy's recorded
+check, finds every object its rows name, and compares the keyset's fingerprint with the live one. Frameflow joins the pull's list,
+`BACKUP_NAMESPACES` in `scripts/hosted/lib-restic.sh`, only once its first backup has sealed, through a pull request. Until then the pull and
+`VERB=verify` skip it, and there is no off-server copy of it.
+
+**Restoring.** This puts Hatchet's database, Frameflow's database and the bucket back to one snapshot, so a video and its run agree.
+Everything written since that snapshot is lost, so a person decides to do it. Objects uploaded since stay in the bucket, where nothing
+names them and they do no harm. Hatchet's keysets stay as they are: the dump was written under them. It has not run on any cluster: the
+Job below ran in Docker on this machine, with stand-ins for the pinned images, so read each step before running it.
+
+1. If the cluster still runs, keep what is there now: `make remote-backup TARGET=plane-prod CONFIRM=plane-prod ONLY=frameflow`. If the
+   live database is the problem, this fails at `integrity_check`. Go on regardless.
+2. Pause auto-sync, root first or it puts the others back, then `frameflow` and `backup`, and wait until none has a sync running. A
+   failing one never ends by itself: [End an operation](runbooks/argo-sync-stuck.md#end-an-operation) says how.
+   ```bash
+   for a in root frameflow backup; do kc -n argocd patch application "$a" --type merge -p '{"spec":{"syncPolicy":{"automated":{"enabled":false}}}}'; done
+   ```
+3. Stop what writes, and the nightly with it:
+   ```bash
+   kc -n frameflow scale deployment/frameflow-worker deployment/frameflow-api deployment/hatchet --replicas=0
+   for c in frameflow-cleanup frameflow-reconcile plane-backup; do kc -n frameflow patch cronjob "$c" --type merge -p '{"spec":{"suspend":true}}'; done
+   kc -n frameflow get pods
+   ```
+   Wait until no `api`, `worker`, `hatchet`, `maintenance` or `backup` pod runs. The worker may take up to its 600 seconds' grace to
+   finish an encode. The web pods can stay: their calls to the API fail until step 6.
+4. Restore, through Job `restore-frameflow` in `frameflow`. It carries `app.kubernetes.io/component: backup`, which lets it reach Hatchet's
+   Postgres and Silo and nothing else, and it runs the images the nightly pins. Its steps, in order:
+   - `unseal` restores the snapshot and checks every file against `SHA256SUMS`.
+   - `keyset` stops unless the backup's fingerprint matches the master keyset Hatchet runs with.
+   - `hatchet-db` drops and makes again Hatchet's database, with `dropdb` and not `pg_restore --clean`, so no table newer than the dump
+     survives. It restores without `--single-transaction`, because Hatchet's partitions need more locks than one transaction holds, and
+     checks each table's count against the backup's.
+   - `sqlite` moves the live `app.db` aside with its `-wal` and `-shm`, so a stale write-ahead log can never meet the restored file, checks
+     the copy, and puts it in place as the app's user, 1000.
+   - `objects` copies the bucket back as the app user, which may write objects in its bucket and make no bucket, so rclone does not try.
+     It deletes nothing.
+
+   `SNAPSHOT` is `latest`, or a short ID: every seal prints its snapshot, in `kc -n frameflow logs job/<job> -c seal`, or in
+   `.local/evidence-raw/backup-plane-prod-<stamp>.txt` for a run of `make remote-backup`. For this machine's copy, `restic -r
+   .local/hosted/plane-prod/offsite-restic/frameflow --password-file .local/hosted/plane-prod/restic-password snapshots --host frameflow
+   --tag wayline` lists them. To restore only part, leave out the other containers, but keep `unseal`, and keep `keyset` with `hatchet-db`.
+   ```bash
+   SNAPSHOT=latest
+   STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+   BACKUP=gitops/clusters/plane-prod/platform/backup/frameflow.yaml
+   image() { NAME="$1" .tools/bin/yq -r '.spec.jobTemplate.spec.template.spec | (.initContainers[], .containers[]) | select(.name == strenv(NAME)) | .image' "$BACKUP"; }
+   RESTIC_IMAGE="$(image seal)" POSTGRES_IMAGE="$(image hatchet-postgres)" PYTHON_IMAGE="$(image sqlite)" RCLONE_IMAGE="$(image objects)"
+   kc apply -f - <<YAML
+   apiVersion: batch/v1
+   kind: Job
+   metadata: {name: restore-frameflow, namespace: frameflow}
+   spec:
+     backoffLimit: 0
+     activeDeadlineSeconds: 14400
+     template:
+       metadata:
+         labels: {app.kubernetes.io/name: restore-frameflow, app.kubernetes.io/component: backup}
+       spec:
+         restartPolicy: Never
+         automountServiceAccountToken: false
+         securityContext: {runAsNonRoot: true, runAsUser: 70, runAsGroup: 70, fsGroup: 70, seccompProfile: {type: RuntimeDefault}}
+         volumes:
+           - {name: backups, persistentVolumeClaim: {claimName: backups, readOnly: true}}
+           - {name: restic-password, secret: {secretName: restic-password, defaultMode: 0440}}
+           - {name: data, persistentVolumeClaim: {claimName: frameflow-data}}
+           - {name: work, emptyDir: {sizeLimit: 20Gi}}
+           - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+         initContainers:
+           - name: unseal
+             image: $RESTIC_IMAGE
+             securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+             resources: {requests: {cpu: 50m, memory: 128Mi}, limits: {cpu: "1", memory: 1Gi}}
+             env:
+               - {name: RESTIC_REPOSITORY, value: /backups/restic}
+               - {name: RESTIC_PASSWORD_FILE, value: /run/restic/password}
+               - {name: RESTIC_CACHE_DIR, value: /work/cache}
+               - {name: TMPDIR, value: /work}
+               - {name: HOME, value: /work}
+             volumeMounts:
+               - {name: backups, mountPath: /backups, readOnly: true}
+               - {name: restic-password, mountPath: /run/restic, readOnly: true}
+               - {name: work, mountPath: /work}
+             command: [/bin/sh, -c]
+             args:
+               - |
+                 set -eu
+                 restic --no-lock restore $SNAPSHOT --host frameflow --tag wayline --target /work/restored --verify
+                 cd /work/restored/work/backup
+                 sha256sum -c SHA256SUMS > /dev/null
+                 echo "unseal: every file matches its hash, in backup \$(grep '"id"' manifest.json)"
+           - name: keyset
+             image: $POSTGRES_IMAGE
+             securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+             resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 100m, memory: 64Mi}}
+             env:
+               - {name: KEYSET, valueFrom: {secretKeyRef: {name: hatchet-server, key: SERVER_ENCRYPTION_MASTER_KEYSET}}}
+             volumeMounts:
+               - {name: work, mountPath: /work}
+             command: [/bin/sh, -c]
+             args:
+               - |
+                 set -eu
+                 live="\$(printf %s "\$KEYSET" | sha256sum | cut -c1-16)"
+                 unset KEYSET
+                 if ! grep -q "\"hatchet_master_keyset_fp\": \"\$live\"" /work/restored/work/backup/manifest.json; then
+                   echo "keyset: this backup was not taken under the master keyset Hatchet runs with, so Hatchet could not read its database" >&2
+                   exit 1
+                 fi
+                 echo "keyset: the backup and the running keyset are a pair"
+           - name: hatchet-db
+             image: $POSTGRES_IMAGE
+             securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+             resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: "1", memory: 512Mi}}
+             env:
+               - {name: PGHOST, value: hatchet-postgres}
+               - {name: PGUSER, valueFrom: {secretKeyRef: {name: hatchet-db, key: POSTGRES_USER}}}
+               - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: hatchet-db, key: POSTGRES_PASSWORD}}}
+               - {name: POSTGRES_DB, valueFrom: {secretKeyRef: {name: hatchet-db, key: POSTGRES_DB}}}
+             volumeMounts:
+               - {name: work, mountPath: /work}
+               - {name: tmp, mountPath: /tmp}
+             command: [/bin/sh, -c]
+             args:
+               - |
+                 set -eu
+                 B=/work/restored/work/backup/postgres
+                 TRIES=0
+                 until pg_isready -q -t 10 || [ "\$TRIES" -ge 30 ]; do TRIES=\$((TRIES + 1)); sleep 2; done
+                 dropdb --maintenance-db=postgres --force --if-exists "\$POSTGRES_DB"
+                 createdb --maintenance-db=postgres "\$POSTGRES_DB"
+                 pg_restore --no-owner --no-privileges --exit-on-error -d "\$POSTGRES_DB" "\$B/hatchet.dump"
+                 vacuumdb --analyze-only "\$POSTGRES_DB"
+                 psql -XAt -F "\$(printf '\t')" -v ON_ERROR_STOP=1 -d "\$POSTGRES_DB" -f "\$B/rowcounts.sql" > /tmp/rowcounts.tsv
+                 cmp -s /tmp/rowcounts.tsv "\$B/rowcounts.tsv" || { echo "hatchet-db: the restored row counts differ from the backup's" >&2; exit 1; }
+                 echo "hatchet-db: restored, and its \$(wc -l < /tmp/rowcounts.tsv) tables count as the backup recorded"
+           - name: sqlite
+             image: $PYTHON_IMAGE
+             securityContext: {runAsUser: 1000, runAsGroup: 1000, allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+             resources: {requests: {cpu: 25m, memory: 32Mi}, limits: {cpu: 500m, memory: 256Mi}}
+             env:
+               - {name: HOME, value: /tmp}
+             volumeMounts:
+               - {name: data, mountPath: /data}
+               - {name: work, mountPath: /work}
+               - {name: tmp, mountPath: /tmp}
+             command: [/bin/sh, -c]
+             args:
+               - |
+                 set -eu
+                 old=/data/app.db.before-restore-$STAMP
+                 for suffix in "" -wal -shm; do
+                   if [ -e "/data/app.db\$suffix" ]; then mv "/data/app.db\$suffix" "\$old\$suffix"; fi
+                 done
+                 cp /work/restored/work/backup/sqlite/app.db /data/app.db.restoring
+                 python3 -I -c 'import sqlite3, sys; r = sqlite3.connect(sys.argv[1]).execute("PRAGMA integrity_check").fetchall(); sys.exit(None if r == [("ok",)] else f"sqlite: {r[:5]}")' /data/app.db.restoring
+                 mv /data/app.db.restoring /data/app.db
+                 echo "sqlite: restored. The file it replaced, if any, is \$old"
+         containers:
+           - name: objects
+             image: $RCLONE_IMAGE
+             securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
+             resources: {requests: {cpu: 25m, memory: 32Mi}, limits: {cpu: 500m, memory: 192Mi}}
+             env:
+               - {name: HOME, value: /tmp}
+               - {name: RCLONE_CONFIG, value: /tmp/rclone.conf}
+               - {name: RCLONE_CONFIG_DST_TYPE, value: s3}
+               - {name: RCLONE_CONFIG_DST_PROVIDER, value: Minio}
+               - {name: RCLONE_CONFIG_DST_ENDPOINT, value: "http://frameflow-silo:9000"}
+               - {name: RCLONE_CONFIG_DST_NO_CHECK_BUCKET, value: "true"}
+               - {name: RCLONE_CONFIG_DST_ACCESS_KEY_ID, valueFrom: {secretKeyRef: {name: frameflow-app, key: S3_ACCESS_KEY_ID}}}
+               - {name: RCLONE_CONFIG_DST_SECRET_ACCESS_KEY, valueFrom: {secretKeyRef: {name: frameflow-app, key: S3_SECRET_ACCESS_KEY}}}
+             volumeMounts:
+               - {name: work, mountPath: /work}
+               - {name: tmp, mountPath: /tmp}
+             command: [/bin/sh, -c]
+             args:
+               - |
+                 set -eu
+                 rclone copy /work/restored/work/backup/objects dst:frameflow-media --checksum --transfers 4 --stats 0
+                 rclone check /work/restored/work/backup/objects dst:frameflow-media --one-way --download
+                 echo "objects: every object in the backup is in frameflow-media"
+   YAML
+   kc -n frameflow wait --for=condition=Complete job/restore-frameflow --timeout=4h
+   kc -n frameflow logs job/restore-frameflow --all-containers --prefix
+   ```
+5. Delete the Job, and resume the CronJobs. Argo CD does not put `suspend` back, because the manifests never set it:
+   ```bash
+   kc -n frameflow delete job restore-frameflow
+   for c in frameflow-cleanup frameflow-reconcile plane-backup; do kc -n frameflow patch cronjob "$c" --type merge -p '{"spec":{"suspend":false}}'; done
+   ```
+6. Put auto-sync back, `frameflow` and `backup` first and root last:
+   `kc -n argocd patch application <name> --type json -p '[{"op":"remove","path":"/spec/syncPolicy/automated/enabled"}]'`. Argo CD puts
+   the replicas back in its waves: Hatchet first, whose start runs any newer migrations, then the API and the worker. Then run
+   `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=argo`, check that a video plays and that
+   `curl -sS https://frameflow.bereket.dev/api/health/ready` answers, and look at the runs in `make remote-ui TARGET=plane-prod UI=hatchet`.
+7. **The Hatchet token.** If the API or the worker now fails to authenticate to Hatchet, the token was minted after this snapshot, and the
+   restored database does not know it: `make remote-frameflow-token TARGET=plane-prod CONFIRM=plane-prod`, and the operator restarts both.
+8. **Runs in flight** when the snapshot was taken come back as running. Hatchet's timeouts fail them, and reconcile settles their videos
+   within about 30 minutes. Upload again any that matter.
+9. **A fresh baseline:** `make remote-backup TARGET=plane-prod CONFIRM=plane-prod ONLY=frameflow`. Once the restore is proved good, the
+   files `/data/app.db.before-restore-<stamp>*` on the API's volume can go.
+
+**After a lost VPS.** Rebuilding the node and the platform is the recovery bundle's part. The bootstrap makes
+`/srv/wayline/backups/frameflow` and Secret `restic-password` from the bundle's password, and Infisical's restore brings back project
+`frameflow-prod` with Hatchet's keysets in it, or the seed writes them again from `.local/hosted/plane-prod/frameflow/` or the bundle. Merge
+or sync both releases and mint the token, as in the first deploy. Then, before the first night runs, put this machine's copy back as the
+node's repository, moving aside any that a night has made there already, and restore in place from step 2. Not scripted, and not tried:
+
+```bash
+TARGET=plane-prod bash -c 'HOSTED_NO_CLUSTER=yes; source scripts/hosted/lib.sh
+  COPYFILE_DISABLE=1 tar -C "$LOCAL_DIR/offsite-restic/frameflow" -cf - . |
+    node_ssh "sudo -n install -d -m 750 -o 70 -g 70 $HOSTED_BACKUP_ROOT/frameflow/restic && sudo -n tar -xf - -C $HOSTED_BACKUP_ROOT/frameflow/restic && sudo -n chown -R 70:70 $HOSTED_BACKUP_ROOT/frameflow/restic && sudo -n chmod -R g+rX $HOSTED_BACKUP_ROOT/frameflow/restic"'
+```
+
+The copy is a full restic repository, under the same password and with the same snapshots, `--host frameflow --tag wayline`, because the
+pull made it with `--copy-chunker-params`.
+
+**If the keysets are lost too,** Hatchet's dump cannot be used, and the `keyset` step stops. Remove the old keyset files, make new ones
+with `make remote-frameflow-inputs TARGET=plane-prod`, and replace their values in Infisical by hand, because the seed never overwrites
+one. Let Hatchet start on an empty database, restore only with `unseal`, `sqlite` and `objects`, and mint a new token. Every run's history
+is gone. Videos keep their records and objects, and reconcile settles those that were processing.
+
+### Frameflow: checking status
+
+```bash
+make remote-status TARGET=plane-prod      # the Applications, pods not ready, and the last nightly of each backup, Frameflow's too
+kc -n argocd get application infisical-operator-frameflow frameflow \
+  -o custom-columns='NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status,REVISION:.status.sync.revision'
+kc -n frameflow get deployment,statefulset,cronjob,pods,pvc
+kc -n frameflow get infisicalstaticsecrets,ingressroute,certificate
+curl -sS https://frameflow.bereket.dev/api/health/ready
+```
+
+Logs are in Grafana, Explore, Loki: `{namespace="frameflow"}`, and one component's with `{namespace="frameflow", pod=~"frameflow-worker-.*"}`.
+Traefik's access log has each request to the host, the uploads among them:
+`{namespace="traefik"} | json | RequestHost="frameflow.bereket.dev" | RequestMethod="PUT"`.
+
+### Frameflow: troubleshooting
+
+#### The worker does not register
+
+Videos stay queued, the pod is not Ready, and `FrameflowWorkerUnavailable` fires after 15 minutes. Its health server starts only after it
+has registered its workflows with Hatchet, so both its probes are refused until then.
+
+```bash
+kc -n frameflow get pods -l app.kubernetes.io/component=worker
+kc -n frameflow logs deployment/frameflow-worker --tail=100
+```
+
+- **Hatchet is not Ready**: the next section.
+- **`CreateContainerConfigError`**: a Secret it reads does not exist. Usually `hatchet-client-token`, because the token was never written:
+  [below](#the-tokens-infisicalstaticsecret-is-degraded).
+- **`UNAUTHENTICATED`, or a 401 or 403**: the token was revoked, or its row is not in Hatchet's database, after a restore from before it was
+  minted. Mint another. A token minted under another `SERVER_URL` or another set of keysets fails the same way.
+- **`connection refused` to `hatchet:7070` or `hatchet:8888`**, with Hatchet Ready: a NetworkPolicy, `worker`'s egress or `hatchet`'s
+  ingress in `network-policies/frameflow.yaml`. `make remote-netpol TARGET=plane-prod CONFIRM=plane-prod FROM_NS=frameflow` runs the
+  namespace's rows.
+- **It exits with status 1 and restarts**: its link to Hatchet's dispatcher gave up reconnecting, and it exits so the kubelet starts it
+  again. Look at Hatchet first.
+
+#### Hatchet is not ready
+
+`HatchetUnavailable` fires after 5 minutes, and new uploads fail to queue, with `The video could not be queued for processing.` Its
+readiness is the engine's own, on 8733 `/ready`, which also fails when its database or its queue does. It is HTTP, because its gRPC port
+has no health service to ask.
+
+```bash
+kc -n frameflow get pods -l app.kubernetes.io/component=hatchet
+kc -n frameflow logs deployment/hatchet --all-containers --tail=100
+kc -n frameflow describe pod -l app.kubernetes.io/component=hatchet | sed -n '/Events:/,$p'
+```
+
+By the log:
+
+- **`wait-for-postgres: hatchet-postgres:5432 did not answer in 3 minutes`**: `hatchet-postgres-0` is not Ready, or a policy between them
+  refuses.
+- **`failed to validate SERVER_AUTH_COOKIE_SECRETS, secrets must be 16/24/32 bytes`**: `HATCHET_COOKIE_SECRETS` is not two keys of 32 hex
+  characters with one space between: [secrets](#frameflow-secrets).
+- **A time zone error**: Hatchet refuses a database whose time zone is not UTC, and its Postgres runs with `-c timezone=UTC`, so that
+  argument is gone.
+- **A migration fails**: the database must be Hatchet's own, and was empty when it first started. Nothing else may make its objects,
+  extension `btree_gist` among them.
+- **A keyset error**: the three keysets in Infisical are not a set, or one is damaged. Put back the ones in this machine's files, through
+  the Infisical UI, and never make new ones for a database that exists.
+- **OOMKilled**: its limit is 1536Mi, and Go keeps its heap to 90% of it. It used about 40Mi idle in Docker.
+
+Every start runs the migrations and the seed, which do nothing on a database Hatchet made. On an empty one, the first start was ready in
+3 seconds in Docker.
+
+#### The pages load, and nothing in them does
+
+The API is down, and `FrameflowApiUnavailable` fires after 5 minutes. Its readiness, `/health/ready`, fails while SQLite or Silo does:
+
+```bash
+kc -n frameflow get pods -l app.kubernetes.io/component=api
+kc -n frameflow logs deployment/frameflow-api --tail=50
+```
+
+- **`CreateContainerConfigError`**: `frameflow-app` or `hatchet-client-token` does not exist: `kc -n frameflow get infisicalstaticsecrets`.
+- **It exits at start with what a setting lacks**, such as `OWNER_SESSION_SECRET with at least 32 characters`, or `OWNER_TOKEN_SHA256` not
+  being 64 hex characters: the value in Infisical.
+- **Not Ready, with `Readiness probe failed` and a 503 in its events**: SQLite or Silo fails it. Silo is down, or refuses the app user's
+  keys, as after a change before the setup Job ran: [secrets](#frameflow-secrets).
+
+#### ImagePullBackOff in frameflow
+
+As for the sites, [ImagePullBackOff](#imagepullbackoff), with these differences:
+
+- Frameflow's `ghcr-pull` comes from Infisical: `kc -n frameflow get secret ghcr-pull` must exist, and a new token goes into
+  `GHCR_PULL_TOKEN` in project `frameflow-prod` too.
+- Its own images are plain linux/amd64 manifests, so a `no match for platform` means a digest from somewhere else.
+- hatchet-lite is public on GHCR. Silo, `mc` and Postgres come from Docker Hub, through `mirror.gcr.io` first, as
+  `infrastructure/hosted/plane-prod/registries.yaml` sets, so a `429` or `toomanyrequests` is Docker Hub's limit for anonymous pulls, and it
+  clears by itself.
+
+#### Uploads fail
+
+The studio shows what went wrong in its notice. Traefik's access log has the PUT and its status, and the browser's developer tools have
+Silo's answer, which names its error in XML.
+
+| The studio says | Why | What to do |
+|---|---|---|
+| `The declared upload exceeds the configured size limit.` (413, from the API) | The file is over 100 MiB. The studio's own text says 500 MB, and the API's limit is the one that holds | A smaller file. [Processing limits](#frameflow-processing-limits-and-retention) says what raising it takes |
+| `Only MP4 uploads are supported.` (415) | Another container or extension | An MP4 |
+| `Object storage rejected the upload.`, with Silo's 403 `SignatureDoesNotMatch` | The request's Host or Content-Type is not what the URL was signed for, or the app user's secret key in `frameflow-app` is not the one Silo holds | Traefik passes the Host on by default, so look for a change to the upload route. For the keys, sync `frameflow`, which runs the setup Job: [secrets](#frameflow-secrets) |
+| The same, with 403 `AccessDenied` and an expired request | More than 15 minutes since the URL was made | Upload again |
+| The same, with 403 `InvalidAccessKeyId` | Silo has no user by the app's access key, as after a new one in Infisical before the setup Job ran | Sync `frameflow` |
+| The same, with a quota error | The bucket is full | [Retention](#frameflow-processing-limits-and-retention) |
+| `Could not reach object storage.` | The connection broke: often Traefik's 180s `readTimeout`, which a 100 MiB PUT needs about 4.7 Mbit/s of upload to beat | A faster link or a smaller file. Traefik's log shows the PUT's `Duration` near 180s |
+| `The upload authorization expired.` (410) | The upload finished more than 15 minutes after its URL was made, and the API no longer takes it | Upload again |
+| `The uploaded object size does not match the declared size.` (400) | The PUT stopped short, or the object Silo holds is not the size declared | Upload again |
+| `Upload storage is unavailable.` (503) | The API could not sign the URL. Signing calls nothing, so this is the API's S3 settings, not Silo | `kc -n frameflow logs deployment/frameflow-api --tail=50` |
+| `The video could not be queued for processing.` (503) | Hatchet refused the run | [Hatchet is not ready](#hatchet-is-not-ready), and the API's log for the token |
+
+#### The token's InfisicalStaticSecret is Degraded
+
+Before the token is written, `hatchet-client-token` finds no `HATCHET_CLIENT_TOKEN`, and reads Degraded. `frameflow`'s sync then fails at
+that wave and retries, and the API, the worker and the CronJobs wait behind it. That is why the CR comes in release B, after the token.
+`frameflow` is root's last wave, so root's operation does not finish either, and no later change to an Application file applies until this
+is fixed or the operation is ended: [docs/runbooks/argo-sync-stuck.md](runbooks/argo-sync-stuck.md), End an operation.
+
+```bash
+kc -n frameflow get infisicalstaticsecret hatchet-client-token -o jsonpath='{.status.conditions}{"\n"}'
+make remote-frameflow-token TARGET=plane-prod CONFIRM=plane-prod
+```
+
+The CR reads Healthy at the operator's next read, within 60 seconds, and the sync goes on at its next retry, up to 5 minutes later.
+
+#### A video fails, or stays queued
+
+- **Its state** is in the studio, with the reason when it failed, and in Hatchet's dashboard, under Runs: workflow `frameflow-phase-3`, with
+  each task's attempts and errors.
+- **`SOURCE_TOO_SMALL`**: the source is under 1280x720.
+- **A task that times out** is cancelled: FFmpeg gets SIGTERM, then SIGKILL 5 seconds later, the task's scratch is deleted, and Hatchet
+  retries it, twice for the probe, the encodes and publish. Cancelling a run in the dashboard takes the same path, and the video ends
+  failed.
+- **Queued for long**: one video is processed at a time, so it may be waiting its turn, for up to 12 hours. Otherwise the worker is not
+  registered, above.
+- **Stuck in queued or processing**, while Hatchet says the run ended: `frameflow-reconcile`, every 10 minutes, asks Hatchet about each
+  video stuck for over 30 minutes and sets its state to match.
+- **The worker was evicted**, for its scratch: `kc -n frameflow get events --field-selector reason=Evicted`. The task in it fails and is
+  retried on the new pod.
+
+A failed video's source stays in the bucket until it is deleted in the studio. To process it again, upload it again.
+
+The two CronJobs try each run three times, and keep a Job that still failed, two hours for cleanup's and one for reconcile's, for its logs
+and for `KubeJobFailed`: `kc -n frameflow get jobs`, then `kc -n frameflow logs job/<name>`. Each is safe to run again, and the next run
+does what the failed one did not.

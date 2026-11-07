@@ -14,12 +14,14 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `kubeconfig.sh` | Fetch K3s's kubeconfig, rewrite it for the tunnel, and print the UID for `target.yaml` | `remote-kubeconfig` |
 | `status.sh` | Read-only summary | `remote-status` |
 | `bootstrap.sh` | Deploy key, Grafana's login, the static sites' pull Secrets, port 80, Terraform, backup folders, restic password, secret zero, Infisical, alerts, bundle | `remote-bootstrap` |
-| `ui.sh` | Port-forward an admin UI. None has a public route but Grafana and Infisical, which this also reaches when a route is down | `remote-ui` |
+| `ui.sh` | Port-forward an admin UI, Frameflow's Hatchet dashboard and Silo console among them. None has a public route but Grafana and Infisical, which this also reaches when a route is down | `remote-ui` |
 | `grafana-admin.sh` | Make Grafana's admin login once and write its Secret (`apply`), replace its password (`rotate`), or print the URL and username and copy the password (`login`) | `remote-grafana-admin` |
 | `infisical-admin.sh` | Print Infisical's URL and admin email, and copy its password to the clipboard (`login`). Bootstrap makes that login, and this only reads it | `remote-infisical-admin` |
 | `pull-secrets.sh` | Secret ghcr-pull in the static sites' namespaces, from the owner's GHCR token file. Run it again after saving a new token | `remote-pull-secrets`, and through `remote-bootstrap` |
+| `frameflow-inputs.sh` | Frameflow's owner access key and its sha256, and Hatchet's three keysets, made once on this machine with Docker, for the seed to copy into Infisical. It never replaces a file | `remote-frameflow-inputs` |
+| `frameflow-hatchet-token.sh` | Mint Frameflow's Hatchet client token in Hatchet's pod, and write it to Infisical, never printing it | `remote-frameflow-token` |
 | `alerts.sh` | Render `alertmanager.yaml` from the owner's files into a Secret, and say COMPLETE or INCOMPLETE | `remote-alerts` |
-| `bundle.sh` | The age-encrypted recovery bundle, proved by decrypting it again | `remote-bundle` |
+| `bundle.sh` | The age-encrypted recovery bundle, proved by decrypting it again. It holds `.local/hosted/plane-prod/frameflow/` too, the owner access key while it is there | `remote-bundle` |
 | `backup.sh` | Run tonight's backups now, from the CronJobs | `remote-backup` |
 | `pull-backups.sh` | Copy the encrypted repositories here, over a read-only SFTP user | `remote-pull-setup`, `remote-pull-backups` |
 | `backup-dest.sh` | `verify`, `push` and `status` of the copies off the VPS | `remote-backup-dest` |
@@ -27,7 +29,7 @@ Through make: `make remote-<verb> TARGET=plane-prod`. No local target can reach 
 | `restart-check.sh` | Restart Plane's pods one at a time, compare what Postgres holds before and after, and say how long the site was down | `remote-restart-check` |
 | `smoke.sh` | `tests/e2e/smoke.py --env hosted --mode verify` on an existing account, asked at a hidden prompt | `remote-smoke` |
 | `test-hosted.sh` | The hosted test suite. Exits 0, 1 or 2, and says BLOCKED or INCOMPLETE plainly | `remote-test` |
-| `scrub-values.sh` | Keep the values of its Secrets, and Grafana's admin password from its file, in a file for `scripts/publish-evidence.sh` to scrub, which reaches no cluster here | `remote-publish-evidence` |
+| `scrub-values.sh` | Keep the values of its Secrets, and Grafana's admin password and Frameflow's inputs from their files, in a file for `scripts/publish-evidence.sh` to scrub, which reaches no cluster here | `remote-publish-evidence` |
 | `target.sh` | The opt-in shared scripts source when `WAYLINE_TARGET` is set: `scripts/secret-zero.sh`, `infisical-bootstrap.sh`, `infisical-seed.sh`, `test-netpol.sh`, `infisical/tests/rendered-secrets.sh`. It needs `CONFIRM=plane-prod` too, so a leaked variable aims nothing | `remote-netpol`, and through `remote-bootstrap` and `remote-test` |
 
 Local state lives in `.local/hosted/plane-prod/`, mode 0700, and never in Git. Bash 3.2, because macOS ships it.
@@ -38,7 +40,8 @@ cert-manager's self-check goes through the CoreDNS rewrite and never leaves the 
 then asks Let's Encrypt, whose connection to port 80 is dropped, and the order fails. The next try is an hour away, doubling up to 32, and
 opening the firewall retriggers nothing. So `bootstrap.sh` opens port 80 before Argo CD starts. If an order failed anyway, then with port
 80 open, this removes the backoff, and cert-manager tries again at once. For Grafana's the namespace is `monitoring` and the name `grafana-tls`,
-for Rillmark's `rillmark` and `rillmark-tls`, and for Awushi Cloudgarden's, on devops.bereket.dev, `awushi-cloudgarden` and `devops-tls`:
+for Rillmark's `rillmark` and `rillmark-tls`, for Awushi Cloudgarden's, on devops.bereket.dev, `awushi-cloudgarden` and `devops-tls`,
+and for Frameflow's `frameflow` and `frameflow-tls`:
 
 ```
 .tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod -n plane-prod patch certificate wayline-tls \
@@ -48,9 +51,9 @@ for Rillmark's `rillmark` and `rillmark-tls`, and for Awushi Cloudgarden's, on d
 That is read from cert-manager v1.21.3's `shouldBackoffReissuingOnFailure` and has not run on this cluster. Moving `issuerRef` from
 staging to production also tries at once, because the next request no longer matches the Certificate.
 
-`grafana-tls`, `infisical-tls`, `rillmark-tls` and `devops-tls` can fail one way more: DNS. The zone's wildcard answers for any name with no
-record of its own, and that points at Vercel, so each A record has to be live before Argo CD first sees that Certificate. For Infisical's
-the namespace is `infisical`. [docs/hosted-apps.md](../../docs/hosted-apps.md) gives the order for the apps' hosts.
+`grafana-tls`, `infisical-tls`, `rillmark-tls`, `devops-tls` and `frameflow-tls` can fail one way more: DNS. The zone's wildcard answers for any
+name with no record of its own, and that points at Vercel, so each A record has to be live before Argo CD first sees that Certificate. For
+Infisical's the namespace is `infisical`. [docs/hosted-apps.md](../../docs/hosted-apps.md) gives the order for the apps' hosts.
 
 `infisical-tls` has one more condition, at its first order and at every renewal, about every 60 days. Its solver pod takes 64Mi of the
 namespace's `limits.memory` quota, 1376Mi of 2400Mi is used steady, and the server's rollout and the nightly backup each take 1024Mi more, so
@@ -308,3 +311,17 @@ kc -n plane-prod wait --for=condition=Complete job/restore-predeploy --timeout=1
    `kc -n argocd patch application <name> --type json -p '[{"op":"remove","path":"/spec/syncPolicy/automated/enabled"}]'`. Argo CD puts the
    replicas back, unless you terminated a sync in step 3: it does not retry that revision by itself, and the next commit starts a new one.
    Then `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=argo`, and `make remote-smoke TARGET=plane-prod`.
+
+## Frameflow
+
+Frameflow is the one app beside Wayline with data and secrets of its own, and [docs/hosted-apps.md](../../docs/hosted-apps.md#frameflow) is its
+runbook: its first deploy in two releases, its owner access key, secrets, backups and restore. What here is its alone:
+
+- `frameflow-inputs.sh` runs once, before the bootstrap that first seeds Infisical project `frameflow-prod`. Hatchet's database can be read only
+  with the keysets it makes, so it never replaces one, and refuses a set it finds in part. The recovery bundle holds them.
+- `frameflow-hatchet-token.sh` runs between Frameflow's two releases, once Hatchet is Ready, and again to replace the token. A release B that
+  lands before it has run brings InfisicalStaticSecret `hatchet-client-token`, which reads Degraded, and holds Frameflow's sync and the root's.
+- `ui.sh hatchet` forwards to port 18888 and no other, the one Hatchet's `SERVER_URL`, `http://localhost:18888`, names. Open the dashboard as
+  localhost, because its sign-in cookie is for that name. `ui.sh frameflow-silo` forwards Silo's console.
+- `backup.sh` and `restore-test.sh` take `ONLY=frameflow`. Frameflow joins `lib-restic.sh`'s `BACKUP_NAMESPACES` only once its first backup has
+  sealed, so until then nothing pulls it off the VPS.
