@@ -6,8 +6,9 @@
 #   scripts/hosted/test-hosted.sh --selftest   the verdicts on Grafana's rows, from a table, with no cluster, so CI can run it
 #
 # CONFIRM, because it starts short-lived probe pods, mints 10-minute tokens, signs in, and sends one synthetic alert, which reaches
-# the owner's phone if Telegram is set. It also spends this machine's login tries at Grafana's and Infisical's public routes, so a login
-# from here within a minute of it may read 429. At Infisical's it spends no real credential: the tries are a made-up address.
+# the owner's phone if Telegram is set. It also spends this machine's login tries at Grafana's and Infisical's public routes, and its
+# session calls at Infisical's, so a login or a page of Infisical's from here within a minute of it may read 429. At Infisical's it spends
+# no real credential: the tries are a made-up address, and one more comes from the api's pod, which spends that pod's own.
 #
 # Exit, as scripts/test.sh: 0 every row passed, 1 something failed, 2 nothing failed and something could not say yes:
 #   BLOCKED     it could not run, and that says nothing about the platform.
@@ -86,6 +87,55 @@ grafana_health_verdict() { # <status> <body>
       fi
       ;;
     *) printf 'FAIL|%s' "$1" ;;
+  esac
+}
+
+# Infisical's own answer to a call it refuses with no session: 401, with helmet's X-Download-Options, which it puts on all it sends and
+# Traefik never does. The rows that read Traefik's 404 below lean on one of these, because with no route at all they would read 404 too.
+infisical_reached_verdict() { # <status> <helmet or none>
+  case "$1 $2" in
+    "401 helmet") printf 'PASS|%s from Infisical' "$1" ;;
+    "000 "* | " "*) printf 'BLOCKED|no answer' ;;
+    *" helmet") printf 'FAIL|%s from Infisical, where its login should have refused it 401' "$1" ;;
+    *) printf 'FAIL|%s, and not from Infisical, so the route does not pass what a browser asks' "$1" ;;
+  esac
+}
+
+# Traefik's refusal counts only beside a row above that showed the route reaching Infisical, because with no route at all it is the same 404.
+infisical_refusal_verdict() { # <PASS if the route was shown to reach Infisical> <what traefik_refused said>
+  if [[ "$1" != PASS ]]; then
+    printf 'BLOCKED|the route did not reach Infisical above, so a 404 here would say nothing'
+    return 0
+  fi
+  case "$2" in
+    refused) printf 'PASS|Traefik answered 404' ;;
+    "no answer") printf 'BLOCKED|no answer' ;;
+    *) printf 'FAIL|it reached Infisical: %s' "$2" ;;
+  esac
+}
+
+# The last of a run of tries at a limit, which stops at the first 429.
+infisical_limit_verdict() { # <answer>...
+  [[ "$#" -gt 0 ]] || { printf 'BLOCKED|no answer'; return 0; }
+  local last="${!#}"
+  case "$last" in
+    429) printf 'PASS|%s answers before 429' "$(($# - 1))" ;;
+    000 | "") printf 'BLOCKED|no answer, after %s' "$*" ;;
+    *) printf 'FAIL|no 429 in %s answers, the last %s' "$#" "$last" ;;
+  esac
+}
+
+# One try from another address, once this machine's tries have met the limit: anything but 429 from Infisical shows the count is this
+# machine's alone.
+infisical_other_client_verdict() { # <this machine's last answer> <the other client's status> <helmet or none>
+  if [[ "$1" != 429 ]]; then
+    printf 'BLOCKED|this machine did not meet the limit above, so another address would show nothing'
+    return 0
+  fi
+  case "$2 $3" in
+    "429 "*) printf 'FAIL|429, so every client shares one count, and a stranger'"'"'s guesses hold off the admin' ;;
+    *" helmet") printf 'PASS|%s from Infisical' "$2" ;;
+    *) printf 'BLOCKED|%s, not from Infisical, so it says nothing of the limit' "${2:-no answer}" ;;
   esac
 }
 
@@ -170,6 +220,50 @@ FAIL 200 {"database":"ok","version":"13.3.0"}
 FAIL 503 {"database":"failing"}
 BLOCKED 000 -
 BLOCKED - -
+TABLE
+  # The status, then helmet or none. A dash is nothing.
+  while read -r want code who; do
+    [[ "$code" != - ]] || code=""
+    check_verdict "$want" infisical_reached_verdict "$code" "$who"
+  done <<'TABLE'
+PASS 401 helmet
+FAIL 404 none
+FAIL 200 helmet
+FAIL 401 none
+BLOCKED 000 none
+BLOCKED - none
+TABLE
+  while read -r want reached answer; do
+    check_verdict "$want" infisical_refusal_verdict "$reached" "${answer//_/ }"
+  done <<'TABLE'
+PASS PASS refused
+FAIL PASS HTTP/2_401
+BLOCKED PASS no_answer
+BLOCKED FAIL refused
+BLOCKED BLOCKED refused
+BLOCKED FAIL HTTP/2_401
+TABLE
+  while read -r want answers; do
+    # shellcheck disable=SC2086  # each answer is its own argument
+    check_verdict "$want" infisical_limit_verdict $answers
+  done <<'TABLE'
+PASS 400 400 400 429
+PASS 429
+FAIL 400 400 400 400
+FAIL 401 401 404
+BLOCKED 400 000
+TABLE
+  while read -r want mine code who; do
+    [[ "$code" != - ]] || code=""
+    check_verdict "$want" infisical_other_client_verdict "$mine" "$code" "$who"
+  done <<'TABLE'
+PASS 429 400 helmet
+FAIL 429 429 none
+FAIL 429 429 helmet
+BLOCKED 429 404 none
+BLOCKED 429 - none
+BLOCKED 400 400 helmet
+BLOCKED 000 400 helmet
 TABLE
   if [[ "$failures" -ne 0 ]]; then
     printf 'fail selftest: %s failed\n' "$failures" >&2
@@ -406,11 +500,21 @@ traefik_refused() { # method path [header]
   fi
 }
 
+# Who answered a call: its status, and helmet when it was Infisical, because helmet puts X-Download-Options on all it sends.
+infisical_answer() { # method path [header]
+  local headers code
+  local -a extra=()
+  [[ -z "${3:-}" ]] || extra=(-H "$3")
+  headers="$("${INFISICAL_ASK[@]}" -X "$1" -D - -o /dev/null ${extra[@]+"${extra[@]}"} "https://$HOSTED_INFISICAL_DOMAIN$2" 2>/dev/null || true)"
+  code="$(head -1 <<<"$headers" | awk '{print $2}')"
+  if [[ "$headers" == *[Xx]-[Dd]ownload-[Oo]ptions* ]]; then printf '%s helmet' "${code:-000}"; else printf '%s none' "${code:-000}"; fi
+}
+
 # The other console on the internet, and the secret store: its sign-in page answers, it reads claimed and closed to sign-up, what it refuses
-# is refused by Traefik before it gets there, and guessing at its sign-in meets a limit. Every try here is a made-up address and password,
-# so no real credential is spent and the admin's own count of failures does not move.
+# is refused by Traefik before it gets there, and guessing at its sign-in meets a limit that is this address's own. Every try here is a
+# made-up address and password, so no real credential is spent and the admin's own count of failures does not move.
 infisical_public() {
-  local host="$HOSTED_INFISICAL_DOMAIN" url code page verdict method path got
+  local host="$HOSTED_INFISICAL_DOMAIN" url code page verdict method path got reached=FAIL bare=FAIL page_ok=FAIL
   url="https://$host"
   INFISICAL_ASK=(curl -k -sS --path-as-is --max-time 15 --resolve "$host:443:$HOSTED_HOST")
 
@@ -420,6 +524,7 @@ infisical_public() {
     row BLOCKED "Infisical's sign-in page answers" "no answer"
   elif [[ "$code" == 200 && "$page" == *'<title id="initial-document-title">Infisical</title>'* ]]; then
     row PASS "Infisical's sign-in page answers" "$code"
+    page_ok=PASS
   else
     row FAIL "Infisical's sign-in page answers" "$code, and not Infisical's page"
   fi
@@ -431,16 +536,18 @@ infisical_public() {
     *) row FAIL "Infisical has its admin and is closed to sign-up" "it reads $verdict: scripts/hosted/README.md, section Infisical reads open" ;;
   esac
 
+  # Reaches Infisical, which wants a session: the route passes what a browser asks, and Infisical's own login stands behind it. The rows of
+  # Traefik's 404 below count only with this and the page above, because with no route at all they would read the same.
+  # shellcheck disable=SC2046  # the status and who answered are two words
+  got="$(infisical_reached_verdict $(infisical_answer GET '/api/v4/secrets?projectId=x&environment=prod'))"
+  verdict_row "an anonymous read of Infisical's secrets is refused by Infisical" "$got"
+  [[ "$page_ok" == PASS && "${got%%|*}" == PASS ]] && reached=PASS
+
   # A few of each kind the route refuses, by name and by another spelling, each of which Traefik itself refuses. An encoded slash is not one
   # of those: Traefik passes it on encoded, and Fastify's router finds no route for it. tests/routes/infisical-public-route.sh asks every one,
   # in every spelling, against the pinned Traefik, and with Infisical behind it.
   while read -r method path; do
-    got="$(traefik_refused "$method" "$path")"
-    case "$got" in
-      refused) row PASS "Traefik refuses $method $path" ;;
-      "no answer") row BLOCKED "Traefik refuses $method $path" "no answer" ;;
-      *) row FAIL "Traefik refuses $method $path" "it reached Infisical: $got" ;;
-    esac
+    verdict_row "Traefik refuses $method $path" "$(infisical_refusal_verdict "$reached" "$(traefik_refused "$method" "$path")")"
   done <<'PATHS'
 POST /api/v1/auth/universal-auth/login
 POST /api/v1/auth/kubernetes-auth/login
@@ -469,46 +576,72 @@ PATHS
 
   # A machine's credential is refused on the calls a browser makes too. These are its shape and not a credential: a token whose payload
   # begins as a machine identity's does, a service token's prefix, and an API key's header. None is signed, and Traefik reads only the header.
-  # The token is made here, so no token-shaped string sits in the repository for a secret scanner to flag.
+  # The token is made here, so no token-shaped string sits in the repository for a secret scanner to flag. The same call with no header
+  # comes first, and must reach Infisical, so that a 404 with the header is the header's doing.
   local kind header token
+  # shellcheck disable=SC2046  # the status and who answered are two words
+  got="$(infisical_reached_verdict $(infisical_answer GET /api/v1/organization))"
+  verdict_row "GET /api/v1/organization with no credential reaches Infisical, which refuses it" "$got"
+  bare="${got%%|*}"
   token="$(for part in '{"alg":"HS256","typ":"JWT"}' '{"identityId":"00000000-0000-4000-8000-000000000000"}' 'not-signed'; do
     printf '%s' "$part" | openssl base64 -A | tr '+/' '-_' | tr -d '='
     printf '.'
   done)"
   while IFS='|' read -r kind header; do
-    got="$(traefik_refused GET /api/v1/organization "$header")"
-    case "$got" in
-      refused) row PASS "Traefik refuses $kind on a browser's call" ;;
-      "no answer") row BLOCKED "Traefik refuses $kind on a browser's call" "no answer" ;;
-      *) row FAIL "Traefik refuses $kind on a browser's call" "it reached Infisical: $got" ;;
-    esac
+    verdict_row "Traefik refuses $kind on a browser's call" "$(infisical_refusal_verdict "$bare" "$(traefik_refused GET /api/v1/organization "$header")")"
   done <<HEADERS
 a machine identity's token|Authorization: Bearer ${token%.}
 a service token|Authorization: Bearer st.00000000-0000-4000-8000-000000000000.not-a-token
 an API key|X-Api-Key: not-a-key
 HEADERS
 
-  # Reaches Infisical, which wants a session: the route passes what a browser asks, and Infisical's own login stands behind it.
-  code="$("${INFISICAL_ASK[@]}" -o /dev/null -w '%{http_code}' "$url/api/v4/secrets?projectId=x&environment=prod" 2>/dev/null || true)"
-  case "$code" in
-    401) row PASS "an anonymous read of Infisical's secrets is refused by Infisical" "$code" ;;
-    000 | "") row BLOCKED "an anonymous read of Infisical's secrets is refused by Infisical" "no answer" ;;
-    *) row FAIL "an anonymous read of Infisical's secrets is refused by Infisical" "$code" ;;
-  esac
-
-  # A made-up account and a new X-Forwarded-For with each try, which the limit must not read. The limit is 10 a minute.
-  local answers="" attempt
-  for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
+  # A made-up account and a new X-Forwarded-For with each try, which the limit must not read. The limit is 10 a minute. That shows the
+  # limit holds whatever the header says, and not whose count it is: the row after it asks that.
+  local answers="" attempt=1
+  while [[ "$attempt" -le 14 ]]; do
     code="$("${INFISICAL_ASK[@]}" -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -H "X-Forwarded-For: 203.0.113.$attempt" \
       --data-binary '{"email":"test-hosted-rate-limit@invalid.example","password":"not-a-password"}' "$url/api/v3/auth/login" 2>/dev/null || true)"
     answers="$answers $code"
     [[ "$code" != 429 ]] || break
+    attempt=$((attempt + 1))
   done
-  case "$code" in
-    429) row PASS "guessing at Infisical's sign-in hits a limit per client" "answers:$answers" ;;
-    000 | "") row BLOCKED "guessing at Infisical's sign-in hits a limit per client" "no answer" ;;
-    *) row FAIL "guessing at Infisical's sign-in hits a limit per client" "answers:$answers" ;;
-  esac
+  # shellcheck disable=SC2086  # each answer is its own argument
+  verdict_row "guessing at Infisical's sign-in meets its limit, whatever X-Forwarded-For says" "$(infisical_limit_verdict $answers)"
+
+  # Per client: once this machine has met the limit, one try from another address must still reach Infisical. The api's pod is that address,
+  # through the CoreDNS rewrite to Traefik's Service, as in the routes section. Code passed as an argument and carrying nothing secret.
+  if cluster_or_blocked "another address is not under this machine's limit"; then
+    local other
+    if ! kc -n plane-prod get deployment plane-api-wl >/dev/null 2>&1; then
+      row BLOCKED "another address is not under this machine's limit" "Plane is not deployed, so its api pod cannot ask"
+    else
+      other="$(kc -n plane-prod exec deploy/plane-api-wl -c plane-api -- python -c "
+import http.client, ssl
+context = ssl.create_default_context()
+context.check_hostname = False
+context.verify_mode = ssl.CERT_NONE
+connection = http.client.HTTPSConnection('$host', 443, context=context, timeout=10)
+connection.request('POST', '/api/v3/auth/login', body='{\"email\":\"test-hosted-rate-limit@invalid.example\",\"password\":\"not-a-password\"}', headers={'Content-Type': 'application/json', 'User-Agent': 'test-hosted'})
+response = connection.getresponse()
+print('ANSWER', response.status, 'helmet' if response.getheader('X-Download-Options') else 'none')
+" 2>/dev/null | grep '^ANSWER' || true)"
+      other="${other#ANSWER }"
+      # shellcheck disable=SC2086  # the status and who answered are two words
+      verdict_row "another address is not under this machine's limit" "$(infisical_other_client_verdict "$code" ${other:-000 none})"
+    fi
+  fi
+
+  # The session part's own limit, 30 a minute, past which an anonymous two-factor check meets 429, the first 30 having reached Infisical's 401.
+  answers=""
+  attempt=1
+  while [[ "$attempt" -le 45 ]]; do
+    code="$("${INFISICAL_ASK[@]}" -o /dev/null -w '%{http_code}' "$url/api/v2/auth/mfa/check/totp" 2>/dev/null || true)"
+    answers="$answers $code"
+    [[ "$code" != 429 ]] || break
+    attempt=$((attempt + 1))
+  done
+  # shellcheck disable=SC2086  # each answer is its own argument
+  verdict_row "the session part meets its wider limit, past 30 calls" "$(infisical_limit_verdict $answers)"
 }
 
 outside() {
