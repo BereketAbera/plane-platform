@@ -14,13 +14,16 @@ does not hold: run `vercel dns ls bereket.dev` first, because a `grafana` or `in
 this one.
 
 Credentials come from the environment, as [`providers.tf`](providers.tf) lists, and never from a file in Git. State is at
-`.local/hosted/plane-prod/terraform/host/terraform.tfstate`.
+`.local/hosted/plane-prod/terraform/host/terraform.tfstate`, relative to the checkout, and only the checkout that made it holds it. From any
+other, Terraform starts from nothing: it imports wayline's record again and makes a second A record for each of the others. So
+`scripts/hosted/host-terraform.sh`, which runs Terraform with the credentials the two CLIs already hold, stops when that file is missing, and
+`apply` applies only a plan whose changes are exactly the ones you name:
 
 ```bash
-TF=infrastructure/terraform/environments/prod-host
-terraform -chdir=$TF init
-terraform -chdir=$TF plan    # with wayline's and grafana's records in state, expect one record to add, infisical, and no other change
-terraform -chdir=$TF apply
+TARGET=plane-prod scripts/hosted/host-terraform.sh plan
+# With wayline's and grafana's records in state it ends: This plan: create vercel_dns_record.infisical
+TARGET=plane-prod CONFIRM=plane-prod EXPECT='create vercel_dns_record.infisical' scripts/hosted/host-terraform.sh apply
 ```
 
-If the plan shows anything else, stop and read it. `scripts/hosted/host-terraform.sh` runs these with the credentials the two CLIs already hold.
+If the plan shows anything else, stop and read it. `apply` makes its own plan again and refuses, applying nothing, unless its changes are
+the ones in `EXPECT`.
