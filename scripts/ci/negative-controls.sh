@@ -240,6 +240,20 @@ spec:
 YAML
 }
 plant_hosted_grafana_host_in_a_local_tree() { printf '# see https://grafana.bereket.dev\n' >>helm/values/traefik.yaml; }
+# Infisical's real route, with each thing policy/hosted.rego exists to refuse on it, the value it is read at, and what alerts on it.
+INFISICAL_ROUTE=gitops/clusters/plane-prod/platform/infisical/route.yaml
+plant_hosted_infisical_family_more() { replace_first "$INFISICAL_ROUTE" '\|webhooks\|' '|webhooks|scim|'; }
+plant_hosted_infisical_refusal_less() { replace_first "$INFISICAL_ROUTE" 'admin/\(bootstrap\|signup\)\|' ''; }
+plant_hosted_infisical_login_without_its_limit() { replace_first "$INFISICAL_ROUTE" '\n\s+middlewares:\n\s+- name: infisical-guess-limit' ''; }
+plant_hosted_infisical_limit_on_a_header() { replace_first "$INFISICAL_ROUTE" '(sourceCriterion:\n\s+)ipStrategy:\n\s+depth: 0' '\1requestHeaderName: X-Forwarded-For'; }
+plant_hosted_infisical_route_to_its_database() { replace_first "$INFISICAL_ROUTE" '- name: infisical\n(\s+)port: 8080' '- name: infisical-postgres\n\1port: 5432'; }
+plant_hosted_infisical_host_in_a_local_tree() { printf '# see https://infisical.bereket.dev\n' >>helm/values/traefik.yaml; }
+plant_hosted_infisical_upgrade_unread() { replace_first gitops/clusters/plane-prod/values/infisical.yaml 'tag: "v0\.167\.6@' 'tag: "v0.168.0@'; }
+plant_hosted_infisical_machine_credential_let_through() { replace_first "$INFISICAL_ROUTE" '\n\s+&& !HeaderRegexp\(`Authorization`[^\n]*' ''; }
+plant_hosted_infisical_machine_only_call_let_through() { replace_first "$INFISICAL_ROUTE" '\|identities/details\|' '|'; }
+# A body with the field gone is no proof that sign-up is closed, so it must not read claimed.
+plant_hosted_infisical_claim_from_a_missing_field() { replace_first scripts/hosted/lib-infisical-claim.sh '\.config\.allowSignUp != false' '.config.allowSignUp == true'; }
+plant_hosted_infisical_open_alert_late() { replace_first gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted.yaml '(- alert: InfisicalOpenToClaim\n\s+expr: [^\n]+\n)' '\1          for: 10m\n'; }
 # What the check adds for a solver, and no more: this is over the operator's surge and under one solver.
 plant_hosted_no_quota_room_for_a_solver() { yq -i '.quotas.monitoring."requests.memory" = "1690Mi"' infrastructure/hosted/plane-prod/capacity.yaml; }
 plant_hosted_node_port() {
@@ -507,6 +521,17 @@ control hosted-grafana-metrics-public validate-manifests.sh "is not one of Grafa
 control hosted-grafana-login-without-its-limit validate-manifests.sh "is not one of Grafana's two" plant_hosted_grafana_login_without_its_limit
 control hosted-grafana-limit-on-a-header validate-manifests.sh "any other source criterion counts something the client chooses" plant_hosted_grafana_limit_on_a_header
 control hosted-grafana-host-in-a-local-tree check-cluster-separation.sh "the hosted Grafana host in a local tree" plant_hosted_grafana_host_in_a_local_tree
+control hosted-infisical-family-more validate-manifests.sh "is not one of Infisical's four" plant_hosted_infisical_family_more
+control hosted-infisical-refusal-less validate-manifests.sh "is not one of Infisical's four" plant_hosted_infisical_refusal_less
+control hosted-infisical-login-without-its-limit validate-manifests.sh "is not one of Infisical's four" plant_hosted_infisical_login_without_its_limit
+control hosted-infisical-limit-on-a-header validate-manifests.sh "any other source criterion counts something the client chooses" plant_hosted_infisical_limit_on_a_header
+control hosted-infisical-route-to-its-database validate-manifests.sh "is not one of Infisical's four" plant_hosted_infisical_route_to_its_database
+control hosted-infisical-host-in-a-local-tree check-cluster-separation.sh "the hosted Infisical host in a local tree" plant_hosted_infisical_host_in_a_local_tree
+control hosted-infisical-machine-credential-let-through validate-manifests.sh "is not one of Infisical's four" plant_hosted_infisical_machine_credential_let_through
+control hosted-infisical-machine-only-call-let-through validate-manifests.sh "is not one of Infisical's four" plant_hosted_infisical_machine_only_call_let_through
+control hosted-infisical-claim-from-a-missing-field lint.sh "Infisical claim verdict self check FAILED" plant_hosted_infisical_claim_from_a_missing_field
+CONTROL_SKIP_CHARTS=no control hosted-infisical-upgrade-unread validate-manifests.sh "Infisical's public route was read from v0.167.6" plant_hosted_infisical_upgrade_unread
+control hosted-infisical-open-alert-late validate-manifests.sh "promtool: hosted rule unit tests FAILED" plant_hosted_infisical_open_alert_late
 CONTROL_SKIP_CHARTS=no control hosted-no-quota-room-for-a-solver check-capacity.sh "for the largest rollout, Job or solver), and its quota is 1690Mi" plant_hosted_no_quota_room_for_a_solver
 control hosted-node-port-in-the-tree validate-manifests.sh "no NodePort Service" plant_hosted_node_port
 control hosted-load-balancer-in-the-render validate-manifests.sh "no LoadBalancer Service" plant_hosted_load_balancer_in_the_render
