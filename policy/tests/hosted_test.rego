@@ -978,13 +978,64 @@ test_another_middleware_beside_infisical_rejected if {
 
 infisical_image := "docker.io/infisical/infisical:v0.167.6@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c"
 
-test_infisical_at_the_version_its_route_was_read_from_accepted if {
-	count(hosted.deny) == 0 with input as deployment("infisical", "infisical", infisical_image, {})
+# As values/infisical.yaml sets them, and the chart renders them, with no namespace.
+infisical_env := [
+	{"name": "NODE_OPTIONS", "value": "--max-old-space-size=640"},
+	{"name": "SITE_URL", "value": "https://infisical.bereket.dev"},
+	{"name": "HTTPS_ENABLED", "value": "true"},
+	{"name": "TRUSTED_PROXY_CIDRS", "value": "10.244.0.0/16"},
+	{"name": "DISABLE_PUBLIC_SECRET_SHARING", "value": "true"},
+]
+
+infisical_server(image, env) := {
+	"kind": "Deployment",
+	"metadata": {"name": "infisical"},
+	"spec": {"template": {"spec": {"containers": [{"name": "infisical-standalone-infisical", "image": image, "env": env, "envFrom": [{"secretRef": {"name": "infisical-secrets"}}]}]}}},
 }
 
-# Another version may bring a login or a sign-up its lists do not name, so the route is read again first.
+test_infisical_at_the_version_its_route_was_read_from_accepted if {
+	count(hosted.deny) == 0 with input as infisical_server(infisical_image, infisical_env)
+}
+
+# Another version may bring a login, a sign-up or a token its lists do not name, so the route is read again first. The whole reference counts,
+# under any spelling of the registry.
 test_infisical_at_another_version_rejected if {
-	says(deployment("infisical", "infisical", "docker.io/infisical/infisical:v0.168.0@sha256:0000000000000000000000000000000000000000000000000000000000000000", {}), "was read from v0.167.6")
-	says(deployment("infisical", "infisical", "docker.io/infisical/infisical:latest", {}), "was read from v0.167.6")
-	says(deployment("infisical", "infisical", "docker.io/infisical/infisical:v0.167.6", {}), "was read from v0.167.6")
+	every image in [
+		"docker.io/infisical/infisical:v0.168.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"docker.io/infisical/infisical:latest",
+		"docker.io/infisical/infisical:v0.167.6",
+		"docker.io/infisical/infisical:v0.167.6@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+		"infisical/infisical:v0.168.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"index.docker.io/infisical/infisical:v0.168.0@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"docker.io/infisical/infisical@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"registry.example:5000/mirror/infisical/infisical:v0.167.6@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c",
+	] {
+		says(infisical_server(image, infisical_env), "was read from v0.167.6")
+	}
+}
+
+test_other_infisical_images_ignored if {
+	every image in [
+		"docker.io/infisical/kubernetes-operator:v0.10.2@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"docker.io/infisical/infisical-gateway:v1@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"docker.io/library/postgres:16.15-alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+	] {
+		count(hosted.deny) == 0 with input as deployment("infisical", "other", image, {})
+	}
+}
+
+# Each value the public route needs, gone, changed, or from a reference, which nothing here can read.
+test_infisical_without_what_its_route_needs_rejected if {
+	every name in ["SITE_URL", "HTTPS_ENABLED", "TRUSTED_PROXY_CIDRS", "DISABLE_PUBLIC_SECRET_SHARING"] {
+		says(infisical_server(infisical_image, [e | some e in infisical_env; e.name != name]), sprintf("sets %s to \"unset\"", [name]))
+		says(infisical_server(infisical_image, array.concat(infisical_env, [{"name": name, "valueFrom": {"secretKeyRef": {"name": "x", "key": "y"}}}])), sprintf("sets %s to \"a reference\"", [name]))
+	}
+	says(infisical_server(infisical_image, array.concat(infisical_env, [{"name": "SITE_URL", "value": "http://localhost:18100"}])), "with a public route it must be")
+	says(infisical_server(infisical_image, array.concat(infisical_env, [{"name": "DISABLE_PUBLIC_SECRET_SHARING", "value": "false"}])), "with a public route it must be")
+	says(infisical_server(infisical_image, array.concat(infisical_env, [{"name": "TRUSTED_PROXY_CIDRS", "value": "0.0.0.0/0"}])), "with a public route it must be")
+}
+
+# The last of two entries is the one Kubernetes runs, so a good value later puts a bad one right.
+test_infisical_env_read_as_kubernetes_runs_it if {
+	count(hosted.deny) == 0 with input as infisical_server(infisical_image, array.concat([{"name": "HTTPS_ENABLED", "value": "false"}], infisical_env))
 }

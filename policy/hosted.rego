@@ -359,18 +359,55 @@ deny contains msg if {
 	msg := sprintf("%s: must be exactly %v, and any other source criterion counts something the client chooses", [identity, want])
 }
 
-# The route's lists were read from this version's running server and its web client, so another version may hold a login or a sign-up they
-# do not name. Moving Infisical on means reading those again, with tests/routes/infisical-public-route.sh, and then moving this.
+# The route's lists were read from this version's running server and its web client, and its header refusal from how this version's tokens
+# begin, so another version may hold a login, a sign-up or a token they do not name. Moving Infisical on means reading those again, with
+# tests/routes/infisical-public-route.sh against the new image and INFISICAL_ROUTE_TEST_DIRECT set, and then moving this. The whole reference,
+# so another digest under the same tag counts too, and any image whose repository is infisical/infisical, however its registry is spelled.
 infisical_route_version := "v0.167.6"
 
-infisical_image := "docker.io/infisical/infisical:"
+infisical_route_image := concat("", ["docker.io/infisical/infisical:", infisical_route_version, "@sha256:ca5cbd14b2f170feaaca3fbe5b001b7594c8b9c0c62a491409910f10b05dbb2c"])
+
+# An image reference's repository: its path with no tag or digest. The registry, which may hold a port of its own, stays in front.
+image_repository(image) := concat("/", array.concat(array.slice(parts, 0, count(parts) - 1), [split(parts[count(parts) - 1], ":")[0]])) if {
+	parts := split(split(image, "@")[0], "/")
+}
+
+infisical_server_image(image) if image_repository(image) == "infisical/infisical"
+
+infisical_server_image(image) if endswith(image_repository(image), "/infisical/infisical")
 
 deny contains msg if {
 	kube.is_workload(input)
 	some c in kube.containers(input)
-	startswith(c.image, infisical_image)
-	not startswith(c.image, concat("", [infisical_image, infisical_route_version, "@"]))
-	msg := sprintf("%s: container %q runs %s, and Infisical's public route was read from %s. Read the new version's routes and web client, run tests/routes/infisical-public-route.sh, then change infisical_route_version in policy/hosted.rego", [identity, c.name, c.image, infisical_route_version])
+	infisical_server_image(c.image)
+	c.image != infisical_route_image
+	msg := sprintf("%s: container %q runs %s, and Infisical's public route was read from %s, as %s. Read the new version's routes, web client and tokens, run tests/routes/infisical-public-route.sh against it, then change infisical_route_image in policy/hosted.rego", [identity, c.name, c.image, infisical_route_version, infisical_route_image])
+}
+
+# What the values tell Infisical's server about its public route, so a revert of any of it fails here: the host its links and CORS name,
+# Secure cookies, Traefik's pods as the one proxy whose forwarded address it believes, and no anonymous secret sharing. Read from whatever
+# runs its image, because the chart renders no namespace. env wins over the chart's envFrom, so the value here is the one it runs with.
+infisical_env_wanted := {
+	"SITE_URL": concat("", ["https://", infisical_host]),
+	"HTTPS_ENABLED": "true",
+	"TRUSTED_PROXY_CIDRS": "10.244.0.0/16",
+	"DISABLE_PUBLIC_SECRET_SHARING": "true",
+}
+
+# Kubernetes takes the last of two entries with one name.
+container_env_value(c, name) := values[count(values) - 1] if {
+	values := [object.get(e, "value", "a reference") | some e in object.get(c, "env", []); e.name == name]
+	count(values) > 0
+} else := "unset"
+
+deny contains msg if {
+	kube.is_workload(input)
+	some c in kube.containers(input)
+	infisical_server_image(c.image)
+	some name, want in infisical_env_wanted
+	got := container_env_value(c, name)
+	got != want
+	msg := sprintf("%s: container %q sets %s to %q, and with a public route it must be %q", [identity, c.name, name, got, want])
 }
 
 public_backend(service) if {
