@@ -28,14 +28,8 @@ sftp_command() {
     "$PULL_USER" "$HOSTED_HOST" "$PULL_KEY" "$HOSTED_KNOWN_HOSTS"
 }
 
-# For a test with no node: the same restic calls against any SFTP command and repository.
-if [[ -n "${HOSTED_TEST_SFTP_COMMAND:-}" ]]; then
-  sftp_command() { printf 'sftp.command=%s' "$HOSTED_TEST_SFTP_COMMAND"; }
-  node_repo() { printf 'sftp:test:%s/%s/restic' "$HOSTED_TEST_NODE_ROOT" "$1"; }
-fi
-
 restic_pull_key_or_die() {
-  [[ -s "$PULL_KEY" || -n "${HOSTED_TEST_SFTP_COMMAND:-}" ]] || die "${PULL_KEY#"$ROOT"/} is missing. Run: make remote-pull-setup TARGET=plane-prod CONFIRM=plane-prod"
+  [[ -s "$PULL_KEY" ]] || die "${PULL_KEY#"$ROOT"/} is missing. Run: make remote-pull-setup TARGET=plane-prod CONFIRM=plane-prod"
 }
 
 # restic's exit for no repository there, since 0.17.
