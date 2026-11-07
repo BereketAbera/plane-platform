@@ -126,3 +126,9 @@ spec:
           labels: { severity: warning, component: node }
           annotations:
             summary: Nothing reports whether the node needs a reboot, so NodeRebootRequired cannot fire
+        - alert: PublicFirewallNotLoaded
+          expr: wayline_edge_table_loaded == 0
+          for: 10m
+          labels: { severity: critical, component: node }
+          annotations:
+            summary: The public firewall's table is not loaded, so the API and kubelet ports answer on the public address

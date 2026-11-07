@@ -73,10 +73,36 @@ esac
 [[ "${TARGET:-}" == plane-prod ]] || die "set TARGET=plane-prod"
 [[ "${CONFIRM:-}" == plane-prod ]] || die "this changes the server's firewall: set CONFIRM=plane-prod"
 
+# Plane's first admin sign-up is open to whoever posts first, so the site must not open to everyone while nobody has claimed it.
+# With no Plane Application yet there is nothing to claim. The check runs on the node, so it needs no public route to itself.
+if [[ "$STAGE" == open ]]; then
+  claimed="$(server <<'EOF' || true
+if ! k3s kubectl -n argocd get application plane-prod >/dev/null 2>&1; then
+  echo no-plane
+else
+  curl -sk -m 15 --resolve wayline.bereket.dev:443:127.0.0.1 https://wayline.bereket.dev/api/instances/ |
+    jq -r 'if (.instance.is_setup_done // .is_setup_done) == true then "claimed" else "unclaimed" end' 2>/dev/null || echo unknown
+fi
+EOF
+)"
+  case "$claimed" in
+    no-plane | claimed) ;;
+    *) die "Plane's instance reads '$claimed', and its first admin sign-up is open to whoever posts first. Create the admin at stage owner, then open." ;;
+  esac
+fi
+
 rendered="$(TEMPLATE="$HOSTED/edge.nft.tmpl" RULES="$rules" python3 -I -c '
 import os
 print(open(os.environ["TEMPLATE"]).read().replace("@@PUBLIC_RULES@@", os.environ["RULES"]), end="")')"
 encoded="$(printf '%s' "$rendered" | base64 | tr -d '\n')"
+
+# A rollback goes back to the stage before this one, and to port 22 alone if there was none. Removing the table instead would
+# leave 6443, 10250 and 9100 answering on the public address after one failed login, and port 22 is open in every stage, so
+# restoring a stage cannot be what locks anyone out.
+closed_rendered="$(TEMPLATE="$HOSTED/edge.nft.tmpl" RULES='' python3 -I -c '
+import os
+print(open(os.environ["TEMPLATE"]).read().replace("@@PUBLIC_RULES@@", os.environ["RULES"]), end="")')"
+closed_encoded="$(printf '%s' "$closed_rendered" | base64 | tr -d '\n')"
 
 server <<EOF
 set -euo pipefail
@@ -85,14 +111,19 @@ tmp="\$(mktemp /etc/wayline/edge.nft.XXXXXX)"
 printf '%s' '$encoded' | base64 -d >"\$tmp"
 chmod 644 "\$tmp"
 nft -c -f "\$tmp"
+if [ -s /etc/wayline/edge.nft ]; then
+  cp /etc/wayline/edge.nft /etc/wayline/edge-previous.nft
+else
+  printf '%s' '$closed_encoded' | base64 -d >/etc/wayline/edge-previous.nft
+fi
 systemctl stop edge-rollback.timer 2>/dev/null || true
 systemctl reset-failed edge-rollback.timer edge-rollback.service 2>/dev/null || true
-systemd-run --quiet --on-active=120 --unit=edge-rollback /usr/sbin/nft delete table inet wayline_edge
+systemd-run --quiet --on-active=120 --unit=edge-rollback /bin/sh -c 'cp /etc/wayline/edge-previous.nft /etc/wayline/edge.nft && /usr/sbin/nft -f /etc/wayline/edge.nft'
 nft -f "\$tmp"
 mv "\$tmp" /etc/wayline/edge.nft
 EOF
 sleep 1
-login_works || die "a new login failed. The timer on the server removes the firewall within 2 minutes. Change nothing until then"
+login_works || die "a new login failed. The timer on the server restores the previous stage within 2 minutes. Change nothing until then"
 server <<'EOF'
 set -euo pipefail
 systemctl stop edge-rollback.timer
