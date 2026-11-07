@@ -312,7 +312,7 @@ smoke() {
   section "Smoke, on an existing account over https"
   local rc=0 options=""
   [[ "$STAGING" != yes ]] || options=yes
-  SMOKE_ALLOW_STAGING="$options" "$ROOT/scripts/hosted/smoke.sh" || rc=$?
+  SMOKE_ALLOW_STAGING="${SMOKE_ALLOW_STAGING:-$options}" "$ROOT/scripts/hosted/smoke.sh" || rc=$?
   case "$rc" in
     0) row PASS "smoke: sign-in, Secure cookies, project, upload, wss, job, cleanup" ;;
     2) row BLOCKED "smoke: sign-in, Secure cookies, project, upload, wss, job, cleanup" "above" ;;

@@ -290,7 +290,9 @@ sentinel_kube_router() {
   local readings
   # shellcheck disable=SC2016  # expanded by the node's shell, not this one
   readings="$(node_script 'PATH="$PATH:/var/lib/rancher/k3s/data/current/bin:/var/lib/rancher/k3s/data/current/bin/aux"
-printf "skipped=%s\n" "$(journalctl -u k3s --no-pager 2>/dev/null | grep -c "Skipping network policy" || true)"
+# Since K3s last started, because a skip it logged before ipset was installed says nothing now.
+started="$(systemctl show k3s -p ActiveEnterTimestamp --value 2>/dev/null)"
+printf "skipped=%s\n" "$(journalctl -u k3s --no-pager ${started:+--since "$started"} 2>/dev/null | grep -c "Skipping network policy" || true)"
 printf "chains=%s\n" "$(iptables -S 2>/dev/null | grep -c "^-N KUBE-ROUTER" || true)"
 printf "forward=%s\n" "$(iptables -S FORWARD 2>/dev/null | grep -c "KUBE-ROUTER-FORWARD" || true)"
 command -v ipset >/dev/null 2>&1 && echo ipset=yes || echo ipset=no' </dev/null)" ||
@@ -300,9 +302,12 @@ command -v ipset >/dev/null 2>&1 && echo ipset=yes || echo ipset=no' </dev/null)
     die "K3s logged 'Skipping network policy', so it is failing open: $(tr '\n' ' ' <<<"$readings")"
   fi
   if grep -qx 'chains=0' <<<"$readings" || grep -qx 'forward=0' <<<"$readings"; then
-    die "K3s's iptables have no KUBE-ROUTER chains, or FORWARD does not jump to them, so nothing enforces policy: $(tr '\n' ' ' <<<"$readings")"
+    # Informational, as on kindnet: iptables here may read another backend than K3s's own, and the behaviour below is the real proof.
+    warn "the node's iptables shows no KUBE-ROUTER chains, or no FORWARD jump to them: $(tr '\n' ' ' <<<"$readings"). Continuing, the behaviour test decides."
+  else
+    ok "kube-router: its chains exist, and FORWARD jumps to them"
   fi
-  ok "kube-router: ipset is there, its chains exist, FORWARD jumps to them, and the journal has no skip"
+  ok "kube-router: ipset is there, and the journal has no skip"
 }
 
 run_sentinel() {
