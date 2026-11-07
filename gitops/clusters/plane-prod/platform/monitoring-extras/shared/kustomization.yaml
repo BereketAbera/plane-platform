@@ -11,7 +11,7 @@ resources:
   - rules-hosted-plane.yaml
   - rules-hosted-platform.yaml
 # Hashed names: a config change gives a new ConfigMap name, which rolls the pod. Dashboards keep
-# fixed names because the Grafana sidecar watches them by label and reloads without a restart.
+# fixed names because the Grafana sidecar watches them by label, and Grafana reads their files again every 30s.
 configMapGenerator:
   - name: blackbox-config
     files: [blackbox.yml]

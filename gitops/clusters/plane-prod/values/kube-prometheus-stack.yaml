@@ -202,7 +202,7 @@ grafana:
     tag: 13.3.0-distroless
     sha: 540b8afb775bf34aefce417e4329039daa5d44b6f2fbda6881397b1b247ca7df
   # scripts/hosted/grafana-admin.sh makes this Secret, from files here, before Argo CD starts, so the chart generates no password
-  # and renders no Secret of its own. The sidecars read it too, for their reload calls.
+  # and renders no Secret of its own.
   admin:
     existingSecret: grafana-admin
     userKey: admin-user
@@ -234,15 +234,16 @@ grafana:
         - apiGroups: [""]
           resources: [configmaps]
           verbs: [get, list, watch]
+  # ephemeral-storage bounds the database and logs on the node's only disk. A new database is about 2 MiB in Docker, not measured on this node,
+  # so this is far over what it needs. Past it the kubelet evicts the pod, and the new one starts empty, which loses nothing here.
   resources:
     requests: { cpu: 25m, memory: 128Mi }
-    limits: { cpu: 500m, memory: 384Mi }
+    limits: { cpu: 500m, memory: 384Mi, ephemeral-storage: 2Gi }
   grafana.ini:
     server:
       domain: grafana.bereket.dev
       root_url: https://grafana.bereket.dev
-    # Its login is all that stands between this page and the internet. auth.basic stays on: the sidecars' reload calls use it, and a
-    # guess that way counts toward the same limit on failed logins as one at the form.
+    # Its login is all that stands between this page and the internet.
     security:
       cookie_secure: true
       cookie_samesite: lax
@@ -252,6 +253,10 @@ grafana:
     users:
       allow_sign_up: false
       allow_org_create: false
+    # Off, because it answers on every path, where the limit on POST /login does not reach, and each failure writes the name it was given to
+    # the database, at any length. Nothing here needs it, because the sidecars below make no reload call.
+    auth.basic:
+      enabled: false
     auth.anonymous:
       enabled: false
     # The page after login. Grafana's own home offers to create a first dashboard, which read as if none had loaded. The sidecar writes this
@@ -291,6 +296,8 @@ grafana:
       searchNamespace: null # own namespace only; matches rbac.namespaced above
       folderAnnotation: grafana_folder
       resource: configmap # every dashboard here is a ConfigMap; the default also watches Secrets
+      # The reload call would need basic auth. Grafana reads this folder again every 30s by itself.
+      skipReload: true
       provider:
         foldersFromFilesStructure: true
         allowUiUpdates: false
@@ -298,6 +305,12 @@ grafana:
       defaultDatasourceEnabled: true
       uid: prometheus # dashboards in monitoring-extras pin this uid
       resource: configmap # as above
+      # Grafana reads datasources only when it starts, or on a reload call, which would need basic auth. So one LIST before it starts, in place
+      # of a sidecar. The chart's default of WATCH would never exit, and the pod would stay in Init. A LIST that fails exits 1, and the kubelet
+      # runs it again. A changed datasource takes a new pod.
+      initDatasources: true
+      skipReload: true
+      watchMethod: LIST
   additionalDataSources:
     - name: Loki
       uid: loki

@@ -166,12 +166,35 @@ grafana_public() {
     *) row FAIL "Grafana's /metrics is not public" "$code" ;;
   esac
 
-  # A made-up user, so Grafana's own count of failures for the admin stays where it is, and a new X-Forwarded-For with each try, which the
-  # limit must not read.
+  # By the form, and ahead of the limit below, which spends this machine's tries. Both values reach curl on stdin, so neither reaches a process
+  # list, and only the status reaches this run's evidence.
+  if [[ -s "$LOCAL_DIR/grafana-admin-user" && -s "$LOCAL_DIR/grafana-admin-password" ]]; then
+    code="$(jq -n --rawfile user "$LOCAL_DIR/grafana-admin-user" --rawfile password "$LOCAL_DIR/grafana-admin-password" '{$user, $password}' |
+      "${ask[@]}" -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' --data-binary @- "$url/login" 2>/dev/null || true)"
+    case "$code" in
+      200) row PASS "the login held here opens Grafana" "$code" ;;
+      429) row BLOCKED "the login held here opens Grafana" "429, because this machine spent its tries in the last minute. Run this again" ;;
+      000 | "") row BLOCKED "the login held here opens Grafana" "no answer" ;;
+      *) row FAIL "the login held here opens Grafana" "$code. A running pod keeps the admin it started with: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply, and read scripts/hosted/grafana-admin.sh" ;;
+    esac
+    # The right login, so a 401 can only mean basic auth is off.
+    code="$(printf 'user = "%s:%s"\n' "$(cat "$LOCAL_DIR/grafana-admin-user")" "$(cat "$LOCAL_DIR/grafana-admin-password")" |
+      "${ask[@]}" -K - -o /dev/null -w '%{http_code}' "$url/api/org" 2>/dev/null || true)"
+    case "$code" in
+      401) row PASS "Grafana refuses basic auth, even with the right login" "$code" ;;
+      000 | "") row BLOCKED "Grafana refuses basic auth, even with the right login" "no answer" ;;
+      *) row FAIL "Grafana refuses basic auth, even with the right login" "$code, and each failed try there writes to its database, past the login's limit" ;;
+    esac
+  else
+    row BLOCKED "the login held here opens Grafana" "no login in .local/hosted/plane-prod. Run: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply"
+  fi
+
+  # An empty form, which Grafana answers with 400 and does not count as a failed login, so this run leaves its count alone. A new X-Forwarded-For
+  # with each try, which the limit must not read.
   local answers=""
   for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
     code="$("${ask[@]}" -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -H "X-Forwarded-For: 203.0.113.$attempt" \
-      --data-binary '{"user":"test-hosted-rate-limit","password":"not-a-password"}' "$url/login" 2>/dev/null || true)"
+      --data-binary '{}' "$url/login" 2>/dev/null || true)"
     answers="$answers $code"
     [[ "$code" != 429 ]] || break
   done
@@ -195,19 +218,6 @@ grafana_public() {
     else
       row PASS "Traefik sees a client's own address" "$seen"
     fi
-  fi
-
-  # Through curl's config on stdin, so neither value reaches a process list, and only the status reaches this run's evidence.
-  if [[ -s "$LOCAL_DIR/grafana-admin-user" && -s "$LOCAL_DIR/grafana-admin-password" ]]; then
-    code="$(printf 'user = "%s:%s"\n' "$(cat "$LOCAL_DIR/grafana-admin-user")" "$(cat "$LOCAL_DIR/grafana-admin-password")" |
-      "${ask[@]}" -K - -o /dev/null -w '%{http_code}' "$url/api/org" 2>/dev/null || true)"
-    case "$code" in
-      200) row PASS "the login held here opens Grafana" "$code" ;;
-      000 | "") row BLOCKED "the login held here opens Grafana" "no answer" ;;
-      *) row FAIL "the login held here opens Grafana" "$code. A running pod keeps the admin it started with: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply, and read scripts/hosted/grafana-admin.sh" ;;
-    esac
-  else
-    row BLOCKED "the login held here opens Grafana" "no login in .local/hosted/plane-prod. Run: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply"
   fi
 }
 
