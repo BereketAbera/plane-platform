@@ -1,6 +1,7 @@
-# Tries to reach live data from inside the isolated namespace, by address, because this namespace has no DNS. Every line of TARGETS
-# must time out. scripts/hosted/restore-test.sh also dials each from the node, so a timeout here means the policy and not a target
-# that is down. Exit codes as scripts/test-netpol.sh reads them: curl's 28 with a time_connect of zero is a drop.
+# Tries to reach live data from inside the isolated namespace, by address, because this namespace has no DNS. No line of TARGETS may
+# connect. scripts/hosted/restore-test.sh also dials each from the node, so a failure here means the policy and not a target that is
+# down. Exit codes as scripts/test-netpol.sh reads them: curl's 28 with a time_connect of zero is a drop, which is how kindnet denies,
+# and 7 is a refusal, which is how K3s's kube-router denies, and that counts only if the node connected to that port.
 apiVersion: v1
 kind: Pod
 metadata:

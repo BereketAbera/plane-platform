@@ -98,6 +98,7 @@ run "python compile" python_compile_all
 run "smoke.py self check" smoke_self_check
 run "scan report self check" python3 -B scripts/ci/scan-images-report.py --selftest
 run "network policy verdict self check" scripts/test-netpol.sh --selftest
+run "restore test verdict self check" scripts/hosted/restore-test.sh --selftest
 
 [[ "$failed" -eq 0 ]] || die "$failed lint check(s) failed"
 ok "lint passed"
