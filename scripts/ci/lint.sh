@@ -105,6 +105,7 @@ run "Infisical claim verdict self check" scripts/hosted/edge.sh --selftest
 run "host Terraform plan check self check" scripts/hosted/host-terraform.sh --selftest
 run "hosted admin token end self check" scripts/hosted/status.sh --selftest
 run "hosted bootstrap way back self check" scripts/hosted/bootstrap.sh --selftest
+run "Infisical route test self check" python3 -I -B tests/routes/infisical-public-route.py --selftest
 
 [[ "$failed" -eq 0 ]] || die "$failed lint check(s) failed"
 ok "lint passed"
