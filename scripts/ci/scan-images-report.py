@@ -4,8 +4,8 @@
     scan-images-report.py <results directory>
     scan-images-report.py --selftest
 
-Reads platform.txt, inventory.tsv, not-scanned.txt and images/*.json from the directory, and mode.txt where the run wrote
-it, and writes summary.tsv, critical.tsv and report.txt beside them, the last being what this prints. Exits 1 if
+Reads platform.txt, inventory.tsv, not-scanned.txt and images/*.json from the directory, and mode.txt and notes.txt where
+the run wrote them, and writes summary.tsv, critical.tsv and report.txt beside them, the last being what this prints. Exits 1 if
 an image we build has a CRITICAL finding with a fix available, if any image was not scanned, or if any result is of a platform
 this scan was not for. See scan-images.sh for why the policy is that and no wider.
 """
@@ -175,7 +175,7 @@ def table(rows):
     return lines
 
 
-def report_lines(rows, critical, failures, platforms):
+def report_lines(rows, critical, failures, platforms, notes=()):
     scanned = [row for row in rows if row["scanned"] == "yes"]
     total = {severity: sum(row[severity.lower()] for row in scanned) for severity in SEVERITIES}
     ours = [row for row in scanned if row["ours"] == "yes"]
@@ -196,6 +196,8 @@ def report_lines(rows, critical, failures, platforms):
         lines += [f"  {image}" for image in end_of_life]
     if not ours:
         lines.append("No image built here was scanned, so this run says nothing about Wayline's own images.")
+    # What scan-images.sh found while listing, such as where this checkout and the branch hosted production runs differ.
+    lines += notes
     if failures:
         lines.append(f"FAIL: {len(failures)} policy failure(s):")
         lines += [f"  {failure}" for failure in failures]
@@ -210,7 +212,7 @@ def main(directory):
     write_tsv(os.path.join(directory, "critical.tsv"), ["image", "ours", "id", "package", "installed", "fixed_in", "target"], critical)
     platforms = read_platforms(directory)
     failures = policy_failures(rows, critical, platforms, read_mode(directory))
-    lines = report_lines(rows, critical, failures, platforms)
+    lines = report_lines(rows, critical, failures, platforms, read_lines(directory, "notes.txt"))
     print("\n".join(lines))
     # Kept with the results, so whoever reads them later, as an artifact or as evidence, reads what was printed here.
     with open(os.path.join(directory, "report.txt"), "w", encoding="utf-8") as handle:
@@ -230,9 +232,9 @@ def selftest():
     ours_ghcr = "ghcr.io/owner/wayline/web@sha256:" + "b" * 64
     upstream = "docker.io/makeplane/plane-frontend:v1@sha256:" + "c" * 64
 
-    def run(images, not_scanned=(), asked=("linux/arm64",), read_as=("linux", "arm64"), artifact_type="container_image", mode=None):
+    def run(images, not_scanned=(), asked=("linux/arm64",), read_as=("linux", "arm64"), artifact_type="container_image", mode=None, notes=()):
         """images: {image: [vulnerabilities]}. asked goes in platform.txt, and read_as is what each result says it read. mode goes
-        in mode.txt, which None leaves out, as an older run did. Returns (exit code, summary rows, report)."""
+        in mode.txt and notes in notes.txt, each left out when not given, as by an older run. Returns (exit code, summary rows, report)."""
         with tempfile.TemporaryDirectory() as directory:
             os.mkdir(os.path.join(directory, "images"))
             if asked is not None:
@@ -241,6 +243,9 @@ def selftest():
             if mode is not None:
                 with open(os.path.join(directory, "mode.txt"), "w", encoding="utf-8") as handle:
                     handle.write(f"{mode}\n")
+            if notes:
+                with open(os.path.join(directory, "notes.txt"), "w", encoding="utf-8") as handle:
+                    handle.write("".join(f"{note}\n" for note in notes))
             with open(os.path.join(directory, "inventory.tsv"), "w", encoding="utf-8") as inventory:
                 for number, (image, vulnerabilities) in enumerate(images.items()):
                     filename = f"{number}.json"
@@ -307,6 +312,10 @@ def selftest():
     assert code == 1 and "SCAN_ALSO_PLATFORM" not in report and "the pin is wrong" in report, "a hosted scan must not suggest what it refuses"
     code, _, report = run({ours_ghcr: []}, mode="built", **arm64_in_amd64)
     assert code == 1 and "SCAN_ALSO_PLATFORM" not in report and "the build made another" in report, "a scan of a build must not suggest what it refuses"
+    code, _, report = run({upstream: []}, mode="hosted", asked=("linux/amd64",), read_as=amd64, notes=["deploy/plane-prod differs from this checkout."])
+    assert code == 0 and "deploy/plane-prod differs from this checkout." in report.splitlines(), "a note is printed, and fails nothing"
+    code, _, report = run({upstream: None}, notes=["a note"])
+    assert code == 1 and report.rstrip("\n").splitlines()[-2:] == ["FAIL: 1 policy failure(s):", f"  {upstream} was not scanned: no result"], "a note does not hide a failure"
     print("selftest ok")
     return 0
 
