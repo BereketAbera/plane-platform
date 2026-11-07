@@ -13,6 +13,7 @@ As soon as the app's pods run in its namespace, with nothing added for it:
 |---|---|---|
 | Logs, kept 7 days | Alloy, which reads every namespace but `kube-system`, `kube-public`, `kube-node-lease` and `restore-test-*` | Grafana, Explore, Loki: `{namespace="frameflow"}` |
 | CPU, memory and restarts per pod | The kubelet and kube-state-metrics, neither limited by namespace | Dashboards `Kubernetes / Compute Resources / Namespace (Pods)` and `/ Pod` |
+| The namespace's CPU, memory and restarts on the page Grafana opens on | `Platform overview`, for the same namespaces Alloy reads | Its row `Workloads by namespace` |
 | An alert on repeated restarts, or a container near its memory limit | `PodRestarting` and `ContainerMemorySaturation`, for the same namespaces Alloy reads | The alert receiver |
 | An alert on a crash loop, a pod not ready, a stuck rollout or a failed Job | The chart's `KubePodCrashLooping`, `KubePodNotReady`, `KubeDeploymentRolloutStuck` and `KubeJobFailed`, for any namespace. Each waits about 15 minutes, and reads as a warning | The alert receiver |
 | An alert on any certificate of its own | `CertificateExpiringSoon` and `CertificateNotReady`, from cert-manager's metrics | The alert receiver |
@@ -73,7 +74,7 @@ spec:
 
 **3. A Probe for uptime.** This is what tells you the app answers users, through Traefik and its certificate. Its host needs a line in
 `k3s_coredns_rewrites` in `infrastructure/terraform/environments/prod/main.tf`, because blackbox may reach only Traefik's Service. The served-certificate
-alert then covers that host by itself. Nothing else reads a new Probe, so add a rule like the one in step 5.
+alert then covers that host by itself, and `Platform overview` shows it in `Probe history`. No alert reads a new Probe, so add a rule like the one in step 5.
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
@@ -98,7 +99,7 @@ spec:
 
 **4. A dashboard, if the generic ones are not enough.** Put the JSON in `monitoring-extras/shared/dashboards/` and list it under `configMapGenerator` in
 that `kustomization.yaml`, with the label `grafana_dashboard: "1"`. It has to be in namespace `monitoring`, because that is all Grafana's sidecar watches. It
-loads with no restart.
+loads within about 30 seconds, with no restart.
 
 **5. Alerts of its own.** A PrometheusRule anywhere is read. Test it in `tests/rules/`.
 
@@ -119,6 +120,7 @@ A public route is a separate change. `policy/hosted.rego` allows Plane's and Gra
   does. Even that probe needs a rule first: blackbox's policy allows Traefik alone, so a target on another server needs public addresses on 443 added to
   its egress, in the form Alertmanager's policy uses.
 - **Logs written to a file.** Alloy reads what a container sends to stdout and stderr.
+- **The app's traffic on `Platform overview`.** Its request rate and 5xx panels read Plane's services, so a new app's belong on its own dashboard, in step 4.
 - **Anything in the app's own terms,** such as queue depth or failed jobs, until it exports a metric and a rule reads it. A pod can look healthy here while
   the app is broken, which is why step 3 matters most.
 - **The node dying.** Nothing on it can report that. Healthchecks does, through Watchdog, once the same command says COMPLETE.
