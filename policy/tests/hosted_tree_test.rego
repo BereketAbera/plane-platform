@@ -60,4 +60,5 @@ test_cluster_scoped_objects_accepted if {
 test_documents_that_are_no_object_ignored if {
 	count(hosted_tree.deny) == 0 with input as {}
 	count(hosted_tree.deny) == 0 with input as {"note": "no kind"}
+	count(hosted_tree.deny) == 0 with input as {"apiVersion": "v1", "kind": "List", "items": [open_postgres]}
 }

@@ -30,10 +30,12 @@ cluster_scoped_kinds := {
 # policy/hosted.rego on what may sit in a namespace read the namespace an object states, so one that states none would pass them all and land
 # where they hold: a NetworkPolicy or a Middleware with no namespace in platform/infisical lands in namespace infisical, past every rule on
 # what reaches the secret store and what limits its route. Argo CD reads the field as a string, so a blank, a null or anything else that is
-# not a string is none to it either, as policy/plane.rego reads it for a route.
+# not a string is none to it either, as policy/plane.rego reads it for a route. A document that wraps others has no namespace of its own, and
+# policy/gitops.rego refuses it.
 deny contains msg if {
 	is_string(input.kind)
 	not cluster_scoped_kinds[input.kind]
+	not kube.wraps_other_objects(input)
 	not states_a_namespace
 	msg := sprintf("%s: states no namespace, so Argo CD would put it in its Application's destination, past every rule here that reads the namespace an object states. Name the namespace it is for", [identity])
 }
