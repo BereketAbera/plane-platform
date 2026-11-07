@@ -15,6 +15,8 @@ from __future__ import annotations
 import argparse
 import base64
 import contextlib
+import http.client
+import http.server
 import io
 import json
 import pathlib
@@ -723,51 +725,89 @@ def run(arguments: argparse.Namespace) -> int:
         print(f"the echo server received {len(echo.lines)} requests in all")
     if real and arguments.direct:
         print("== real tokens from this version, made at the backend itself")
-        real_tokens(report, client, arguments.direct)
+        direct_rows(report, client, arguments.direct)
 
     pathlib.Path(arguments.log).write_text("\n".join(report.lines) + "\n")
     print(f"SUMMARY passed={report.passed} failed={report.failed} blocked={report.blocked} info={report.info}, each row in {arguments.log}")
     return report.exit_code()
 
 
+class NoAnswer(Exception):
+    """The backend itself gave no answer this test can read: nothing listening, a reset, or a success that is not a JSON object."""
+
+
 def direct_call(base: str, method: str, path: str, body: dict | None = None, token: str = "") -> tuple[int, dict]:
-    """A call to the backend itself, past Traefik, as the bootstrap scripts make theirs through a port-forward."""
+    """A call to the backend itself, past Traefik, as the bootstrap scripts make theirs through a port-forward. A refusal that is not a JSON
+    object reads as an empty one. No answer at all raises NoAnswer, so a wrong address or a copy that stops answering is a row that could
+    not be asked, and the run still writes its log."""
     headers = {"Content-Type": "application/json", "User-Agent": "infisical-public-route-test"}
     if token:
         headers["Authorization"] = "Bearer " + token
     data = json.dumps(body).encode() if body is not None else None
     request = urllib.request.Request(base.rstrip("/") + path, data=data, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return response.status, json.loads(response.read() or b"{}")
-    except urllib.error.HTTPError as error:
         try:
-            return error.code, json.loads(error.read() or b"{}")
-        except ValueError:
-            return error.code, {}
+            with urllib.request.urlopen(request, timeout=30) as response:
+                status, raw = response.status, response.read()
+        except urllib.error.HTTPError as error:
+            status, raw = error.code, error.read()
+    except (OSError, http.client.HTTPException) as error:
+        # URLError is an OSError, as a refused connection, a reset and a timeout are. HTTPException is an answer that is not HTTP.
+        raise NoAnswer(f"{method} {path}: {getattr(error, 'reason', None) or error}") from None
+    try:
+        answer = json.loads(raw or b"{}")
+    except ValueError:
+        answer = None
+    if isinstance(answer, dict):
+        return status, answer
+    if 200 <= status < 300:
+        raise NoAnswer(f"{method} {path} answered {status} with no JSON object")
+    return status, {}
+
+
+def dig(value: object, *keys: str) -> object:
+    """value[key][key]..., or None where a level is missing or is not an object, because an answer is whatever the server sent."""
+    for key in keys:
+        if not isinstance(value, dict):
+            return None
+        value = value.get(key)
+    return value
 
 
 def payload_text(token: str) -> str:
     """A token's payload as the JSON text it was signed as, keys in the order the server wrote them."""
     part = token.split(".")[1]
-    return base64.urlsafe_b64decode(part + "=" * (-len(part) % 4)).decode("utf-8", "replace")
+    try:
+        return base64.urlsafe_b64decode(part + "=" * (-len(part) % 4)).decode("utf-8", "replace")
+    except ValueError:
+        return ""
+
+
+def direct_rows(report: Report, client: Client, direct: str) -> None:
+    """real_tokens, with a backend that stops answering read as a row that could not be asked."""
+    try:
+        real_tokens(report, client, direct)
+    except NoAnswer as error:
+        report.row("BLOCKED", "real tokens", f"the backend at {direct} gave no answer: {error}")
 
 
 def real_tokens(report: Report, client: Client, direct: str) -> None:
     """The header refusal reads a machine identity's token by how this version's payload begins, and a person's by how theirs does. Both are
     made here by the server itself, on a copy nobody has claimed: the bootstrap call hands out the instance admin identity's token, and the
-    admin it makes signs in. So a version that writes its tokens another way fails here, before the route is moved to it."""
+    admin it makes signs in. So a version that writes its tokens another way fails here, before the route is moved to it. A copy claimed
+    already hands out none, which is a row that could not be asked, and no pass."""
     status, config = direct_call(direct, "GET", "/api/v1/admin/config")
-    if status != 200 or config.get("config", {}).get("initialized") is not False:
-        report.row("INFO", "real tokens", f"the backend at {direct} is claimed already or did not answer ({status}), so it hands out none")
+    if status != 200 or dig(config, "config", "initialized") is not False:
+        report.row("BLOCKED", "real tokens", f"the backend at {direct} is claimed already ({status}), so it hands out none: start a new copy")
         return
     # A throwaway admin for a throwaway copy, made at run time and never printed or kept.
     email = f"route-test-{secrets.token_hex(4)}@example.invalid"
     password = secrets.token_hex(24)
     status, answer = direct_call(direct, "POST", "/api/v1/admin/bootstrap", {"email": email, "password": password, "organization": "route-test"})
-    identity = str(answer.get("identity", {}).get("credentials", {}).get("token", ""))
-    if status != 200 or identity.count(".") != 2:
-        report.row("FAIL", "the bootstrap call on the backend hands out the instance admin identity's token", f"status {status}")
+    identity = str(dig(answer, "identity", "credentials", "token") or "")
+    organization = str(dig(answer, "organization", "id") or "")
+    if status != 200 or identity.count(".") != 2 or not organization:
+        report.row("FAIL", "the bootstrap call on the backend hands out the instance admin identity's token and its organization", f"status {status}")
         return
     shape = payload_text(identity)
     report.row("PASS" if shape.startswith('{"identityId":') else "FAIL", 'a machine identity\'s real token begins {"identityId":, which the route reads it by', shape[:14])
@@ -775,16 +815,19 @@ def real_tokens(report: Report, client: Client, direct: str) -> None:
         status, answered, body = client.ask(method, path, headers={"Authorization": "Bearer " + identity})
         who = who_answered(status, answered, body, True, method)
         report.row("PASS" if who != "backend" else "FAIL", f"{method} {path} with a real machine identity's token is refused", f"{status} from {who}")
-    status, _ = direct_call(direct, "GET", "/api/v1/organization", token=identity)
-    report.row("PASS" if status == 200 else "FAIL", "the same token works at the backend itself, so the refusal above is the route's", str(status))
+    # This version takes a person's session alone at GET /api/v1/organization, verifyAuth(["jwt"]) in its organization router, and answers
+    # this token 403 there. The call an identity makes of itself is GET /api/v1/identities/details, which the route refuses by its path.
+    status, answer = direct_call(direct, "GET", "/api/v1/identities/details", token=identity)
+    belongs = dig(answer, "identityDetails", "organization", "id") == organization
+    report.row("PASS" if status == 200 and belongs else "FAIL", "the same token works at the backend itself, as an identity of the organization the bootstrap made, so the refusal above is the route's",
+               f"{status}, {'that organization' if belongs else 'not that organization'}")
 
     status, answer = direct_call(direct, "POST", "/api/v3/auth/login", {"email": email, "password": password})
-    first = str(answer.get("accessToken", ""))
-    organizations = direct_call(direct, "GET", "/api/v1/organization", token=first)[1].get("organizations", []) if status == 200 else []
+    first = str(dig(answer, "accessToken") or "") if status == 200 else ""
     session = ""
-    if organizations:
-        status, answer = direct_call(direct, "POST", "/api/v3/auth/select-organization", {"organizationId": organizations[0]["id"]}, token=first)
-        session = str(answer.get("token", "")) if status == 200 else ""
+    if first.count(".") == 2:
+        status, answer = direct_call(direct, "POST", "/api/v3/auth/select-organization", {"organizationId": organization}, token=first)
+        session = str(dig(answer, "token") or "") if status == 200 else ""
     if session.count(".") != 2:
         report.row("FAIL", "the admin the bootstrap call made signs in at the backend", f"status {status}")
         return
@@ -810,6 +853,118 @@ def preflight(arguments: argparse.Namespace) -> str:
         except OSError as error:
             return echo_port_taken(arguments.echo_port, error)
     return ""
+
+
+class Copy:
+    """For --selftest: a throwaway copy of Infisical v0.167.6, answering the calls real_tokens makes as that version's code does. Read from its
+    server: GET /api/v1/organization and GET /api/v1/user take a person's session alone, verifyAuth(["jwt"]), and GET
+    /api/v1/identities/details an identity's token alone, verifyAuth(["identityAccessToken"]). Any other kind gets ForbiddenRequestError,
+    a 403, and an identity's token is signed with identityId first."""
+
+    ORGANIZATION = {"id": "11111111-1111-4111-8111-111111111111", "name": "route-test", "slug": "route-test"}
+    USER = "33333333-3333-4333-8333-333333333333"
+    TAKES = {("POST", "/api/v3/auth/select-organization"): "accessToken", ("GET", "/api/v1/organization"): "accessToken",
+             ("GET", "/api/v1/user"): "accessToken", ("GET", "/api/v1/identities/details"): "identityAccessToken"}
+
+    def __init__(self, claimed: bool = False, identity_first: str = "identityId", garbled: bool = False) -> None:
+        self.claimed = claimed
+        self.identity_first = identity_first
+        self.garbled = garbled
+        self.account: dict = {}
+        self.calls: list[str] = []
+        self.address = ""
+
+    def answer(self, method: str, target: str, authorization: str = "", body: bytes = b"") -> tuple[int, bytes, str]:
+        path = target.split("?", 1)[0]
+        token = authorization.partition(" ")[2]
+        try:
+            kind = str(json.loads(payload_text(token)).get("authTokenType", "")) if token.count(".") == 2 else ""
+        except (ValueError, AttributeError):
+            kind = ""
+        self.calls.append(f"{method} {path} {kind}".rstrip())
+
+        def reply(status: int, value: dict) -> tuple[int, bytes, str]:
+            return status, json.dumps(value).encode(), "application/json; charset=utf-8"
+
+        if self.garbled:
+            return 200, b"<!doctype html><title>Infisical</title>", "text/html; charset=utf-8"
+        if (method, path) == ("GET", "/api/v1/admin/config"):
+            return reply(200, {"config": {"initialized": self.claimed, "allowSignUp": not self.claimed}})
+        if (method, path) == ("POST", "/api/v1/admin/bootstrap"):
+            if self.claimed:
+                return reply(400, {"statusCode": 400, "message": "Instance has already been set up", "error": "BadRequest"})
+            self.claimed, self.account = True, json.loads(body or b"{}")
+            identity = {"identityId": "22222222-2222-4222-8222-222222222222", "identityName": "Instance Admin Identity", "authMethod": "token-auth",
+                        "authTokenType": "identityAccessToken"}
+            token = unsigned_token({self.identity_first: identity[self.identity_first], **identity})
+            return reply(200, {"message": "Successfully bootstrapped instance", "organization": self.ORGANIZATION,
+                               "identity": {"id": identity["identityId"], "name": identity["identityName"], "credentials": {"token": token}}})
+        if (method, path) == ("POST", "/api/v3/auth/login"):
+            given = json.loads(body or b"{}")
+            if self.account and (given.get("email"), given.get("password")) == (self.account.get("email"), self.account.get("password")):
+                return reply(200, {"accessToken": unsigned_token({"authMethod": "email", "authTokenType": "accessToken", "userId": self.USER})})
+            return reply(400, {"statusCode": 400, "message": "Invalid credentials", "error": "BadRequest"})
+        takes = self.TAKES.get((method, path))
+        if takes and not kind:
+            return reply(401, {"statusCode": 401, "message": "Token missing", "error": "UnauthorizedError"})
+        if takes and kind != takes:
+            return reply(403, {"statusCode": 403, "message": "You are not allowed to access this resource", "error": f"Forbidden access to {target}"})
+        if path == "/api/v3/auth/select-organization":
+            session = unsigned_token({"authMethod": "email", "authTokenType": "accessToken", "userId": self.USER, "organizationId": self.ORGANIZATION["id"]})
+            return reply(200, {"token": session, "isMfaEnabled": False})
+        if path == "/api/v1/organization":
+            return reply(200, {"organizations": [self.ORGANIZATION]})
+        if path == "/api/v1/user":
+            return reply(200, {"user": {"id": self.USER}})
+        if path == "/api/v1/identities/details":
+            return reply(200, {"identityDetails": {"organization": self.ORGANIZATION}})
+        if path in ("/api/v4/secrets", "/api/v2/folders") and kind:
+            return reply(404, {"statusCode": 404, "message": "Project with ID 'x' not found", "error": "NotFound"})
+        return reply(404, {"statusCode": 404, "message": f"Route {method}:{target} not found", "error": "Not Found"})
+
+
+class Route:
+    """For --selftest: Traefik in front of a Copy. A token whose payload begins {"identityId":, which the last lines of route.yaml refuse, gets
+    Traefik's 404, and the rest reaches the copy, whose answers carry helmet's header as Infisical's do."""
+
+    def __init__(self, copy: Copy) -> None:
+        self.copy = copy
+
+    def ask(self, method: str, target: str, headers: dict[str, str] | None = None, **_: object) -> tuple[int, dict[str, str], bytes]:
+        authorization = (headers or {}).get("Authorization", "")
+        if re.search(r"[^ -~]|^.{7}st\.|\.eyJpZGVudGl0eUlkIjo", authorization):
+            return 404, {"content-type": "text/plain; charset=utf-8"}, b"404 page not found\n"
+        status, body, kind = self.copy.answer(method, target, authorization)
+        return status, {"content-type": kind, "x-download-options": "noopen"}, body
+
+
+@contextlib.contextmanager
+def serving(copy: Copy):
+    """The copy on a loopback port of its own, as a throwaway copy publishes one, for direct_call to ask."""
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *_: object) -> None:
+            pass
+
+        def answer(self) -> None:
+            body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
+            status, data, kind = copy.answer(self.command, self.path, self.headers.get("Authorization", ""), body)
+            self.send_response(status)
+            self.send_header("Content-Type", kind)
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        do_GET = do_POST = answer
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True).start()
+    copy.address = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        yield copy
+    finally:
+        server.shutdown()
+        server.server_close()
 
 
 def selftest() -> int:
@@ -888,6 +1043,34 @@ def selftest() -> int:
             assert run(second) == 2, "a port taken after the preflight stops the run as one that could not run"
         assert "INFISICAL_ROUTE_TEST_ECHO_PORT" in said.getvalue() and not log.exists(), said.getvalue()
         assert preflight(argparse.Namespace(echo_port=port, backend="real", direct="")) == "", "a real backend needs no echo server"
+
+    def real_token_rows(copy: Copy, address: str = "") -> Report:
+        report = Report()
+        with contextlib.redirect_stdout(io.StringIO()):
+            direct_rows(report, Route(copy), address or copy.address)
+        return report
+
+    # The copy answers an identity's token 403 at GET /api/v1/organization, as the image does, so the row that once asked there reads FAIL.
+    with serving(Copy()) as copy:
+        report = real_token_rows(copy)
+        assert (report.passed, report.failed, report.blocked) == (8, 0, 0), report.lines
+        assert "GET /api/v1/identities/details identityAccessToken" in copy.calls, copy.calls
+    # A version that writes an identity's token another way: its shape, and the three calls the route then lets through.
+    with serving(Copy(identity_first="authTokenType")) as copy:
+        report = real_token_rows(copy)
+        assert report.failed == 4, report.lines
+    # A copy claimed already, which once read INFO and exit 0, and one that is not Infisical: neither can be asked, and neither is a pass.
+    with serving(Copy(claimed=True)) as copy:
+        report = real_token_rows(copy)
+        assert (report.blocked, report.failed, report.passed) == (1, 0, 0) and copy.calls == ["GET /api/v1/admin/config"], copy.calls
+    with serving(Copy(garbled=True)) as copy:
+        report = real_token_rows(copy)
+        assert (report.blocked, report.passed) == (1, 0), report.lines
+    # An address with nothing behind it, which once ended the run with a traceback before its log was written.
+    with socket.create_server(("127.0.0.1", 0)) as nothing:
+        address = f"http://127.0.0.1:{nothing.getsockname()[1]}"
+    report = real_token_rows(Copy(), address)
+    assert (report.blocked, report.passed) == (1, 0), report.lines
     print("selftest ok")
     return 0
 
