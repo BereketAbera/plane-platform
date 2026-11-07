@@ -98,6 +98,15 @@ spec:
                   D=/work/backup
                   TAB="$(printf '\t')"
 
+                  # kube-router admits a new pod a second or two after it starts, and until then refuses its connections just as a
+                  # closed port does: three pods on this node were refused at once and answered at 1 to 2 s. So an early refusal says
+                  # nothing, and without this wait the first backup here read one as Plane not being deployed. A minute, for a slow Postgres too.
+                  TRIES=0
+                  until [ -z "${PGPASSWORD:-}" ] || pg_isready -q -t 10 || [ "$TRIES" -ge 30 ]; do
+                    TRIES=$((TRIES + 1))
+                    sleep 2
+                  done
+
                   if [ -z "${PGPASSWORD:-}" ] || ! pg_isready -q -t 10; then
                     if [ -e /backups/restic/config ]; then
                       echo "postgres: Plane is not answering here, and a repository says it was. Refusing to read that as nothing to do." >&2

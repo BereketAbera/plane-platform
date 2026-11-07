@@ -30,6 +30,13 @@ for namespace in $NAMESPACES; do
     printf '== %s %s: %s\n' "$namespace" "$job" "$state"
     kc -n "$namespace" logs "job/$job" --all-containers --prefix --tail=-1 2>/dev/null || true
   } | tee -a "$EVIDENCE"
+  # The Job says so and succeeds while Plane is not here, before the first promotion. Once its Application exists that same line is a
+  # backup that held nothing, which the first real run here did, on a refusal it read as Plane being absent. So that does not pass.
+  if [[ "$state" == ok && "$namespace" == plane-prod ]] &&
+    kc -n "$namespace" logs "job/$job" -c postgres --tail=-1 2>/dev/null | grep -q 'there is nothing to back up' &&
+    kc -n argocd get application plane-prod >/dev/null 2>&1; then
+    state="empty, though Application plane-prod exists"
+  fi
   if [[ "$state" == ok ]]; then
     ok "$namespace sealed"
     # A later success clears the failure PlaneBackupFailed would otherwise report until the Job's TTL.
