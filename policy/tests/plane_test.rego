@@ -127,6 +127,24 @@ test_unbalanced_rule_rejected if {
 	count(plane.deny) == 1 with input as route("Host(`plane.dev.localhost`) && (Path(`/a`) || Path(`/b`)", "plane-web")
 }
 
+# Traefik reads a parenthesis inside a string, or a comment, as nothing, so each of these ORs is at the top and the rule takes every host.
+test_an_or_hidden_by_a_string_or_a_comment_rejected if {
+	count(plane.deny) == 1 with input as route("Host(`plane.dev.localhost`) && PathPrefix(`/(`) || PathPrefix(`/)`)", "plane-web")
+	count(plane.deny) == 1 with input as route("Host(`plane.dev.localhost`) && PathPrefix(\"/(\") || PathPrefix(\"/)\")", "plane-web")
+	count(plane.deny) == 1 with input as route("Host(`plane.dev.localhost`) && PathPrefix(`/`) /* ( */ || PathPrefix(`/`) /* ) */", "plane-web")
+}
+
+# A string that never closes, and a rune, which Traefik reads no rule from.
+test_a_rule_with_a_stray_quote_rejected if {
+	count(plane.deny) == 1 with input as route("Host(`plane.dev.localhost`) && PathPrefix(`/a)", "plane-web")
+	count(plane.deny) == 1 with input as route("Host(`plane.dev.localhost`) && PathPrefix('/')", "plane-web")
+}
+
+test_a_parenthesis_in_a_string_accepted if {
+	count(plane.deny) == 0 with input as route("Host(`plane.dev.localhost`) && PathPrefix(`/(`)", "plane-web")
+	count(plane.deny) == 0 with input as route("Host(`plane.dev.localhost`) && (Path(`/a)`) || Path(\"/b\\\"(\"))", "plane-web")
+}
+
 test_one_bad_route_among_good_ones_rejected if {
 	doc := {
 		"kind": "IngressRoute",
