@@ -7,9 +7,11 @@ Two things outside the cluster, in a root of their own, so that a cluster plan n
 - `vercel_dns_record.wayline`: the A record for `wayline.bereket.dev`, imported by its id, with `prevent_destroy`.
 - `vercel_dns_record.grafana`: the A record for `grafana.bereket.dev`, made here, with `prevent_destroy`, so the zone's wildcard no longer answers
   for that name.
+- `vercel_dns_record.infisical`: the A record for `infisical.bereket.dev`, made the same way and for the same reason.
 
 Vercel's provider acts on one record id and never lists the zone, so nothing else in `bereket.dev` can change. It also cannot see a record it
-does not hold: run `vercel dns ls bereket.dev` first, because a `grafana` record made by hand would become a second A beside this one.
+does not hold: run `vercel dns ls bereket.dev` first, because a `grafana` or `infisical` record made by hand would become a second A beside
+this one.
 
 Credentials come from the environment, as [`providers.tf`](providers.tf) lists, and never from a file in Git. State is at
 `.local/hosted/plane-prod/terraform/host/terraform.tfstate`.
@@ -17,7 +19,7 @@ Credentials come from the environment, as [`providers.tf`](providers.tf) lists, 
 ```bash
 TF=infrastructure/terraform/environments/prod-host
 terraform -chdir=$TF init
-terraform -chdir=$TF plan    # with wayline's record already imported, expect one record to add, grafana, and no other change
+terraform -chdir=$TF plan    # with wayline's and grafana's records in state, expect one record to add, infisical, and no other change
 terraform -chdir=$TF apply
 ```
 
