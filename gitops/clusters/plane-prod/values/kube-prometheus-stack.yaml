@@ -241,6 +241,10 @@ grafana:
       allow_org_create: false
     auth.anonymous:
       enabled: false
+    # The page after login. Grafana's own home offers to create a first dashboard, which read as if none had loaded. The sidecar writes this
+    # file, by the folder annotation in monitoring-extras, and until it has, Grafana falls back to its own.
+    dashboards:
+      default_home_dashboard_path: /tmp/dashboards/Platform/platform-overview.json
     # No pod here has internet egress, so each of these can only time out and log an error.
     analytics:
       check_for_updates: false
