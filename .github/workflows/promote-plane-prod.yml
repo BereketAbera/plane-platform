@@ -1,5 +1,6 @@
 # Opens a pull request moving hosted production to a digest set dev has signed evidence for. It never builds, and it cannot
-# reach the cluster: nothing but ci.yml's release-plane-prod job moves what production reads, and only after this merges.
+# reach the cluster. ci.yml's release-plane-prod job moves what production reads, after this merges. This job's token could push that
+# branch too, as any with contents: write can, and only publish-release.sh and check-deploy-branch.yml would notice.
 #
 # A person merging that pull request is the approval. GitHub cannot enforce that on the Free plan with a private
 # repository: no environment reviewers, no protected branches. See README.md.

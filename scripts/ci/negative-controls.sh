@@ -265,6 +265,49 @@ HOSTED_REPO=ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
 plant_hosted_git_source_elsewhere() { plant_hosted_application git://plane-git/plane-platform.git deploy/plane-prod gitops/environments/prod; }
 plant_hosted_source_on_main() { plant_hosted_application "$HOSTED_REPO" main gitops/environments/prod; }
 plant_hosted_path_outside_the_trees() { plant_hosted_application "$HOSTED_REPO" deploy/plane-prod gitops/applications; }
+plant_hosted_application_on_values() { plant_hosted_application "$HOSTED_REPO" deploy/plane-prod gitops/clusters/plane-prod/values; }
+plant_hosted_application_on_a_new_folder() { plant_hosted_application "$HOSTED_REPO" deploy/plane-prod gitops/clusters/plane-prod/extras; }
+# Nothing checks a folder no Application may read, and this is what would hide there.
+plant_hosted_manifest_in_a_new_folder() {
+  mkdir -p gitops/clusters/plane-prod/extras
+  printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: planted\n  namespace: monitoring\n' >gitops/clusters/plane-prod/extras/notes.yaml
+}
+plant_hosted_manifest_among_the_values() { printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: planted\n  namespace: monitoring\n' >gitops/clusters/plane-prod/values/notes.yaml; }
+plant_hosted_symlink_in_applications() { ln -s ../values/traefik.yaml gitops/clusters/plane-prod/applications/planted.yaml; }
+plant_hosted_symlink_in_platform() { ln -s ../../values/traefik.yaml gitops/clusters/plane-prod/platform/network-policies/planted.yaml; }
+plant_hosted_applications_as_a_symlink() {
+  mv gitops/clusters/plane-prod/applications gitops/clusters/plane-prod/values/elsewhere
+  ln -s values/elsewhere gitops/clusters/plane-prod/applications
+}
+plant_hosted_submodule() { git update-index --add --cacheinfo "160000,$BASE,gitops/clusters/plane-prod/platform/vendored"; }
+plant_hosted_argocd_source() {
+  printf 'kustomize:\n  images:\n    - docker.io/restic/restic=ghcr.io/attacker/evil:latest\n' >gitops/clusters/plane-prod/platform/backup/.argocd-source-backup.yaml
+}
+plant_hosted_kustomization_by_another_name() {
+  printf 'images:\n  - {name: docker.io/restic/restic, newName: ghcr.io/attacker/evil}\n' >gitops/clusters/plane-prod/platform/network-policies/Kustomization
+}
+plant_hosted_helm_parameters() { yq -i '.spec.sources[0].helm.parameters = [{"name": "image.registry", "value": "ghcr.io"}]' gitops/clusters/plane-prod/applications/traefik.yaml; }
+plant_hosted_helm_values_object() { yq -i '.spec.sources[0].helm.valuesObject = {"extraObjects": []}' gitops/clusters/plane-prod/applications/traefik.yaml; }
+plant_hosted_kustomize_images() { yq -i '.spec.source.kustomize.images = ["docker.io/restic/restic=ghcr.io/attacker/evil:latest"]' gitops/clusters/plane-prod/applications/backup.yaml; }
+plant_hosted_object_in_applications() { printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: planted\n  namespace: monitoring\n' >gitops/clusters/plane-prod/applications/planted.yaml; }
+# A Wayline build under a name the evidence check's grep does not know.
+plant_hosted_renamed_image() {
+  plant_in_hosted_tree pod.yaml <<YAML
+apiVersion: v1
+kind: Pod
+metadata:
+  name: planted
+  namespace: monitoring
+spec:
+  containers:
+    - name: planted
+      image: ghcr.io/bereketabera/wl/backend@sha256:$(printf '9%.0s' {1..64})
+YAML
+}
+plant_hosted_image_split_across_chart_values() {
+  yq -i '.image.registry = "ghcr.io" | .image.repository = "bereketabera/wl/backend" | .image.digest = "sha256:'"$(printf '9%.0s' {1..64})"'"' gitops/clusters/plane-prod/values/traefik.yaml
+}
+plant_hosted_image_listed_and_gone() { printf 'docker.io/planted/gone@sha256:%s\n' "$(printf '9%.0s' {1..64})" >>policy/hosted-images.txt; }
 plant_hosted_values_outside_the_trees() {
   plant_hosted_application "$HOSTED_REPO" deploy/plane-prod gitops/environments/prod
   yq -i 'del(.spec.source) | .spec.sources = [{"repoURL": "https://traefik.github.io/charts", "chart": "traefik", "targetRevision": "42.3.0", "helm": {"valueFiles": ["$values/helm/values/traefik.yaml"]}}, {"repoURL": strenv(HOSTED_REPO), "targetRevision": "deploy/plane-prod", "ref": "values"}]' gitops/clusters/plane-prod/applications/planted.yaml
@@ -416,7 +459,24 @@ control hosted-load-balancer-in-the-render validate-manifests.sh "no LoadBalance
 control hosted-ingress-in-the-tree validate-manifests.sh "no Ingress in Git" plant_hosted_ingress
 control hosted-git-source-elsewhere validate-manifests.sh "is not the one this cluster reads" plant_hosted_git_source_elsewhere
 control hosted-source-on-main validate-manifests.sh "this cluster reads only deploy/plane-prod" plant_hosted_source_on_main
-control hosted-path-outside-the-trees validate-manifests.sh "is outside gitops/clusters/plane-prod and gitops/environments/prod" plant_hosted_path_outside_the_trees
+control hosted-path-outside-the-trees validate-manifests.sh "is not one this cluster reads" plant_hosted_path_outside_the_trees
+control hosted-application-on-values validate-manifests.sh "is not one this cluster reads" plant_hosted_application_on_values
+control hosted-application-on-a-new-folder validate-manifests.sh "is not one this cluster reads" plant_hosted_application_on_a_new_folder
+control hosted-manifest-in-a-new-folder validate-manifests.sh "outside applications/, platform/<directory> and bootstrap-chart/" plant_hosted_manifest_in_a_new_folder
+control hosted-manifest-among-the-values validate-manifests.sh "outside applications/, platform/<directory> and bootstrap-chart/" plant_hosted_manifest_among_the_values
+control hosted-symlink-in-applications validate-manifests.sh "no check here reads them" plant_hosted_symlink_in_applications
+control hosted-symlink-in-platform validate-manifests.sh "no check here reads them" plant_hosted_symlink_in_platform
+control hosted-applications-as-a-symlink validate-manifests.sh "no check here reads them" plant_hosted_applications_as_a_symlink
+control hosted-submodule validate-manifests.sh "symlinks or submodules in Git" plant_hosted_submodule
+control hosted-argocd-source-file validate-manifests.sh "no check here reads them" plant_hosted_argocd_source
+control hosted-kustomization-by-another-name validate-manifests.sh "no check here reads them" plant_hosted_kustomization_by_another_name
+control hosted-helm-parameters validate-manifests.sh "a source sets helm.parameters" plant_hosted_helm_parameters
+control hosted-helm-values-object validate-manifests.sh "a source sets helm.valuesObject" plant_hosted_helm_values_object
+control hosted-kustomize-images validate-manifests.sh "a source sets kustomize" plant_hosted_kustomize_images
+control hosted-object-in-applications validate-manifests.sh "so it may hold only Applications" plant_hosted_object_in_applications
+control hosted-renamed-image-in-the-tree validate-manifests.sh "they are not in policy/hosted-images.txt" plant_hosted_renamed_image
+CONTROL_SKIP_CHARTS=no control hosted-image-split-across-chart-values validate-manifests.sh "they are not in policy/hosted-images.txt" plant_hosted_image_split_across_chart_values
+CONTROL_SKIP_CHARTS=no control hosted-image-listed-and-gone validate-manifests.sh "and nothing hosted runs them" plant_hosted_image_listed_and_gone
 control hosted-values-outside-the-trees validate-manifests.sh 'they must come from $values/gitops/clusters/plane-prod' plant_hosted_values_outside_the_trees
 control hosted-base-outside-the-trees validate-manifests.sh "does not build from the two hosted trees alone" plant_hosted_base_outside_the_trees
 control hosted-render-drift validate-manifests.sh "render is up to date: hosted FAILED" plant_hosted_render_drift

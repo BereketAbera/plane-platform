@@ -57,6 +57,9 @@ if [[ "$reachable" == yes ]]; then
     warn "could not read the firewall over SSH"
 fi
 
+section "Branch deploy/plane-prod"
+GIT_TERMINAL_PROMPT=0 "$ROOT/scripts/ci/check-deploy-branch.sh" || true
+
 section "Alert delivery"
 "$ROOT/scripts/hosted/alerts.sh" state || true
 

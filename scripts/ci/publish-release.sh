@@ -7,22 +7,35 @@
 # In order, stopping at the first that fails, so a failure leaves the branch where it is and reaches nothing:
 #   1. scripts/ci/check-prod-evidence.sh. Exit 3 means plane-prod is not promoted yet, and the release holds the platform alone.
 #   2. The refusal to move backwards: RELEASE.json on the branch names a main commit, and this one must descend from it.
-#   3. Nothing to do if the two hosted trees match the branch's, and the branch stays where it is.
-#   4. Each Wayline digest must be a plain linux/amd64 manifest on GHCR, read with GITHUB_TOKEN.
-#   5. A commit parented on the branch's tip, or on nothing the first time, holding only gitops/clusters/plane-prod,
+#   3. The branch must still hold what that commit released. GitHub Free cannot stop a push to it, and this would overwrite one and
+#      report success, which hides that it happened. So it stops, and names the commit. scripts/ci/check-deploy-branch.sh makes the
+#      same comparison every day, because a push between two releases can otherwise stay for as long as main is quiet.
+#   4. A branch that runs a set must not go back to none, which is what a revert of the first promotion leaves. Exit 3 cannot know
+#      that, and root would prune Application plane-prod, leaving Plane running unmanaged with its availability alerts quiet.
+#   5. Nothing to do if the two hosted trees match the branch's, and the branch stays where it is.
+#   6. Each Wayline digest must be a plain linux/amd64 manifest on GHCR, read with GITHUB_TOKEN.
+#   7. A commit parented on the branch's tip, or on nothing the first time, holding only gitops/clusters/plane-prod,
 #      gitops/environments/prod and RELEASE.json. So a workflow file cannot cross, and GitHub lets GITHUB_TOKEN push it.
 #      It is pushed without force, so a branch that moved meanwhile refuses it.
 #
 # It builds that commit from objects, with a temporary index, and touches neither the working tree nor the checkout's index.
 # With no gitops/clusters/plane-prod at this commit there is nothing to release, and it says so and exits 0.
+
+# First, and with the system's git. common.sh below puts .tools/bin ahead on PATH, with the token in this environment, so anything tracked
+# there would run as a tool from then on. It is gitignored, so a tracked file there was forced in.
+tracked_tools="$(cd "$(dirname "$0")/../.." && command -p git ls-tree -r --name-only HEAD -- .tools 2>/dev/null || true)"
+if [[ -n "$tracked_tools" ]]; then
+  printf 'fail this commit tracks files under .tools, which would run as tools with the token in reach, so deploy/plane-prod stays where it is: %s\n' "$tracked_tools" >&2
+  exit 1
+fi
+
 # shellcheck source=../lib/common.sh
 source "$(dirname "$0")/../lib/common.sh"
+# shellcheck source=lib-release-branch.sh
+source "$(dirname "$0")/lib-release-branch.sh"
 
 [[ $# -eq 0 ]] || die "usage: $0, which releases HEAD"
 
-BRANCH=deploy/plane-prod
-CLUSTER_TREE=gitops/clusters/plane-prod
-ENVIRONMENT_TREE=gitops/environments/prod
 GHCR_PREFIX=ghcr.io/bereketabera/wayline
 # All four, so an index answers as an index and the refusal below can say so.
 ACCEPT='application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json'
@@ -61,16 +74,6 @@ case "$check_status" in
 esac
 [[ "$check_status" -ne 0 || "$SET_HASH" =~ ^[a-f0-9]{64}$ ]] || die "check-prod-evidence.sh passed and named no set: $(cat "$WORK/check-output")"
 
-# GITHUB_TOKEN from the job's environment, read when git asks, so it is never on a command line or in .git/config.
-remote_git() { # remote_git <git arguments...>
-  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    # shellcheck disable=SC2016  # git's credential helper expands this, not this shell
-    git -c credential.helper= -c 'credential.helper=!f() { test "$1" = get || return 0; printf "username=x-access-token\npassword=%s\n" "$GITHUB_TOKEN"; }; f' "$@"
-  else
-    git "$@"
-  fi
-}
-
 remote_tip="$(remote_git ls-remote origin "refs/heads/$BRANCH")" || die "could not read origin, and an unreadable branch must not look like a missing one"
 TIP="${remote_tip%%[[:space:]]*}"
 remote_git fetch --quiet origin "+refs/heads/main:refs/remotes/origin/main" || die "could not fetch origin's main"
@@ -86,6 +89,15 @@ if [[ -n "$TIP" ]]; then
   [[ "$recorded" =~ ^[a-f0-9]{40}$ ]] || die "$BRANCH at $TIP has no RELEASE.json naming a main commit, so nothing says this would move forwards"
   git merge-base --is-ancestor "$recorded" "$COMMIT" 2>/dev/null ||
     die "$BRANCH was released from $recorded, and $COMMIT does not descend from it. Refusing to move backwards. A rollback is a revert on main, which moves forwards"
+
+  different="$(release_trees_that_differ "$TIP" "$recorded")"
+  [[ -z "$different" ]] ||
+    die "$BRANCH at $TIP says it came from $recorded and differs from that commit under ${different//$'\n'/ and }, so someone pushed it by hand, and Argo CD may have deployed it. This would overwrite that and hide it, so a person has to look: git diff $recorded $TIP -- ${different//$'\n'/ }. To put it back, push a commit on it whose trees are that commit's, and run this job again"
+
+  released_set="$(git cat-file blob "$TIP:RELEASE.json" | jq -r '.set_hash // ""')"
+  if [[ "$check_status" -eq 3 && -n "$released_set" ]]; then
+    die "$BRANCH runs set ${released_set:0:12}, and $COMMIT promotes none, which is what a revert of the first promotion leaves. Root would prune Application plane-prod and leave Plane running unmanaged with its alerts quiet, so the branch stays where it is. To change what runs, promote another set: gh workflow run promote-plane-prod.yml -f set_hash=<set>. Otherwise revert the revert"
+  fi
 
   unchanged=yes
   for tree in "$CLUSTER_TREE" "$ENVIRONMENT_TREE"; do

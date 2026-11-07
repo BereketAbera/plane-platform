@@ -199,13 +199,17 @@ git_repo := "ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git"
 
 git_revision := "deploy/plane-prod"
 
-# deploy/plane-prod holds only these two trees, so anything else would fail at sync, after the merge.
-under_hosted_tree(path) if {
+# Root reads applications/, a child one directory of platform/, and plane-prod the render. Everything that checks this tree reads those
+# and nothing else (collect_hosted in scripts/ci/lib-manifests.sh), so an Application on any other path, values/ or a new folder, would
+# deploy what no rule here has read. And deploy/plane-prod holds only the two trees, so a path out of them would fail at sync.
+readable_path("gitops/environments/prod")
+
+readable_path(path) if {
 	not contains(path, "..")
-	startswith(path, "gitops/clusters/plane-prod/")
+	regex.match(`^gitops/clusters/plane-prod/platform/[A-Za-z0-9._-]+$`, path)
 }
 
-under_hosted_tree("gitops/environments/prod")
+readable_path("gitops/clusters/plane-prod/applications") if input.metadata.name == "root"
 
 clean_path(path) := trim_suffix(trim_prefix(path, "./"), "/")
 
@@ -232,8 +236,8 @@ deny contains msg if {
 	some source in kube.app_sources(input)
 	git_source(source)
 	path := source.path
-	not under_hosted_tree(clean_path(path))
-	msg := sprintf("%s: path %q is outside gitops/clusters/plane-prod and gitops/environments/prod, the only trees %s holds", [identity, path, git_revision])
+	not readable_path(clean_path(path))
+	msg := sprintf("%s: path %q is not one this cluster reads: a directory of gitops/clusters/plane-prod/platform, or gitops/environments/prod. Nothing checks what any other path holds", [identity, path])
 }
 
 # With neither field it would read the root of the branch.
@@ -258,6 +262,41 @@ deny contains msg if {
 hosted_value_file(value_file) if {
 	not contains(value_file, "..")
 	startswith(value_file, "$values/gitops/clusters/plane-prod/")
+}
+
+# Charts here render from helm.valueFiles and directories from their files, and that is all these checks read. Any other field of a
+# source changes what runs with no file to read: helm.parameters, helm.valuesObject, a kustomize image, a directory filter, a plugin.
+# An allow list, so a field Argo CD adds later needs a change here. scripts/ci/check-prod-evidence.sh and collect_hosted refuse
+# .argocd-source files, which reach the same fields from a directory.
+source_fields := {"repoURL", "targetRevision", "path", "chart", "ref", "helm"}
+
+deny contains msg if {
+	input.kind == "Application"
+	some source in kube.app_sources(input)
+	some field, _ in source
+	not source_fields[field]
+	msg := sprintf("%s: a source sets %s, which changes what runs and which nothing here reads. Put it in a file this tree holds", [identity, field])
+}
+
+deny contains msg if {
+	input.kind == "Application"
+	some source in kube.app_sources(input)
+	some field, _ in object.get(source, "helm", {})
+	field != "valueFiles"
+	msg := sprintf("%s: a source sets helm.%s, which changes what runs and which nothing here reads. Put it in a values file", [identity, field])
+}
+
+# Every rule above reads a source, so an Application with none would pass them all, and a hydrator reads another branch.
+deny contains msg if {
+	input.kind == "Application"
+	not kube.app_sources(input)
+	msg := sprintf("%s: an Application here names spec.source or spec.sources, and this one neither", [identity])
+}
+
+deny contains msg if {
+	input.kind == "Application"
+	input.spec.sourceHydrator
+	msg := sprintf("%s: no sourceHydrator. This cluster reads one branch, as it stands", [identity])
 }
 
 # A range would let a chart move with no change in Git.

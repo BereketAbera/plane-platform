@@ -69,11 +69,41 @@ collect_in_repo() { # collect_in_repo <directory>: one file per source, everythi
   helm template bootstrap gitops/bootstrap/chart --namespace argocd >"$out/bootstrap.yaml"
 }
 
+# What Argo CD would act on in the two hosted trees and nothing here would read, so it would reach the cluster past every check.
+# scripts/ci/check-prod-evidence.sh refuses the same in the commit it gates, and this says so to a pull request as well:
+#   a symlink or a submodule: every reader here looks for regular files, and Argo CD follows a link that stays in the repository
+#   .argocd-source*: Argo CD merges it into the Application's source
+#   kustomization.yml, Kustomization: Argo CD builds such a directory, and collect reads it as plain files
+#   a manifest outside applications/, a directory of platform/ and bootstrap-chart/: no reader looks there
+#   anything but an Application in applications/: root applies it, under a project that allows every kind and namespace
+refuse_what_hosted_checks_cannot_read() {
+  local found file kinds
+  found="$(find "$HOSTED_TREE" "$HOSTED_ENVIRONMENT" \( -type l -o -name '.argocd-source*' -o -name kustomization.yml -o -name Kustomization \) 2>/dev/null | LC_ALL=C sort)"
+  [[ -z "$found" ]] || die "Argo CD acts on these and no check here reads them, so they cannot be in the hosted trees. A symlink or an override goes, and a kustomization is named kustomization.yaml: ${found//$'\n'/, }"
+  # A submodule is a plain directory on disk, so only Git can say.
+  found="$(git ls-files -s -- "$HOSTED_TREE" "$HOSTED_ENVIRONMENT" | awk '$1 != "100644" && $1 != "100755"')"
+  [[ -z "$found" ]] || die "these are symlinks or submodules in Git, and no check here reads them: ${found//$'\n'/, }"
+  while read -r file; do
+    case "$file" in
+      "$HOSTED_TREE"/applications/* | "$HOSTED_TREE"/platform/*/* | "$HOSTED_TREE"/bootstrap-chart/*) continue ;;
+      *.jsonnet) die "$file: nothing here reads jsonnet, and an Application could" ;;
+    esac
+    # values/ holds Helm values, which say nothing about what they are. A document that does is a manifest in the wrong place.
+    kinds="$(yq -N -r 'select(.apiVersion != null and .kind != null) | .kind' "$file")" || die "$file is not YAML, so nothing can say it is no manifest"
+    [[ -z "$kinds" ]] || die "$file is a ${kinds//$'\n'/, } outside applications/, platform/<directory> and bootstrap-chart/, which are all that anything here reads"
+  done < <(find "$HOSTED_TREE" -type f \( -name '*.yaml' -o -name '*.yml' -o -name '*.json' -o -name '*.jsonnet' \) 2>/dev/null | LC_ALL=C sort)
+  while read -r file; do
+    kinds="$(yq -N -r 'select(. != null) | .kind // "no kind"' "$file" | { grep -vx Application || true; })" || die "$file is not YAML"
+    [[ -z "$kinds" ]] || die "$file holds ${kinds//$'\n'/, }. Root applies whatever applications/ holds, under a project that allows every kind and namespace, so it may hold only Applications"
+  done < <(hosted_applications)
+}
+
 # The hosted tree, as the hosted Argo CD reads it: the root reads applications/, and each child a directory of platform/.
 # values/ holds Helm values and no manifests. Writes nothing for a part that does not exist yet, so an empty tree passes.
 collect_hosted() { # collect_hosted <directory>: one file per source
   local out="$1" platform_dir target
   mkdir -p "$out"
+  refuse_what_hosted_checks_cannot_read
   [[ ! -d "$HOSTED_TREE/applications" ]] || collect "$HOSTED_TREE/applications" "$out/applications.yaml"
   # Copied to applications/ by the first promotion, so it must already pass everything an Application there does.
   [[ ! -f "$HOSTED_APPLICATION_TEMPLATE" ]] || tr -d '\r' <"$HOSTED_APPLICATION_TEMPLATE" >"$out/plane-prod-application.yaml"
@@ -122,6 +152,41 @@ hosted_tree_stands_alone() { # hosted_tree_stands_alone <scratch directory>
       status=1
     done < <(yq -r '(.spec.sources // [.spec.source])[] | (.helm.valueFiles // [])[]' "$application")
   done < <(hosted_applications)
+  return "$status"
+}
+
+# Only the render has to be evidenced, so this is what makes a new or renamed image anywhere else at least a diff someone reads.
+# Wayline's own move with each promotion, in the render, and are not listed.
+HOSTED_IMAGE_LIST=policy/hosted-images.txt
+
+images_named_in() { # images_named_in <manifest...>: the image keys at any depth, and anything pinned by digest in any other string
+  {
+    yq -N -r 'select(. != null) | .. | select(tag == "!!map") | select(has("image")) | .image | select(tag == "!!str")' "$@"
+    yq -N -r 'select(. != null) | .. | select(tag == "!!map") | select(has("baseImage")) | .baseImage | select(tag == "!!str")' "$@"
+    yq -N -r 'select(. != null) | .. | select(tag == "!!str")' "$@" | { grep -oE '[[:alnum:]][[:alnum:]._/:-]*@sha256:[a-f0-9]{64}' || true; }
+  } | { grep -E '[/:]' || true; } | LC_ALL=C sort -u
+}
+
+# hosted_images_listed <all|some> <manifest...>: every image these name is in the list. all when these are everything the list covers,
+# so an entry nothing names fails too. SKIP_CHARTS leaves out the charts, and then only what is here can be compared.
+hosted_images_listed() {
+  local scope="$1" named listed unlisted stale status=0
+  shift
+  [[ -f "$HOSTED_IMAGE_LIST" ]] || { warn "$HOSTED_IMAGE_LIST is missing"; return 1; }
+  named="$(images_named_in "$@")"
+  listed="$(grep -vE '^(#|$)' "$HOSTED_IMAGE_LIST" | LC_ALL=C sort -u)"
+  unlisted="$(LC_ALL=C comm -23 <(printf '%s\n' "$named") <(printf '%s\n' "$listed"))"
+  if [[ -n "$unlisted" ]]; then
+    warn "hosted production would run these, and they are not in $HOSTED_IMAGE_LIST. If each is meant, add it, so a person reads that diff: ${unlisted//$'\n'/, }"
+    status=1
+  fi
+  if [[ "$scope" == all ]]; then
+    stale="$(LC_ALL=C comm -13 <(printf '%s\n' "$named") <(printf '%s\n' "$listed"))"
+    if [[ -n "$stale" ]]; then
+      warn "$HOSTED_IMAGE_LIST lists these, and nothing hosted runs them, so take them out: ${stale//$'\n'/, }"
+      status=1
+    fi
+  fi
   return "$status"
 }
 
