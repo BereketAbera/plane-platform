@@ -3,8 +3,13 @@
 #
 # No renewBefore: cert-manager renews at two thirds of the lifetime, and Let's Encrypt is shortening that lifetime in 2027 and 2028.
 #
-# ignore-healthcheck: a closed firewall or a Let's Encrypt limit would otherwise hold every later wave. The certificate rules in
-# monitoring-extras report it, and nothing in this cluster needs the Secret to start: Traefik serves it once it appears.
+# ignore-healthcheck: an order that fails, on a closed firewall or a Let's Encrypt limit, would otherwise hold every later wave. The
+# certificate rules in monitoring-extras report it, and nothing in this cluster needs the Secret to start: Traefik serves it once it
+# appears.
+#
+# A closed firewall does not make this wait. cert-manager's self-check passes behind it, so Let's Encrypt is asked and the order fails,
+# and the next try is an hour or more away, which opening the firewall does not shorten. So scripts/hosted/bootstrap.sh opens port 80
+# before Argo CD starts. scripts/hosted/README.md says how to try again at once.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
