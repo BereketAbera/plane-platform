@@ -401,11 +401,13 @@ not that nothing refused arrives.
 Of its 3136 refused requests over HTTP/1.1, Traefik answered 3084 itself, and 52 arrived in another shape, with an encoded slash or backslash, a
 doubly encoded slash or dot, an overlong encoded dot, a NUL or a semicolon inside one segment: `/api/v1/admin/x/%2e%2e%2fbootstrap` arrived as
 `/api/v1/admin/x/..%2Fbootstrap`. Each of the 52 passed because `fastify_reads`, the test's model of find-my-way, does not read what arrived as the
-path refused, so their verdict is the model's. Routed by hand through find-my-way 9.9.0 as this image holds it, with Infisical's router options and
-the 183 distinct routes the test refuses, none of the 52 reached one of them: 42 found no route, and the 10 overlong forms took its bad-URL path,
-which Fastify answers 400. That check is not in this repository. Over HTTP/2, Traefik answered 183 of the 196 requests itself and reset 10 as
-malformed, and 3 reached the echo in the shapes three of the 52 arrive in, `/api/v1/admin/x/..%2Fbootstrap` among them, which pass on the same
-model. An earlier run, before the test read curl's answer, had counted 9 HTTP/2 requests that got none as passes. Behind this Infisical, 3480 passed
+path refused, so their verdict is the model's. Routed by hand through a separate copy of the published find-my-way 9.9.0, the version this image's
+`node_modules/find-my-way/package.json` names, with Infisical's router options and the 183 distinct routes the test refuses, none of the 52 reached
+one of them: 42 found no route, and the 10 overlong forms took its bad-URL path, which Fastify answers 400. The extract of this image holds only
+that `package.json`, so the copy inside the image is not what ran. That check is not in this repository. Over HTTP/2, Traefik answered 183
+of the 196 requests itself and reset 10 as malformed, and 3 reached the echo in the shapes three of the 52 arrive in,
+`/api/v1/admin/x/..%2Fbootstrap` among them, which pass on the same model. So 55 refused requests arrived in another shape, 52 over HTTP/1.1 and 3
+over HTTP/2. An earlier run, before the test read curl's answer, had counted 9 HTTP/2 requests that got none as passes. Behind this Infisical, 3480 passed
 and none failed. That run cannot see what Traefik forwarded, and it then read any 404 from Infisical as no route, which a handler's own 404 is not.
 The 47 rows it read so were 40 spellings and walks that Traefik passed on with an encoded slash, a NUL or a backslash inside a segment, which
 Fastify reads as one segment, 5 rows that stay, and two header tricks. Which kind of 404 each of the 40 was is not on record. The test now reads
