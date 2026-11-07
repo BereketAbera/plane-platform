@@ -9,6 +9,10 @@
 #
 # Until the first promotion Plane is not here, so its Secrets are optional and the run says so and succeeds. Once a repository
 # exists, the same absence is a failure, so a Plane that has gone missing cannot read as a quiet success.
+#
+# ignore-healthcheck: Argo CD reads a CronJob whose last run failed as Degraded, which would make Application backup Degraded and fail
+# root's sync at its first wave until a later night succeeds, and root could add or change no Application meanwhile. BackupTooOld and
+# PlaneBackupFailed report a failed run instead.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -17,6 +21,8 @@ metadata:
   labels:
     app.kubernetes.io/name: plane-backup
     app.kubernetes.io/component: backup
+  annotations:
+    argocd.argoproj.io/ignore-healthcheck: "true"
 spec:
   schedule: "17 2 * * *"
   timeZone: Etc/UTC

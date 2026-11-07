@@ -3,6 +3,8 @@
 #
 # Secret zero stays out: the dump is useless without ENCRYPTION_KEY, and it lives in .local/hosted/plane-prod/secret-zero and the
 # recovery bundle, never here. Only a truncated hash of it goes in the manifest.
+#
+# ignore-healthcheck: as in plane-prod.yaml, a failed night must not hold root's sync at its first wave.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -11,6 +13,8 @@ metadata:
   labels:
     app.kubernetes.io/name: plane-backup
     app.kubernetes.io/component: backup
+  annotations:
+    argocd.argoproj.io/ignore-healthcheck: "true"
 spec:
   schedule: "47 1 * * *"
   timeZone: Etc/UTC
