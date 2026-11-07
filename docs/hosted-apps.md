@@ -74,11 +74,12 @@ any two apps.
    by digest, smoke-tests and scans that digest, and only then records the digests in the run's summary and in its `image-digests` artifact,
    kept 90 days. So a digest with no record did not pass.
 2. **A promotion pull request here moves the pin.** `promote-app.yml` points the app's manifest and its line in `policy/hosted-images.txt`
-   at that digest, runs `scripts/ci/validate-manifests.sh`, and opens a pull request from `promote/<app>`. Promote the **index** digest:
-   the tag names it, and the node pulls its linux/amd64 image, the one the run smoke-tested and scanned.
+   at that digest, runs `scripts/ci/validate-manifests.sh`, and opens a pull request from `promote/<app>`. Promote the **linux/amd64**
+   digest, the manifest the run pulled back, smoke-tested and scanned, so the node runs exactly that. The tag names the index, which holds
+   it beside its linux/arm64 sibling.
    ```bash
    gh workflow run promote-app.yml -R BereketAbera/plane-platform -f app=rillmark -f component=web \
-     -f digest=sha256:<the index digest> -f tag=<the commit's first 12 characters>
+     -f digest=sha256:<the linux/amd64 digest> -f tag=<the commit's first 12 characters>
    gh run list -R BereketAbera/plane-platform -w promote-app.yml -L 1    # then gh run watch <id> -R BereketAbera/plane-platform
    ```
    Without `tag` the tag stays as it is, and may then name the commit of the image before. A dispatch for an app that already runs that
@@ -106,16 +107,16 @@ gh run list -R BereketAbera/rillmark -w images.yml -b main -L 5
 dir="$(mktemp -d)" && gh run download <run id> -R BereketAbera/rillmark -n image-digests -D "$dir" && cat "$dir/digests.tsv"
 ```
 
-It names the commit, the tag, the index digest and the linux/amd64 digest. The digest in the pull request must be that index, from the
-commit you mean to ship. Then that GHCR serves it, with both platforms:
+It names the commit, the tag, the index digest and the linux/amd64 digest. The digest in the pull request must be that linux/amd64 digest,
+from the commit you mean to ship. Then that GHCR serves it, under that tag's index:
 
 ```bash
 gh auth refresh -h github.com -s read:packages       # once, if gh's token cannot read packages
 gh auth token | docker login ghcr.io --username BereketAbera --password-stdin
-docker buildx imagetools inspect ghcr.io/bereketabera/rillmark/web@sha256:<the index digest>
+docker buildx imagetools inspect ghcr.io/bereketabera/rillmark/web:<the tag>
 ```
 
-Its `linux/amd64` entry must be the run's linux/amd64 digest. The token goes through a pipe into Docker's credential store and is never
+Its `linux/amd64` entry must be the digest in the pull request. The token goes through a pipe into Docker's credential store and is never
 printed. `docker logout ghcr.io` takes it out again.
 
 ### Promoting from this machine instead
@@ -123,7 +124,7 @@ printed. `docker logout ghcr.io` takes it out again.
 `make promote-app` is the same script as the workflow, run here, and it commits nothing:
 
 ```bash
-make promote-app APP=rillmark COMPONENT=web DIGEST=sha256:<the index digest> TAG=<the commit's first 12 characters>
+make promote-app APP=rillmark COMPONENT=web DIGEST=sha256:<the linux/amd64 digest> TAG=<the commit's first 12 characters>
 SKIP_CHARTS=yes scripts/ci/validate-manifests.sh      # what the workflow runs before it opens the pull request
 git switch -c promote/rillmark
 git add gitops/clusters/plane-prod/platform/rillmark policy/hosted-images.txt
