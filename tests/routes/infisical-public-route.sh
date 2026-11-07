@@ -4,13 +4,19 @@
 # and middleware code to the same words. Then tests/routes/infisical-public-route.py asks it.
 #
 #   tests/routes/infisical-public-route.sh                                                    an echo server behind Traefik, which shows what would arrive
-#   INFISICAL_BACKEND=http://host.docker.internal:18110 tests/routes/infisical-public-route.sh   a real Infisical behind it, which shows what Fastify's router does with it
+#   INFISICAL_BACKEND=http://host.docker.internal:18210 tests/routes/infisical-public-route.sh   a real Infisical behind it, which shows what Fastify's router does with it
 #   INFISICAL_ROUTE_TEST_SERVE=yes INFISICAL_BACKEND=... tests/routes/infisical-public-route.sh  no questions: leaves it up, for a browser mapped to that port, until Ctrl-C
 #   INFISICAL_ROUTE_TEST_NETWORK=<docker network> ...                                         Traefik joins that network too, so the backend sees it as a
 #                                                                                              proxy of its own range, as Infisical sees Traefik's pod
-#   INFISICAL_ROUTE_TEST_DIRECT=http://127.0.0.1:18110 INFISICAL_BACKEND=... ...               the same Infisical from this machine, past Traefik. On a copy
-#                                                                                              nobody has claimed, the test claims it there and sends the
-#                                                                                              real tokens it hands out through the route
+#   INFISICAL_ROUTE_TEST_DIRECT=http://127.0.0.1:18210 INFISICAL_ROUTE_TEST_THROWAWAY=<container> INFISICAL_BACKEND=... ...
+#                                                                                              the same Infisical from this machine, past Traefik. The test
+#                                                                                              claims it with an admin it never keeps and sends the real
+#                                                                                              tokens it hands out through the route, so it asks only a
+#                                                                                              container named here as a copy to throw away, that nobody has
+#                                                                                              claimed and that publishes that port on 127.0.0.1. Docker
+#                                                                                              holds that address for it, so a port-forward to a real
+#                                                                                              Infisical, as scripts/hosted makes from 18100 up, cannot
+#                                                                                              answer there
 #
 # Exit, as scripts/test.sh: 0 every row passed, 1 something got through, 2 nothing did and something could not be asked, a BLOCKED row or the
 # whole run. No cluster and no credential: it asks nothing of production.
@@ -39,10 +45,12 @@ fi
 
 # The questions, with what this run was given.
 questions() {
-  python3 -I "$ROOT/tests/routes/infisical-public-route.py" --echo-port "$ECHO_PORT" --backend "$mode" --direct "${INFISICAL_ROUTE_TEST_DIRECT:-}" "$@"
+  python3 -I "$ROOT/tests/routes/infisical-public-route.py" --echo-port "$ECHO_PORT" --backend "$mode" \
+    --direct "${INFISICAL_ROUTE_TEST_DIRECT:-}" --throwaway "${INFISICAL_ROUTE_TEST_THROWAWAY:-}" "$@"
 }
 # What would stop them is asked before anything starts. Another run's echo server on this one's port would answer this run's Traefik, and
-# the questions would then stop with none asked.
+# the questions would then stop with none asked. A direct target that is not a running container named as a copy to throw away is asked
+# nothing, and one claimed already nothing more.
 [[ "${INFISICAL_ROUTE_TEST_SERVE:-}" == yes ]] || questions --preflight || exit 2
 
 "$ROOT/scripts/install-tools.sh" yq helm >/dev/null
