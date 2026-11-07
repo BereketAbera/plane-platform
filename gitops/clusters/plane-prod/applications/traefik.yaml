@@ -1,5 +1,5 @@
-# Ships the IngressRoute CRDs that the Plane, Grafana and Infisical routes need, and the only hostPort on the node. Finalizer kept: nothing here is
-# irreplaceable, so removing this file from Git cleanly removes the app.
+# Ships the IngressRoute CRDs that the Plane, Grafana, Infisical and app routes need, and the only hostPort on the node. Finalizer kept:
+# nothing here is irreplaceable, so removing this file from Git cleanly removes the app.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
