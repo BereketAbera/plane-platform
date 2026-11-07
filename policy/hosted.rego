@@ -229,6 +229,8 @@ infisical_limit_specs := {
 
 route_namespaces := {plane_namespace, grafana_namespace, infisical_namespace}
 
+# These read the namespace an object states. Argo CD would put one that states none in its Application's destination, where these would not
+# see it, so policy/hosted_tree.rego wants every object in the hosted tree to state its own.
 in_grafana_namespace if object.get(input.metadata, "namespace", "") == grafana_namespace
 
 in_infisical_namespace if object.get(input.metadata, "namespace", "") == infisical_namespace
@@ -562,6 +564,8 @@ infisical_network_policies := {
 	},
 }
 
+# This reads the namespace a policy states. One that states none in platform/infisical would land in namespace infisical all the same, so
+# policy/hosted_tree.rego refuses it.
 is_network_policy_in(namespace) if {
 	input.kind == "NetworkPolicy"
 	object.get(input.metadata, "namespace", "") == namespace
