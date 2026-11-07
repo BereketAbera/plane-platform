@@ -157,7 +157,7 @@ remote-bootstrap: remote-guard ## Hosted: deploy key, Terraform, restic password
 remote-ui: remote-guard ## Hosted: port-forward an admin UI, none of which has a public route but Grafana: make remote-ui TARGET=plane-prod UI=argocd|grafana|prometheus|alertmanager|infisical [PORT=<local port>]
 	@./scripts/hosted/ui.sh "$(UI)" $(PORT)
 
-remote-grafana-admin: remote-guard ## Hosted: Grafana's admin login. VERB=login prints the URL and username and copies the password; CONFIRM=plane-prod VERB=apply makes it and writes its Secret, and VERB=rotate replaces the password: make remote-grafana-admin TARGET=plane-prod VERB=apply|rotate|login
+remote-grafana-admin: remote-guard ## Hosted: Grafana's admin login. VERB=login prints the URL and username and copies the password; CONFIRM=plane-prod VERB=apply makes it and writes its Secret, and VERB=rotate replaces the password: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply|rotate, or TARGET=plane-prod VERB=login
 	@./scripts/hosted/grafana-admin.sh "$(VERB)"
 
 remote-smoke: remote-guard ## Hosted: smoke over https on an existing account, asked at a hidden prompt, removing what it makes: make remote-smoke TARGET=plane-prod [SMOKE_WORKSPACE=<slug>] [SMOKE_ALLOW_STAGING=yes]
