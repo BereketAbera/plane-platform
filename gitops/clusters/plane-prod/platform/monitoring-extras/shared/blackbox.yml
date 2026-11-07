@@ -68,16 +68,12 @@ modules:
       fail_if_not_ssl: true
       valid_status_codes: [200]
       fail_if_body_json_not_matches_cel: "body.config.initialized == true && body.config.allowSignUp == false"
-  # Infisical's MFA router, which answers a call with no bearer token 401 in its own hook, before any handler or the database. One of its
-  # paths sits under each of the route's two limits, and a route whose Middleware is missing gets Traefik's 404, so this reads that as down.
-  http_infisical_no_bearer:
-    prober: http
-    timeout: 5s
-    http:
-      preferred_ip_protocol: ip4
-      fail_if_not_ssl: true
-      valid_status_codes: [401]
-      fail_if_body_not_matches_regexp: ['"error":\s*"Missing bearer token"']
+  # One call under each of the route's two limits, which Infisical refuses through its error handler with no account read. Each body names
+  # that error, so a route whose Middleware is missing, which gets Traefik's 404 in plain text, reads as down. Not the MFA router's paths:
+  # in v0.167.6 its hook answers a call with no bearer token in a body that does not match the route's own 401 schema, so the server
+  # answers 500 instead.
+  #
+  # A password set with no session, which verifyAuth refuses 401 before the body is read.
   http_infisical_no_bearer_post:
     prober: http
     timeout: 5s
@@ -86,7 +82,18 @@ modules:
       preferred_ip_protocol: ip4
       fail_if_not_ssl: true
       valid_status_codes: [401]
-      fail_if_body_not_matches_regexp: ['"error":\s*"Missing bearer token"']
+      fail_if_body_not_matches_regexp: ['"message":\s*"Token missing"']
+  # A token refresh with no refresh cookie, which answers 404 AuthTokenNotFound, the healthy case. A path Infisical has no route for gets
+  # error "Not Found" instead.
+  http_infisical_no_refresh_cookie:
+    prober: http
+    timeout: 5s
+    http:
+      method: POST
+      preferred_ip_protocol: ip4
+      fail_if_not_ssl: true
+      valid_status_codes: [404]
+      fail_if_body_not_matches_regexp: ['"error":\s*"AuthTokenNotFound"']
   # A connection that must not succeed: see the denied-prometheus Probe.
   tcp_denied:
     prober: tcp
