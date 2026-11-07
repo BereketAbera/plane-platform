@@ -9,6 +9,7 @@
 #                                                  dialled over SSH. Everything below holds, except where it names kindnet.
 #                                                  kube-router too accepts traffic from the node's own addresses, and it
 #                                                  too fails open, on a missing ipset, with only a warning in the journal.
+#                                                  What differs most is how a denial reads, under Verdicts.
 #
 # kindnet fails open and silently: when its setup breaks it logs one line and lets everything
 # through. So nothing here is believed until a sentinel has shown, in a throwaway namespace, that a
@@ -18,16 +19,22 @@
 # only the first packet of a new connection, and that is what NetworkPolicy semantics depend on.
 # One pod per row would take about an hour for this matrix (estimate).
 #
-# Verdicts:
-#   allow  passes on a completed connection or on connection refused: the packet arrived.
-#   deny   passes ONLY on a timeout. Refused means the packet arrived, so that is a failure.
+# Verdicts. A policy's denial reads differently on the two clusters.
+#   kindnet drops what a policy denies, so a denied connection times out, and a refusal means the packet arrived.
+#     allow  passes on a completed connection or on connection refused: the packet arrived.
+#     deny   passes ONLY on a timeout. Refused means the packet arrived, so that is a failure.
+#   kube-router ends each pod's chain in -j REJECT (pod.go, v2.11.1-k3s1), so a denied connection is refused at once, exactly as a
+#   closed port refuses. So a refusal proves nothing until the node has connected to that port at the same moment.
+#     allow  passes ONLY on a completed connection. Refused while the node connected to that port means a policy rejected it: a failure.
+#     deny   passes ONLY on a refusal while the node connected to that port. A timeout is not how it denies, so that is INCONCLUSIVE.
 #   INCONCLUSIVE is never a pass. It says the row could not prove anything, and why.
 #
-# A timeout alone cannot tell a policy from a target that is down or a probe pod with no network. So each probe pod
+# A failed connection alone cannot tell a policy from a target that is down or a probe pod with no network. So each probe pod
 # has two references at the same moment, kept in the note column:
 #   the node    dials each target as root, with a bare connect, in the moment before the pod starts and again after it
-#               ends. kindnet's postrouting chain accepts root sockets ahead of its policy queue, so no policy governs
-#               this, and an answer shows the target was up and listening. A target that does not answer leaves its row
+#               ends. kindnet's postrouting chain accepts root sockets ahead of its policy queue, and kube-router's chains
+#               accept the node's own addresses, so no policy governs this. CONNECTED shows the target was up and listening
+#               on that port, and REFUSED only that it was up. A target that does not answer leaves its row
 #               INCONCLUSIVE. A row that says it has no reference proves less, and says so. That means the node had no
 #               address to dial. If the node was asked and the witness itself failed, the row reads NO_READING, which is
 #               INCONCLUSIVE too, and the sentinel first shows the witness works and can tell silence from an answer.
@@ -84,6 +91,9 @@ POLICY_SETTLE_SECONDS="${POLICY_SETTLE_SECONDS:-5}"
 POD_REFERENCE_HOST="kube-dns.kube-system.svc.cluster.local"
 # TEST-NET-1, RFC 5737: nothing is there, so the sentinel can show the node's witness does not answer yes to everything.
 WITNESS_NOBODY="192.0.2.1"
+# What a connection a policy denies reads as, per the header. The sentinel shows it on a known case before any row counts on it.
+DENIAL="${WAYLINE_TARGET:+REFUSED}"
+DENIAL="${DENIAL:-TIMEOUT}"
 RUN_ID="$(date -u +%H%M%S)"
 SENTINEL_NS="netpol-sentinel-$RUN_ID"
 PROBE_LABEL="plane-platform/netpol-probe"
@@ -125,16 +135,17 @@ EOF
 echo DONE'
 
 # Runs on the node, as root. A bare connect, closed at once, so nothing is sent to a port that would log it, as Valkey
-# does an HTTP request. Refused counts as an answer: the target's kernel said so, which a policy's drop never does.
+# does an HTTP request. Refused is an answer too: the target's kernel said so, because no policy governs the node's own sockets.
+# The two stay apart, because only a connection shows the port was open, and on kube-router a pod's refusal needs that.
 # shellcheck disable=SC2016  # expanded by the node's shell, not this one
 NODE_WITNESS='n=0
 while read -r id address port; do
   (
     if out=$(timeout '"$WITNESS_TIMEOUT"' bash -c "exec 3<>/dev/tcp/$address/$port" 2>&1); then
-      echo "$id ANSWERED"
+      echo "$id CONNECTED"
     else
       case "$out" in
-        *refused*) echo "$id ANSWERED" ;;
+        *refused*) echo "$id REFUSED" ;;
         *"not known"* | *"Temporary failure"* | *"No address"*) echo "$id UNRESOLVED" ;;
         *) echo "$id SILENT" ;;
       esac
@@ -265,10 +276,10 @@ assert_witness() {
   ask_witness "$rows" "$readings" ||
     die "sentinel: the node's witness could not run, so every row would lose its reference: $(head -1 "$readings.err")"
   got="$(sort "$readings" | tr '\n' ' ')"
-  if [[ "$got" != "closed ANSWERED nobody SILENT open ANSWERED " ]]; then
-    die "sentinel: the node's witness read: $got. Want an open and a closed port to answer it and $WITNESS_NOBODY not to. Nothing below this point can be trusted."
+  if [[ "$got" != "closed REFUSED nobody SILENT open CONNECTED " ]]; then
+    die "sentinel: the node's witness read: $got. Want the open port to connect, the closed port to refuse it and $WITNESS_NOBODY not to answer. Nothing below this point can be trusted."
   fi
-  ok "sentinel: the node's witness -> a blocked server answers it on an open and a closed port, and $WITNESS_NOBODY does not"
+  ok "sentinel: the node's witness -> a blocked server connects on its open port and refuses on its closed one, and $WITNESS_NOBODY does not answer"
 }
 
 # The local cluster's controller, read from its pod and the node's nftables.
@@ -385,14 +396,19 @@ spec:
       ports: [{port: 8080}]
 YAML
   sleep "$POLICY_SETTLE_SECONDS"
-  assert_class TIMEOUT "default-deny blocks a new connection" blocked "$client" "$server" 8080
+  # The port this reached with no policy, so what changed is the policy, and the witness below shows the port stayed open.
+  assert_class "$DENIAL" "default-deny blocks a new connection" blocked "$client" "$server" 8080
   assert_class CONNECTED "allow rule admits only the labelled client" allowed '{"role":"allowed"}' "$server" 8080
   local server_address
   server_address="$(kc -n "$SENTINEL_NS" get service server -o jsonpath='{.spec.clusterIP}')" ||
     die "sentinel: could not read the server's Service address"
   assert_witness "$server_address"
   kc delete namespace "$SENTINEL_NS" --wait=false >/dev/null
-  ok "enforcement is on, and timeouts, refusals and DNS failures are told apart"
+  if [[ "$DENIAL" == REFUSED ]]; then
+    ok "enforcement is on, and a policy's refusal, a closed port's refusal and DNS failures are told apart, the first two by the node's witness"
+  else
+    ok "enforcement is on, and timeouts, refusals and DNS failures are told apart"
+  fi
 }
 
 # --- Matrix --------------------------------------------------------------------------------------
@@ -492,7 +508,8 @@ R$number-last $POD_REFERENCE_HOST 53"
 #   NONE        it was not asked, because it had no address to dial.
 #   NO_READING  it was asked and a reading is missing, because the witness failed. That is not the same as not asked,
 #               and it is not the same as a target that stayed silent, which on a row outside the cluster costs nothing.
-#   ANSWERED    the target answered both before and after the probes, so it was up across them.
+#   CONNECTED   it connected both before and after the probes, so the port was open across them.
+#   REFUSED     it answered both times, and refused at least once. So the target was up across them, and the port not surely open.
 #   ANSWERED_ONCE  it answered one of those and not the other. So the node reached it, and it was not up across them.
 #   otherwise   neither reading was an answer, and this is the first of them: SILENT or UNRESOLVED.
 witness_of() {
@@ -505,8 +522,9 @@ witness_of() {
   before="$(awk -v id="$2" '$1 == id { print $2 }' "$WORK/witness-$1-before" 2>/dev/null || true)"
   after="$(awk -v id="$2" '$1 == id { print $2 }' "$WORK/witness-$1-after" 2>/dev/null || true)"
   if [[ -z "$before" || -z "$after" ]]; then echo NO_READING
-  elif [[ "$before" == ANSWERED && "$after" == ANSWERED ]]; then echo ANSWERED
-  elif [[ "$before" == ANSWERED || "$after" == ANSWERED ]]; then echo ANSWERED_ONCE
+  elif [[ "$before" == CONNECTED && "$after" == CONNECTED ]]; then echo CONNECTED
+  elif [[ "$before" =~ ^(CONNECTED|REFUSED)$ && "$after" =~ ^(CONNECTED|REFUSED)$ ]]; then echo REFUSED
+  elif [[ "$before" =~ ^(CONNECTED|REFUSED)$ || "$after" =~ ^(CONNECTED|REFUSED)$ ]]; then echo ANSWERED_ONCE
   else echo "$before"
   fi
 }
@@ -558,11 +576,13 @@ decide() {
   local down="the target did not answer the node either, so this proves nothing about a policy"
   local no_reading="the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target"
   local once="the target answered the node in only one of its two readings, so it was not up across this attempt, and this proves nothing about a policy"
+  local no_network="this pod could not resolve a name at the same moment, so it may have had no network at all"
+  local not_a_policy="kube-router refuses what a policy denies, and this timed out, so something else dropped it and this proves nothing about a policy"
   case "$class" in
     NOT_RUN) echo "INCONCLUSIVE|counts|the probe gave no result" ;;
     OTHER:*) echo "FAIL|counts|curl failed in a way that says nothing about the path" ;;
     DNS)
-      if [[ "$scope" == outside && ("$witness" == ANSWERED || "$witness" == ANSWERED_ONCE) ]]; then
+      if [[ "$scope" == outside && "$witness" =~ ^(CONNECTED|REFUSED|ANSWERED_ONCE)$ ]]; then
         echo "INCONCLUSIVE|counts|the node reached this name in at least one of its two readings, so this run had internet DNS and this pod's lookup is what failed"
       elif [[ "$scope" == outside && ("$witness" == UNRESOLVED || "$witness" == SILENT) ]]; then
         echo "INCONCLUSIVE|free|this name needs internet DNS, which this run did not have, so this proves nothing. Not counted against the run"
@@ -573,24 +593,41 @@ decide() {
     CONNECTED) if [[ "$expect" == allow ]]; then echo "PASS|counts|"; else echo "FAIL|counts|a deny row connected"; fi ;;
     REFUSED)
       if [[ "$ready" == 0 ]]; then echo "INCONCLUSIVE|counts|$no_endpoint"
-      elif [[ "$expect" == allow ]]; then echo "PASS|counts|"
-      else echo "FAIL|counts|refused means the packet arrived"
+      elif [[ "$DENIAL" == TIMEOUT ]]; then
+        if [[ "$expect" == allow ]]; then echo "PASS|counts|"; else echo "FAIL|counts|refused means the packet arrived"; fi
+      elif [[ "$reference" != yes ]]; then echo "INCONCLUSIVE|counts|$no_network"
+      elif [[ "$witness" == CONNECTED ]]; then
+        if [[ "$expect" == deny ]]; then
+          echo "PASS|counts|reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's"
+        else
+          echo "FAIL|counts|the node connected to this port at the same moment and this pod was refused, so a policy rejected it"
+        fi
+      elif [[ "$witness" == REFUSED ]]; then echo "INCONCLUSIVE|counts|the node was refused too, so this cannot tell a policy from a closed port"
+      elif [[ "$witness" == NONE ]]; then echo "INCONCLUSIVE|counts|no reference for the target, so this cannot tell a policy from a closed port"
+      elif [[ "$witness" == NO_READING ]]; then echo "INCONCLUSIVE|counts|$no_reading"
+      elif [[ "$witness" == ANSWERED_ONCE ]]; then echo "INCONCLUSIVE|counts|$once"
+      elif [[ "$scope" == outside ]]; then echo "INCONCLUSIVE|free|$outside"
+      else echo "INCONCLUSIVE|counts|$down"
       fi
       ;;
     TIMEOUT)
       if [[ "$ready" == 0 ]]; then echo "INCONCLUSIVE|counts|$no_endpoint"
-      elif [[ "$reference" != yes ]]; then echo "INCONCLUSIVE|counts|this pod could not resolve a name at the same moment, so it may have had no network at all"
-      elif [[ "$witness" == ANSWERED ]]; then
-        if [[ "$expect" == deny ]]; then
+      elif [[ "$reference" != yes ]]; then echo "INCONCLUSIVE|counts|$no_network"
+      elif [[ "$witness" == CONNECTED || "$witness" == REFUSED ]]; then
+        if [[ "$expect" == allow ]]; then
+          echo "FAIL|counts|the target answered the node at the same moment, so the path to it is blocked"
+        elif [[ "$DENIAL" == TIMEOUT ]]; then
           echo "PASS|counts|reference: the target answered the node and this pod's DNS answered, at the same moment"
         else
-          echo "FAIL|counts|the target answered the node at the same moment, so the path to it is blocked"
+          echo "INCONCLUSIVE|counts|$not_a_policy"
         fi
       elif [[ "$witness" == NONE ]]; then
-        if [[ "$expect" == deny ]]; then
+        if [[ "$expect" == allow ]]; then
+          echo "FAIL|counts|no reference for the target, so this may be the target and not the path"
+        elif [[ "$DENIAL" == TIMEOUT ]]; then
           echo "PASS|counts|no reference for the target: a timeout alone, which does not show the target was up"
         else
-          echo "FAIL|counts|no reference for the target, so this may be the target and not the path"
+          echo "INCONCLUSIVE|counts|$not_a_policy"
         fi
       elif [[ "$witness" == NO_READING ]]; then echo "INCONCLUSIVE|counts|$no_reading"
       elif [[ "$witness" == ANSWERED_ONCE ]]; then echo "INCONCLUSIVE|counts|$once"
@@ -653,7 +690,9 @@ run_matrix() {
   done <"$WORK/cases"
 
   log "PASS $passed, FAIL $failed, INCONCLUSIVE $((inconclusive + free)), of which $free need something outside the cluster and do not count against the run. Deny rows that pass with no reference for the target: $unreferenced. Evidence: $EVIDENCE"
-  if [[ "$unreferenced" -eq 0 ]]; then
+  if [[ "$DENIAL" == REFUSED ]]; then
+    log "A deny PASS is a refusal while the node connected to that port and the pod's DNS answered. It cannot rule out a refusal from something else on that pod's path to that target."
+  elif [[ "$unreferenced" -eq 0 ]]; then
     log "A deny PASS is a timeout while both references answered. It cannot rule out loss only on that pod's path to that target."
   else
     log "A deny PASS is a timeout. For $unreferenced of them nothing shows the target was up, as each says. The rest had both references, and none of them can rule out loss only on that pod's path to that target."
@@ -667,50 +706,94 @@ run_matrix() {
 selftest() {
   local failures=0 expect class scope ready witness reference want got asked before after
   # expect class scope ready witness reference wanted verdict and whether it counts
-  while read -r expect class scope ready witness reference want; do
-    got="$(decide "$expect" "$class" tcp "$scope" "$ready" "$witness" "$reference")"
-    got="${got%%|*}|$(cut -d'|' -f2 <<<"$got")"
-    if [[ "$got" != "$want" ]]; then
-      printf 'FAIL decide %s %s %s ready=%s witness=%s reference=%s: got %s, want %s\n' "$expect" "$class" "$scope" "$ready" "$witness" "$reference" "$got" "$want"
-      failures=$((failures + 1))
-    fi
-  done <<'TABLE'
-deny TIMEOUT cluster 1 ANSWERED yes PASS|counts
+  decide_table() { # decide_table <what a denial reads as>, with the table on stdin
+    local DENIAL="$1"
+    while read -r expect class scope ready witness reference want; do
+      got="$(decide "$expect" "$class" tcp "$scope" "$ready" "$witness" "$reference")"
+      got="${got%%|*}|$(cut -d'|' -f2 <<<"$got")"
+      if [[ "$got" != "$want" ]]; then
+        printf 'FAIL decide, denial %s: %s %s %s ready=%s witness=%s reference=%s: got %s, want %s\n' "$DENIAL" "$expect" "$class" "$scope" "$ready" "$witness" "$reference" "$got" "$want"
+        failures=$((failures + 1))
+      fi
+    done
+  }
+  decide_table TIMEOUT <<'TABLE'
+deny TIMEOUT cluster 1 CONNECTED yes PASS|counts
+deny TIMEOUT cluster 1 REFUSED yes PASS|counts
 deny TIMEOUT cluster 1 NONE yes PASS|counts
 deny TIMEOUT cluster 1 SILENT yes INCONCLUSIVE|counts
 deny TIMEOUT cluster 1 NO_READING yes INCONCLUSIVE|counts
 deny TIMEOUT cluster 1 ANSWERED_ONCE yes INCONCLUSIVE|counts
-deny TIMEOUT cluster 0 ANSWERED yes INCONCLUSIVE|counts
-deny TIMEOUT cluster 1 ANSWERED no INCONCLUSIVE|counts
-deny TIMEOUT outside - ANSWERED yes PASS|counts
+deny TIMEOUT cluster 0 CONNECTED yes INCONCLUSIVE|counts
+deny TIMEOUT cluster 1 CONNECTED no INCONCLUSIVE|counts
+deny TIMEOUT outside - CONNECTED yes PASS|counts
 deny TIMEOUT outside - SILENT yes INCONCLUSIVE|free
 deny TIMEOUT outside - UNRESOLVED yes INCONCLUSIVE|free
 deny TIMEOUT outside - NO_READING yes INCONCLUSIVE|counts
 deny TIMEOUT outside - ANSWERED_ONCE yes INCONCLUSIVE|counts
 deny DNS outside - UNRESOLVED yes INCONCLUSIVE|free
 deny DNS outside - SILENT yes INCONCLUSIVE|free
-deny DNS outside - ANSWERED yes INCONCLUSIVE|counts
+deny DNS outside - CONNECTED yes INCONCLUSIVE|counts
+deny DNS outside - REFUSED yes INCONCLUSIVE|counts
 deny DNS outside - ANSWERED_ONCE yes INCONCLUSIVE|counts
 deny DNS outside - NO_READING yes INCONCLUSIVE|counts
 deny DNS cluster - NONE yes INCONCLUSIVE|counts
-deny CONNECTED cluster 1 ANSWERED yes FAIL|counts
-deny REFUSED cluster 1 ANSWERED yes FAIL|counts
-deny REFUSED cluster 0 ANSWERED yes INCONCLUSIVE|counts
-allow CONNECTED cluster 1 ANSWERED yes PASS|counts
-allow REFUSED cluster 1 ANSWERED yes PASS|counts
-allow REFUSED cluster 0 ANSWERED yes INCONCLUSIVE|counts
-allow TIMEOUT cluster 0 ANSWERED yes INCONCLUSIVE|counts
-allow TIMEOUT cluster 1 ANSWERED yes FAIL|counts
+deny CONNECTED cluster 1 CONNECTED yes FAIL|counts
+deny REFUSED cluster 1 CONNECTED yes FAIL|counts
+deny REFUSED cluster 1 REFUSED yes FAIL|counts
+deny REFUSED cluster 0 CONNECTED yes INCONCLUSIVE|counts
+allow CONNECTED cluster 1 CONNECTED yes PASS|counts
+allow REFUSED cluster 1 CONNECTED yes PASS|counts
+allow REFUSED cluster 1 REFUSED yes PASS|counts
+allow REFUSED cluster 0 CONNECTED yes INCONCLUSIVE|counts
+allow TIMEOUT cluster 0 CONNECTED yes INCONCLUSIVE|counts
+allow TIMEOUT cluster 1 CONNECTED yes FAIL|counts
+allow TIMEOUT cluster 1 REFUSED yes FAIL|counts
 allow TIMEOUT cluster 1 NONE yes FAIL|counts
 allow TIMEOUT cluster 1 SILENT yes INCONCLUSIVE|counts
 allow TIMEOUT cluster 1 NO_READING yes INCONCLUSIVE|counts
 allow TIMEOUT outside - SILENT yes INCONCLUSIVE|free
 allow TIMEOUT outside - ANSWERED_ONCE yes INCONCLUSIVE|counts
 allow DNS outside - UNRESOLVED yes INCONCLUSIVE|free
-allow DNS outside - ANSWERED yes INCONCLUSIVE|counts
+allow DNS outside - CONNECTED yes INCONCLUSIVE|counts
 allow DNS outside - ANSWERED_ONCE yes INCONCLUSIVE|counts
 allow NOT_RUN cluster 1 NONE yes INCONCLUSIVE|counts
-allow OTHER:35 cluster 1 ANSWERED yes FAIL|counts
+allow OTHER:35 cluster 1 CONNECTED yes FAIL|counts
+TABLE
+  # kube-router: a refusal is a policy only if the node connected to that port, and a timeout is never one.
+  decide_table REFUSED <<'TABLE'
+deny REFUSED cluster 1 CONNECTED yes PASS|counts
+deny REFUSED cluster 1 REFUSED yes INCONCLUSIVE|counts
+deny REFUSED cluster 1 NONE yes INCONCLUSIVE|counts
+deny REFUSED cluster 1 SILENT yes INCONCLUSIVE|counts
+deny REFUSED cluster 1 NO_READING yes INCONCLUSIVE|counts
+deny REFUSED cluster 1 ANSWERED_ONCE yes INCONCLUSIVE|counts
+deny REFUSED cluster 0 CONNECTED yes INCONCLUSIVE|counts
+deny REFUSED cluster 1 CONNECTED no INCONCLUSIVE|counts
+deny REFUSED outside - CONNECTED yes PASS|counts
+deny REFUSED outside - REFUSED yes INCONCLUSIVE|counts
+deny REFUSED outside - SILENT yes INCONCLUSIVE|free
+deny REFUSED outside - UNRESOLVED yes INCONCLUSIVE|free
+deny REFUSED outside - NO_READING yes INCONCLUSIVE|counts
+deny CONNECTED cluster 1 CONNECTED yes FAIL|counts
+deny TIMEOUT cluster 1 CONNECTED yes INCONCLUSIVE|counts
+deny TIMEOUT cluster 1 REFUSED yes INCONCLUSIVE|counts
+deny TIMEOUT cluster 1 NONE yes INCONCLUSIVE|counts
+deny TIMEOUT outside - CONNECTED yes INCONCLUSIVE|counts
+deny TIMEOUT outside - SILENT yes INCONCLUSIVE|free
+deny DNS outside - UNRESOLVED yes INCONCLUSIVE|free
+deny DNS outside - CONNECTED yes INCONCLUSIVE|counts
+allow CONNECTED cluster 1 CONNECTED yes PASS|counts
+allow REFUSED cluster 1 CONNECTED yes FAIL|counts
+allow REFUSED cluster 1 REFUSED yes INCONCLUSIVE|counts
+allow REFUSED cluster 1 NONE yes INCONCLUSIVE|counts
+allow REFUSED cluster 0 CONNECTED yes INCONCLUSIVE|counts
+allow REFUSED cluster 1 CONNECTED no INCONCLUSIVE|counts
+allow REFUSED outside - SILENT yes INCONCLUSIVE|free
+allow TIMEOUT cluster 1 CONNECTED yes FAIL|counts
+allow TIMEOUT cluster 1 NONE yes FAIL|counts
+allow TIMEOUT cluster 1 SILENT yes INCONCLUSIVE|counts
+allow OTHER:35 cluster 1 CONNECTED yes FAIL|counts
 TABLE
   readings() { # readings <whether the row was asked> <before> <after>. A dash is no reading.
     : >"$WORK/witness-rows-0"
@@ -731,13 +814,18 @@ TABLE
   done <<'TABLE'
 NONE no - -
 NO_READING yes - -
-NO_READING yes ANSWERED -
-NO_READING yes - ANSWERED
-ANSWERED yes ANSWERED ANSWERED
-ANSWERED_ONCE yes ANSWERED SILENT
-ANSWERED_ONCE yes SILENT ANSWERED
-ANSWERED_ONCE yes UNRESOLVED ANSWERED
-ANSWERED_ONCE yes ANSWERED UNRESOLVED
+NO_READING yes CONNECTED -
+NO_READING yes - REFUSED
+CONNECTED yes CONNECTED CONNECTED
+REFUSED yes REFUSED REFUSED
+REFUSED yes CONNECTED REFUSED
+REFUSED yes REFUSED CONNECTED
+ANSWERED_ONCE yes CONNECTED SILENT
+ANSWERED_ONCE yes SILENT CONNECTED
+ANSWERED_ONCE yes REFUSED SILENT
+ANSWERED_ONCE yes SILENT REFUSED
+ANSWERED_ONCE yes UNRESOLVED CONNECTED
+ANSWERED_ONCE yes CONNECTED UNRESOLVED
 SILENT yes SILENT SILENT
 SILENT yes SILENT UNRESOLVED
 UNRESOLVED yes UNRESOLVED SILENT
@@ -753,11 +841,13 @@ TABLE
       failures=$((failures + 1))
     fi
   done <<'TABLE'
-ANSWERED ANSWERED INCONCLUSIVE|counts
-ANSWERED SILENT INCONCLUSIVE|counts
-SILENT ANSWERED INCONCLUSIVE|counts
-UNRESOLVED ANSWERED INCONCLUSIVE|counts
-ANSWERED UNRESOLVED INCONCLUSIVE|counts
+CONNECTED CONNECTED INCONCLUSIVE|counts
+REFUSED REFUSED INCONCLUSIVE|counts
+CONNECTED SILENT INCONCLUSIVE|counts
+SILENT CONNECTED INCONCLUSIVE|counts
+REFUSED SILENT INCONCLUSIVE|counts
+UNRESOLVED CONNECTED INCONCLUSIVE|counts
+CONNECTED UNRESOLVED INCONCLUSIVE|counts
 SILENT SILENT INCONCLUSIVE|free
 UNRESOLVED UNRESOLVED INCONCLUSIVE|free
 SILENT UNRESOLVED INCONCLUSIVE|free

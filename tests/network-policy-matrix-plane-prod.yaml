@@ -3,7 +3,9 @@
 # INCONCLUSIVE, which is not a pass.
 #
 # How a row runs is written at the head of tests/network-policy-matrix.yaml and scripts/test-netpol.sh. In short: a NEW short-lived
-# pod in from.ns with from.labels, never hostNetwork. allow passes on a connection or a refusal, and deny passes ONLY on a timeout.
+# pod in from.ns with from.labels, never hostNetwork. kube-router rejects what a policy denies, where the local cluster drops it, so
+# here deny passes ONLY on a refusal while the node connected to that port, and allow passes ONLY on a connection. A row needs a port
+# that really listens, or it reads INCONCLUSIVE: a refusal alone cannot tell a policy from a closed port.
 #
 # Made from the local matrix once, by these changes, and edited by hand from here on, so a row of one never appears in the other by
 # accident:
