@@ -585,6 +585,56 @@ test_middlewares_elsewhere_ignored if {
 	count(hosted.deny) == 0 with input as middleware("plane-prod", "plane-body-limit", {"buffering": {"maxRequestBodyBytes": 5242880}})
 }
 
+# An app's limit per client address, written as Grafana's is. Frameflow's sign-in limit will be one.
+app_limit(namespace, criterion) := middleware(namespace, "login-limit", {"rateLimit": {"average": 10, "period": "1m", "burst": 10, "sourceCriterion": criterion}})
+
+test_an_app_rate_limit_per_address_accepted if {
+	every namespace, _ in apps {
+		count(hosted.deny) == 0 with input as app_limit(namespace, {"ipStrategy": {"depth": 0}})
+		count(hosted.deny) == 0 with input as middleware(namespace, "x", {"rateLimit": {"burst": 1, "sourceCriterion": {"ipStrategy": {"depth": 0}}}})
+	}
+}
+
+# Each of these sends a request past the Services the app's routes name, or changes it after the rule has read it.
+test_any_other_middleware_in_an_app_namespace_rejected if {
+	every namespace, _ in apps {
+		every spec in [
+			{"errors": {"status": ["500-599"], "service": {"name": "frameflow-silo", "port": 9090}, "query": "/"}},
+			{"forwardAuth": {"address": "http://plane-minio.plane-prod.svc.cluster.local:9000/"}},
+			{"replacePath": {"path": "/frameflow-media/"}},
+			{"stripPrefix": {"prefixes": ["/frameflow-media/videos"]}},
+			{"buffering": {"maxRequestBodyBytes": 209715200}},
+			{"headers": {"customRequestHeaders": {"X-Forwarded-For": "127.0.0.1"}}},
+			{"chain": {"middlewares": [{"name": "login-limit"}]}},
+			{"rateLimit": {"average": 10, "sourceCriterion": {"ipStrategy": {"depth": 0}}}, "headers": {}},
+			{"rateLimit": {"average": 10, "sourceCriterion": {"ipStrategy": {"depth": 0}}, "redis": {"endpoints": ["plane-redis.plane-prod.svc.cluster.local:6379"]}}},
+			{"rateLimit": "10"},
+			{},
+		] {
+			count(hosted.deny) == 1 with input as middleware(namespace, "x", spec)
+		}
+		count(hosted.deny) == 1 with input as {"kind": "Middleware", "metadata": {"name": "x", "namespace": namespace}}
+		says(middleware(namespace, "x", {"forwardAuth": {"address": "http://x"}}), sprintf("a Middleware in namespace %s may only be a rateLimit", [namespace]))
+	}
+}
+
+# Any other source criterion counts something the client chooses, or a whole group of clients together, as Grafana's rule says.
+test_an_app_rate_limit_on_anything_but_the_address_rejected if {
+	every namespace, _ in apps {
+		every criterion in [
+			{"requestHeaderName": "X-Forwarded-For"},
+			{"requestHost": true},
+			{"ipStrategy": {"depth": 1}},
+			{"ipStrategy": {"depth": 0, "excludedIPs": ["10.0.0.0/8"]}},
+			{"ipStrategy": {"depth": 0}, "requestHost": true},
+			{},
+		] {
+			count(hosted.deny) == 1 with input as app_limit(namespace, criterion)
+		}
+		count(hosted.deny) == 1 with input as middleware(namespace, "x", {"rateLimit": {"average": 10}})
+	}
+}
+
 test_ingress_and_gateway_api_in_git_rejected if {
 	count(hosted.deny) == 1 with input as {"kind": "Ingress", "metadata": {"name": "x", "namespace": "plane-prod"}}
 	count(hosted.deny) == 1 with input as {"kind": "HTTPRoute", "metadata": {"name": "x", "namespace": "plane-prod"}}

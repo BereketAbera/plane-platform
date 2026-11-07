@@ -719,6 +719,30 @@ upload_route(route, want) if {
 	count(object.get(route, "middlewares", [])) == 0
 }
 
+# In an app's namespace a Middleware counts requests per client address, as Grafana's login limit does, and does nothing else. Each
+# other kind reaches past what the routes and app_routes name: errors and forwardAuth send a request on to a Service or an address no
+# backend list holds, a rewrite or a prefix change moves the path after the rule has read it, and a rate limit kept in Redis dials an
+# address too. Frameflow's sign-in limit is one of these. Another kind is a change here that a person reads.
+app_rate_limit_fields := {"average", "period", "burst", "sourceCriterion"}
+
+app_rate_limit_source := {"ipStrategy": {"depth": 0}}
+
+deny contains msg if {
+	input.kind == "Middleware"
+	app_routes[this_namespace]
+	not app_rate_limit(object.get(input, "spec", {}))
+	msg := sprintf("%s: a Middleware in namespace %s may only be a rateLimit of average, period and burst, with sourceCriterion exactly %v, because any other kind reaches past the Services its routes name", [identity, this_namespace, app_rate_limit_source])
+}
+
+app_rate_limit(spec) if {
+	object.keys(spec) == {"rateLimit"}
+	is_object(spec.rateLimit)
+	every field in object.keys(spec.rateLimit) {
+		app_rate_limit_fields[field]
+	}
+	object.get(spec.rateLimit, "sourceCriterion", {}) == app_rate_limit_source
+}
+
 # cert-manager makes its own Ingress for a challenge and removes it, so none belongs in Git. Traefik reads the Ingress
 # provider for that alone, so any other would be a public route no rule here reads.
 deny contains msg if {
