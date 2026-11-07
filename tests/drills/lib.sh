@@ -51,6 +51,23 @@ app_is() { # app_is <application> <sync status> <health status>
   [[ "$(app_field "$1" .status.sync.status)" == "$2" && "$(app_field "$1" .status.health.status)" == "$3" ]]
 }
 
+# The platform the node runs of an image, as the image's registry states it. A plain manifest is one platform, which only its
+# config states, and the node runs it whatever that is: dev's backend is a plain linux/amd64 manifest, which the arm64 node runs
+# under Rosetta. Of an index the node runs the child for its own platform, so the index must hold exactly one. Prints
+# <os>/<architecture>, with /<variant> where the config names one, and fails having printed nothing if the registry cannot say.
+image_platform() { # image_platform <reference> <the node's os/architecture>
+  local raw
+  raw="$(docker buildx imagetools inspect --raw "$1" 2>/dev/null)" || return 1
+  if jq -e 'has("manifests")' <<<"$raw" >/dev/null 2>&1; then
+    jq -e --arg os "${2%%/*}" --arg architecture "${2#*/}" \
+      '[.manifests[] | select(.platform.os == $os and .platform.architecture == $architecture)] | length == 1' <<<"$raw" >/dev/null || return 1
+    printf '%s\n' "$2"
+  else
+    docker buildx imagetools inspect "$1" --format '{{json .Image}}' 2>/dev/null |
+      jq -er 'select((.os // "") != "" and (.architecture // "") != "") | [.os, .architecture, (.variant // empty)] | join("/")' 2>/dev/null
+  fi
+}
+
 # A real request through Traefik, on the Host the environment serves. Prints the status code.
 http_status() { # http_status <host> [path]
   curl -sS -o /dev/null -w '%{http_code}' --max-time 5 -H "Host: $1" "http://127.0.0.1${2:-/}" 2>/dev/null || true

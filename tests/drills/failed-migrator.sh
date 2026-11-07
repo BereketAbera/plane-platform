@@ -14,6 +14,10 @@
 # trap deletes its manifest, which takes the tag with it, and its copy on the node. An empty repository stays in the
 # registry's catalog, because the registry has no way to remove one, and its one small blob stays until a garbage collect.
 #
+# It is built for the platform the node runs of that backend, as the registry states it, and the drill stops before it
+# changes anything if the registry cannot say. Dev's backend is a plain linux/amd64 manifest, which the arm64 node runs
+# under Rosetta, so the node's own platform would be the wrong one.
+#
 # HOLD_SECONDS, 300 by default, is how long the failure stays up once Argo CD reports it, so that alerts with a short
 # for: can show. The rules with a for: of 15m cannot fire inside it, so this answers what fires in that time and nothing longer.
 #
@@ -191,10 +195,15 @@ if [[ -n "$published" ]] && git cat-file -e "$published" 2>/dev/null; then
 fi
 BASE_IMAGE="$(kc -n "$NS" get deployment plane-api-wl -o jsonpath='{.spec.template.spec.containers[0].image}')"
 [[ "$BASE_IMAGE" == localhost:5001/*@sha256:* ]] || abort "the api does not run a digest from the local registry: $BASE_IMAGE"
+# Only an index needs the node's platform, to choose the child the node runs. So reading the node may fail here, and
+# image_platform then fails for an index alone.
+NODE_PLATFORM="$(kc get node "$NODE_CONTAINER" -o jsonpath='{.status.nodeInfo.operatingSystem}/{.status.nodeInfo.architecture}' 2>/dev/null || true)"
+BUILD_PLATFORM="$(image_platform "$BASE_IMAGE" "$NODE_PLATFORM")" ||
+  abort "could not read from its registry which platform of $BASE_IMAGE the node runs, the node being '$NODE_PLATFORM', so nothing says what to build the throwaway image for"
 OLD_JOB_IMAGE="$(job_field '.spec.template.spec.containers[0].image')"
 BEFORE="$(workload_state)"
 [[ -n "$BEFORE" ]] || abort "could not read the Deployments"
-pass "$APP is Synced and Healthy, its backend is $BASE_IMAGE"
+pass "$APP is Synced and Healthy, its backend is $BASE_IMAGE, which the node runs as $BUILD_PLATFORM"
 printf '%s\n' "$BEFORE" | sed 's/^/BEFORE  /'
 printf '# %s tests/drills/failed-migrator.sh. utc, state, alert, severity, active since, labels. Also: utc, none or no-reading, and utc, application, sync/health/operation phase.\n' "$ALERTS_FROM" >"$ALERTS_FILE"
 record_alerts </dev/null >/dev/null 2>&1 &
@@ -212,13 +221,13 @@ FROM $BASE_IMAGE
 COPY --link --chmod=755 docker-entrypoint-migrator.sh /code/bin/docker-entrypoint-migrator.sh
 EOF
 # shellcheck disable=SC2054  # the commas are the exporter's options
-docker buildx build --quiet --platform linux/arm64 --provenance=false --sbom=false \
+docker buildx build --quiet --platform "$BUILD_PLATFORM" --provenance=false --sbom=false \
   --metadata-file "$BUILD_DIR/metadata.json" --output type=image,push=true,store=false \
   -t "$THROWAWAY_REPO:$THROWAWAY_TAG" "$BUILD_DIR"
 BAD_DIGEST="$(jq -r '."containerimage.digest" // ""' "$BUILD_DIR/metadata.json")"
 [[ "$BAD_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || abort "no digest recorded for the throwaway image"
 docker buildx imagetools inspect "$THROWAWAY_REPO@$BAD_DIGEST" >/dev/null || abort "the registry does not serve $BAD_DIGEST"
-pass "pushed $THROWAWAY_REPO:$THROWAWAY_TAG, $BAD_DIGEST"
+pass "pushed $THROWAWAY_REPO:$THROWAWAY_TAG, $BAD_DIGEST, built for $BUILD_PLATFORM"
 
 stage "2. Promote it through the real path"
 NEEDS_RESTORE=yes
