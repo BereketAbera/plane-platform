@@ -684,6 +684,85 @@ test_an_app_rate_limit_on_anything_but_the_address_rejected if {
 	}
 }
 
+# A Service as platform/<app>/service.yaml writes it, in an app's namespace.
+app_service(namespace, name, selector, ports) := {
+	"apiVersion": "v1",
+	"kind": "Service",
+	"metadata": {"name": name, "namespace": namespace},
+	"spec": {"type": "ClusterIP", "selector": selector, "ports": ports},
+}
+
+web_selector := {"app.kubernetes.io/component": "web"}
+
+site_service(namespace) := app_service(namespace, namespace, web_selector, [{"name": "http", "port": 80, "targetPort": "http"}])
+
+# What Frameflow's two will be, by number or by the port's name.
+frameflow_web_service(selector, target) := app_service("frameflow", "frameflow-web", selector, [{"name": "http", "port": 3000, "targetPort": target}])
+
+frameflow_silo_service(selector, target) := app_service("frameflow", "frameflow-silo", selector, [{"name": "api", "port": 9000, "targetPort": target}])
+
+test_each_app_service_on_its_own_pods_accepted if {
+	count(hosted.deny) == 0 with input as site_service("rillmark")
+	count(hosted.deny) == 0 with input as site_service("awushi-cloudgarden")
+	count(hosted.deny) == 0 with input as app_service("rillmark", "rillmark", web_selector, [{"name": "http", "port": 80, "targetPort": 8080}])
+	count(hosted.deny) == 0 with input as frameflow_web_service(web_selector, "http")
+	count(hosted.deny) == 0 with input as frameflow_web_service(web_selector, 3000)
+	count(hosted.deny) == 0 with input as frameflow_silo_service({"app.kubernetes.io/component": "s3"}, 9000)
+	count(hosted.deny) == 0 with input as frameflow_silo_service({"app.kubernetes.io/component": "s3"}, "api")
+
+	# Another label only narrows what it selects.
+	count(hosted.deny) == 0 with input as app_service("rillmark", "rillmark", object.union(web_selector, {"app.kubernetes.io/name": "rillmark-web"}), [{"name": "http", "port": 80, "targetPort": "http"}])
+
+	# A Service no route may name keeps its own selector and ports.
+	count(hosted.deny) == 0 with input as app_service("frameflow", "hatchet", {"app.kubernetes.io/component": "hatchet"}, [{"name": "grpc", "port": 7070, "targetPort": 7070}])
+}
+
+# frameflow-web on Silo's pods or Silo's port would give the general route every method and path of Silo's API.
+test_an_app_service_on_other_pods_or_another_port_rejected if {
+	every selector in [{"app.kubernetes.io/component": "s3"}, {"app.kubernetes.io/name": "frameflow-web"}, {"app.kubernetes.io/component": "web-or-s3"}] {
+		denied := hosted.deny with input as frameflow_web_service(selector, "http")
+		count(denied) == 1
+		some msg in denied
+		contains(msg, "so it selects the pods of component web alone")
+	}
+	every target in [9000, "api", 9090, "console"] {
+		says(frameflow_web_service(web_selector, target), "so it goes to 3000 or http on the pods of component web")
+		count(hosted.deny) == 1 with input as frameflow_web_service(web_selector, target)
+	}
+	count(hosted.deny) == 1 with input as frameflow_silo_service(web_selector, 9000)
+	count(hosted.deny) == 1 with input as frameflow_silo_service({"app.kubernetes.io/component": "s3"}, 9090)
+	every namespace in ["rillmark", "awushi-cloudgarden"] {
+		count(hosted.deny) == 1 with input as app_service(namespace, namespace, {"app.kubernetes.io/component": "other"}, [{"name": "http", "port": 80, "targetPort": "http"}])
+		count(hosted.deny) == 1 with input as app_service(namespace, namespace, web_selector, [{"name": "http", "port": 80, "targetPort": 9000}])
+		# With no targetPort, the Service sends to its own port, 80.
+		count(hosted.deny) == 1 with input as app_service(namespace, namespace, web_selector, [{"name": "http", "port": 80}])
+	}
+}
+
+# With no selector, its addresses are whatever is written for it, and an ExternalName names a host outright.
+test_a_service_with_no_selector_in_an_app_namespace_rejected if {
+	every namespace, app in apps {
+		bare := json.remove(app_service(namespace, app.service.name, web_selector, [{"port": app.service.port, "targetPort": "http"}]), ["spec/selector"])
+		says(bare, sprintf("has no selector, and a Service in namespace %s selects the pods it sends to", [namespace]))
+		says(bare, "so it selects the pods of component web alone")
+		count(hosted.deny) == 2 with input as bare
+		external := {"kind": "Service", "metadata": {"name": app.service.name, "namespace": namespace}, "spec": {"type": "ExternalName", "externalName": "plane-minio.plane-prod.svc.cluster.local"}}
+		count(hosted.deny) == 2 with input as external
+		count(hosted.deny) == 1 with input as app_service(namespace, "other", {}, [{"port": 80}])
+		count(hosted.deny) == 1 with input as json.patch(app_service(namespace, "other", web_selector, [{"port": 80}]), [{"op": "replace", "path": "/spec/selector", "value": null}])
+	}
+	# Elsewhere a Service keeps its own shape: Plane's are read by the render's rules.
+	count(hosted.deny) == 0 with input as service({"ports": [{"port": 80}]})
+}
+
+test_endpoints_in_git_rejected if {
+	every namespace in ["rillmark", "frameflow", "plane-prod", "monitoring"] {
+		count(hosted.deny) == 1 with input as {"apiVersion": "discovery.k8s.io/v1", "kind": "EndpointSlice", "metadata": {"name": "x", "namespace": namespace, "labels": {"kubernetes.io/service-name": "rillmark"}}, "addressType": "IPv4", "endpoints": [{"addresses": ["10.96.0.10"]}]}
+		count(hosted.deny) == 1 with input as {"apiVersion": "v1", "kind": "Endpoints", "metadata": {"name": "rillmark", "namespace": namespace}, "subsets": [{"addresses": [{"ip": "10.96.0.10"}]}]}
+	}
+	says({"apiVersion": "discovery.k8s.io/v1", "kind": "EndpointSlice", "metadata": {"name": "x"}}, "no EndpointSlice in Git")
+}
+
 test_ingress_and_gateway_api_in_git_rejected if {
 	count(hosted.deny) == 1 with input as {"kind": "Ingress", "metadata": {"name": "x", "namespace": "plane-prod"}}
 	count(hosted.deny) == 1 with input as {"kind": "HTTPRoute", "metadata": {"name": "x", "namespace": "plane-prod"}}
