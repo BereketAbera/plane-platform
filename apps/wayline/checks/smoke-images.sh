@@ -25,7 +25,12 @@ export DOCKER_DEFAULT_PLATFORM="$PLATFORM"
 
 failures=0
 containers=()
-cleanup() { [[ ${#containers[@]} -eq 0 ]] || docker rm -f "${containers[@]}" >/dev/null 2>&1 || true; }
+cleanup() {
+  local status=$?
+  # set -e ends this script at a failed line with no FAIL of its own, so a log that stops at a PASS must not look finished.
+  [[ "$status" -eq 0 || "${finished:-}" == yes ]] || printf 'smoke-images: stopped early, status %s, before its summary\n' "$status" >&2
+  [[ ${#containers[@]} -eq 0 ]] || docker rm -f "${containers[@]}" >/dev/null 2>&1 || true
+}
 trap cleanup EXIT
 
 pass() { printf 'PASS %s\n' "$*"; }
@@ -80,14 +85,14 @@ ctype() { curl -s -o /dev/null -m 10 -w '%{content_type}' "$base$1"; }
 # Follows the page's stylesheet, then one font of each family named in it.
 check_assets() { # check_assets <page path> <asset prefix>
   local page="$1" prefix="$2" html css font
-  html="$(curl -s -m 10 "$base$page")"
-  css="$(printf '%s' "$html" | grep -oE "${prefix}[^\"']*globals[^\"']*\.css" | head -1)"
+  html="$(curl -s -m 10 "$base$page" || true)"
+  css="$(printf '%s' "$html" | grep -oE "${prefix}[^\"']*globals[^\"']*\.css" | head -1 || true)"
   [[ -n "$css" ]] || { fail "$page links no globals stylesheet under $prefix"; return; }
   check "stylesheet $css status" "$(code "$css")" 200
   # nginx sends text/css, and react-router-serve adds a charset.
   check "stylesheet content type" "$(ctype "$css" | sed 's/;.*//')" text/css
   for family in instrument-sans jetbrains-mono; do
-    font="$(curl -s -m 10 "$base$css" | grep -oE "url\([^)]*${family}[^)]*\.woff2[^)]*\)" | head -1 | sed -E 's/^url\(//; s/\)$//; s/"//g')"
+    font="$(curl -s -m 10 "$base$css" | grep -oE "url\([^)]*${family}[^)]*\.woff2[^)]*\)" | head -1 | sed -E 's/^url\(//; s/\)$//; s/"//g' || true)"
     [[ -n "$font" ]] || { fail "$css declares no $family font"; continue; }
     [[ "$font" == "$prefix"* ]] || fail "$font is not under $prefix"
     check "font $font status" "$(code "$font")" 200
@@ -126,7 +131,7 @@ IMMUTABLE="public, max-age=31536000, immutable"
 check_response() {
   local label="$1" status="$2" cache="$3" path="$4" headers expected
   shift 4
-  headers="$(curl -s -D - -o /dev/null -m 15 "$@" "$base$path" | tr -d '\r')"
+  headers="$(curl -s -D - -o /dev/null -m 15 "$@" "$base$path" | tr -d '\r' || true)"
   check "$label: status" "$(printf '%s\n' "$headers" | sed -n '1s/^HTTP[^ ]* \([0-9]*\).*/\1/p')" "$status"
   check "$label: Cache-Control" "$(printf '%s\n' "$headers" | grep -i '^cache-control:' | sed 's/^[^:]*: *//' | paste -sd'|' -)" "$cache"
   for expected in "${SECURITY_HEADERS[@]}"; do
@@ -206,13 +211,13 @@ check_caching() { # check_caching <URL prefix of the app> <page> <SPA route> <it
   done < <(docker exec "$container" find "$dir" -type f -not -path "$dir/assets/*" -not -name index.html)
 
   # ETag still saves the bytes, on the responses that say to ask, and on the ones that do not need to.
-  etag="$(etag_of "$page")"
+  etag="$(etag_of "$page" || true)"
   if [[ -z "$etag" ]]; then fail "$page sends no ETag"; fi
   check_response "$page with its ETag" 304 "$NO_CACHE" "$page" -H "If-None-Match: $etag"
   check_response "$page with an ETag from another image" 200 "$NO_CACHE" "$page" -H 'If-None-Match: "6aebbfcf-from-another-image"'
   file="${assets%%$'\n'*}"
   file="${prefix}assets/${file##*/}"
-  etag="$(etag_of "$file")"
+  etag="$(etag_of "$file" || true)"
   if [[ -z "$etag" ]]; then fail "$file sends no ETag"; fi
   check_response "$file with its ETag" 304 "$IMMUTABLE" "$file" -H "If-None-Match: $etag"
 }
@@ -326,11 +331,11 @@ if [[ -n "$(ref_of space)" ]]; then
   # A Node server, with no nginx to change. Its HTML has no lifetime and no validator, so a browser has nothing to reuse,
   # and its hashed files are upstream's serve command's rule. docs/evidence/branding/space-cache.txt shows a browser asking
   # every time. These fail if that moves, because the fix in nginx would then be needed here.
-  headers="$(curl -s -D - -o /dev/null -m 15 "$base/spaces/" | tr -d '\r')"
+  headers="$(curl -s -D - -o /dev/null -m 15 "$base/spaces/" | tr -d '\r' || true)"
   for name in cache-control expires etag last-modified; do
     check "/spaces/ HTML has no $name" "$(printf '%s\n' "$headers" | grep -ic "^$name:" || true)" 0
   done
-  css="$(curl -s -m 15 "$base/spaces/" | grep -oE '/spaces/assets/[^"'"'"']*globals[^"'"'"']*\.css' | head -1)"
+  css="$(curl -s -m 15 "$base/spaces/" | grep -oE '/spaces/assets/[^"'"'"']*globals[^"'"'"']*\.css' | head -1 || true)"
   check "hashed $css Cache-Control" "$(curl -sI -m 15 "$base$css" | tr -d '\r' | awk -F': ' 'tolower($1) == "cache-control" { print $2 }')" "$IMMUTABLE"
   check "a missing hashed file under /spaces/assets/ has no Cache-Control" "$(curl -sI -m 15 "$base/spaces/assets/missing-AbCd1234.js" | tr -d '\r' | grep -ic '^cache-control:' || true)" 0
   check "$css with its ETag" "$(curl -s -o /dev/null -m 15 -w '%{http_code}' -H "If-None-Match: $(etag_of "$css")" "$base$css")" 304
@@ -369,5 +374,6 @@ if [[ -n "$(ref_of backend)" ]]; then
   fi
 fi
 
+finished=yes
 printf '\nsmoke-images: %s failure(s)\n' "$failures"
 [[ "$failures" -eq 0 ]]
