@@ -175,7 +175,7 @@ grafana_public() {
       200) row PASS "the login held here opens Grafana" "$code" ;;
       429) row BLOCKED "the login held here opens Grafana" "429, because this machine spent its tries in the last minute. Run this again" ;;
       000 | "") row BLOCKED "the login held here opens Grafana" "no answer" ;;
-      *) row FAIL "the login held here opens Grafana" "$code. A running pod keeps the admin it started with: make remote-grafana-admin TARGET=plane-prod CONFIRM=plane-prod VERB=apply, and read scripts/hosted/grafana-admin.sh" ;;
+      *) row FAIL "the login held here opens Grafana" "$code. Five failed logins from this address lock it for five minutes, and a running pod keeps the admin it started with: scripts/hosted/README.md, and scripts/hosted/grafana-admin.sh" ;;
     esac
     # The right login, so a 401 can only mean basic auth is off.
     code="$(printf 'user = "%s:%s"\n' "$(cat "$LOCAL_DIR/grafana-admin-user")" "$(cat "$LOCAL_DIR/grafana-admin-password")" |
@@ -204,8 +204,8 @@ grafana_public() {
     *) row FAIL "guessing at Grafana's login hits a limit per client" "answers:$answers" ;;
   esac
 
-  # "Per client" rests on Traefik seeing each client's own address, which hostPort's portmap should leave alone and nothing above shows.
-  # These tries are what it logged last, so what it read for them is this machine's address, as Traefik saw it.
+  # "Per client", here and in Grafana's count of failed logins, rests on Traefik seeing each client's own address, which hostPort's portmap should
+  # leave alone and nothing above shows. These tries are what it logged last, so what it read for them is this machine's address, as Traefik saw it.
   if cluster_or_blocked "Traefik sees a client's own address"; then
     local seen
     seen="$(kc -n traefik logs deploy/traefik --tail=500 2>/dev/null |
@@ -214,7 +214,7 @@ grafana_public() {
     if [[ -z "${seen// /}" ]]; then
       row BLOCKED "Traefik sees a client's own address" "its log shows none of those tries"
     elif [[ "$seen" =~ (^|\ )(10\.|127\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.) ]]; then
-      row FAIL "Traefik sees a client's own address" "it read $seen, so every client shares one count at the login's limit"
+      row FAIL "Traefik sees a client's own address" "it read $seen, so every client shares one count, at the login's limit and at Grafana's five failures"
     else
       row PASS "Traefik sees a client's own address" "$seen"
     fi

@@ -50,10 +50,15 @@ A record has to be live before Argo CD first sees that Certificate.
 
 ## Locked out of Grafana
 
-Grafana refuses even the right password for a username with five failed logins in the last five minutes, at the form or by basic auth, and the page is
-public, so anyone who guesses `grafana-admin` can do that. It clears by itself five minutes after the last guess. A new pod starts with an empty
-database, so it clears at once, and takes its login from the Secret again. A container restart keeps the database, and the lock with it. All of
-that was run on Grafana 13.3.0 in Docker with this configuration, and not on this cluster:
+Grafana refuses even the right password from an address with five failed logins in the last five minutes, and that clears by itself five minutes after
+the last of them. It counts per address and not per username, so a stranger's guesses at `grafana-admin` lock out only the stranger, and the name needs no
+secrecy. That rests on Traefik seeing each client's own address. `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=outside` reads that on this
+cluster, in the row `Traefik sees a client's own address`. If it fails, every client shares one count, and anyone's guesses lock out everyone.
+
+If it is your address, any of these gets you in before the five minutes are up. A session from before still works. `make remote-ui TARGET=plane-prod UI=grafana`
+arrives from another address, the pod's own. A new pod starts with an empty database, so it clears at once, and takes its login from the Secret again, where a
+container restart keeps the database, and the count with it. All of that was run on Grafana 13.3.0 in Docker, through Traefik, from two addresses, with this
+configuration, and not on this cluster:
 
 ```
 .tools/bin/kubectl --kubeconfig .local/hosted/plane-prod/kubeconfig --context plane-prod -n monitoring delete pod \

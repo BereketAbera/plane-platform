@@ -243,13 +243,16 @@ grafana:
     server:
       domain: grafana.bereket.dev
       root_url: https://grafana.bereket.dev
-    # Its login is all that stands between this page and the internet.
+    # Its login is all that stands between this page and the internet. Failed logins count per address and not per username. The password is 64
+    # hex characters, so no count is what protects it, and per username any stranger could keep the one admin locked out with a guess a minute.
     security:
       cookie_secure: true
       cookie_samesite: lax
       strict_transport_security: true
       disable_gravatar: true
       disable_brute_force_login_protection: false
+      disable_username_login_protection: true
+      disable_ip_address_login_protection: false
     users:
       allow_sign_up: false
       allow_org_create: false
