@@ -1,0 +1,25 @@
+# Awushi Cloudgarden's public route, https://devops.bereket.dev, and its only one. The whole host goes to nginx, which sets the site's
+# headers itself, and the site is files with nothing to write to, so the route carries no Middleware. policy/hosted.rego binds this
+# host to this namespace, and this namespace to this Service and certificate. The certificate is named for the host, devops-tls.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: awushi-cloudgarden
+  namespace: awushi-cloudgarden
+  labels:
+    app.kubernetes.io/name: awushi-cloudgarden-web
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: awushi-cloudgarden
+  annotations:
+    # After the pod, so its first answer is not Traefik's 503.
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: Host(`devops.bereket.dev`)
+      services:
+        - name: awushi-cloudgarden
+          port: 80
+  tls:
+    secretName: devops-tls
