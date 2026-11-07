@@ -149,7 +149,7 @@ test_another_certificate_or_a_resolver_rejected if {
 }
 
 test_a_route_to_any_console_rejected if {
-	some console in [
+	every console in [
 		["argocd-server", 80],
 		["kps-grafana", 80],
 		["kps-prometheus", 9090],
@@ -157,8 +157,9 @@ test_a_route_to_any_console_rejected if {
 		["infisical", 8080],
 		["plane-rabbitmq", 15672],
 		["traefik", 8080],
-	]
-	count(hosted.deny) == 1 with input as route_to(console[0], console[1])
+	] {
+		count(hosted.deny) == 1 with input as route_to(console[0], console[1])
+	}
 }
 
 test_every_public_backend_accepted if {
@@ -186,13 +187,160 @@ test_traefik_internal_service_rejected if {
 }
 
 test_a_route_in_another_namespace_rejected if {
-	count(hosted.deny) == 1 with input as route_doc("monitoring", route_spec)
+	count(hosted.deny) == 1 with input as route_doc("argocd", route_spec)
+	count(hosted.deny) == 1 with input as route_doc("infisical", route_spec)
 	count(hosted.deny) == 1 with input as {"kind": "IngressRoute", "metadata": {"name": "x"}, "spec": route_spec}
 }
 
 test_tcp_and_udp_routes_rejected if {
 	count(hosted.deny) == 1 with input as {"kind": "IngressRouteTCP", "metadata": {"name": "x", "namespace": "plane-prod"}, "spec": {}}
-	count(hosted.deny) == 2 with input as {"kind": "IngressRouteUDP", "metadata": {"name": "x", "namespace": "monitoring"}, "spec": {}}
+	count(hosted.deny) == 1 with input as {"kind": "IngressRouteUDP", "metadata": {"name": "x", "namespace": "monitoring"}, "spec": {}}
+	count(hosted.deny) == 2 with input as {"kind": "IngressRouteUDP", "metadata": {"name": "x", "namespace": "argocd"}, "spec": {}}
+}
+
+# Written out here and not read from the policy, so a change there has to be made twice.
+grafana_login_route := {
+	"kind": "Rule",
+	"match": "Host(`grafana.bereket.dev`) && Method(`POST`) && (PathPrefix(`/login`) || PathPrefix(`/api/login`))",
+	"middlewares": [{"name": "grafana-login-limit"}],
+	"services": [{"name": "kps-grafana", "port": 80}],
+}
+
+grafana_page_route := {
+	"kind": "Rule",
+	"match": "Host(`grafana.bereket.dev`) && !PathPrefix(`/metrics`)",
+	"services": [{"name": "kps-grafana", "port": 80}],
+}
+
+grafana_spec := {
+	"entryPoints": ["websecure"],
+	"routes": [grafana_login_route, grafana_page_route],
+	"tls": {"secretName": "grafana-tls"},
+}
+
+grafana_route := route_doc("monitoring", grafana_spec)
+
+# The page route swapped for this one, and the rule that names each swap.
+grafana_with(route) := route_doc("monitoring", object.union(grafana_spec, {"routes": [grafana_login_route, route]}))
+
+page_rule(match, service) := {"kind": "Rule", "match": match, "services": [service]}
+
+says(doc, text) if {
+	denied := hosted.deny with input as doc
+	some msg in denied
+	contains(msg, text)
+}
+
+not_grafanas := "is not one of Grafana's two"
+
+test_grafana_route_accepted if {
+	count(hosted.deny) == 0 with input as grafana_route
+}
+
+test_grafana_routes_in_either_order_accepted if {
+	count(hosted.deny) == 0 with input as route_doc("monitoring", object.union(grafana_spec, {"routes": [grafana_page_route, grafana_login_route]}))
+}
+
+test_grafana_on_any_other_host_rejected if {
+	every match in [
+		"Host(`metrics.bereket.dev`) && !PathPrefix(`/metrics`)",
+		"Host(`grafana.wayline.bereket.dev`) && !PathPrefix(`/metrics`)",
+		"Host(`grafana.bereket.dev`) || Host(`other.bereket.dev`)",
+		"HostRegexp(`^grafana[.]bereket[.]dev$`) && !PathPrefix(`/metrics`)",
+		"PathPrefix(`/`) && !PathPrefix(`/metrics`)",
+	] {
+		says(grafana_with(page_rule(match, {"name": "kps-grafana", "port": 80})), not_grafanas)
+	}
+}
+
+test_grafana_with_its_metrics_public_rejected if {
+	says(grafana_with(page_rule("Host(`grafana.bereket.dev`)", {"name": "kps-grafana", "port": 80})), not_grafanas)
+	says(grafana_with(page_rule("Host(`grafana.bereket.dev`) && !Path(`/other`)", {"name": "kps-grafana", "port": 80})), not_grafanas)
+}
+
+test_grafana_on_the_web_entry_point_rejected if {
+	count(hosted.deny) == 1 with input as route_doc("monitoring", object.union(grafana_spec, {"entryPoints": ["web"]}))
+	count(hosted.deny) == 1 with input as route_doc("monitoring", object.union(grafana_spec, {"entryPoints": ["web", "websecure"]}))
+	count(hosted.deny) == 1 with input as route_doc("monitoring", json.remove(grafana_spec, ["entryPoints"]))
+}
+
+test_grafana_without_its_own_certificate_rejected if {
+	says(route_doc("monitoring", json.remove(grafana_spec, ["tls"])), "tls is {} and must name only secretName grafana-tls")
+	says(route_doc("monitoring", object.union(grafana_spec, {"tls": {"secretName": "wayline-tls"}})), "must name only secretName grafana-tls")
+	says(route_doc("monitoring", object.union(grafana_spec, {"tls": {"certResolver": "letsencrypt"}})), "must name only secretName grafana-tls")
+}
+
+test_another_console_under_the_grafana_host_rejected if {
+	every service in [
+		{"name": "kps-prometheus", "port": 9090},
+		{"name": "kps-alertmanager", "port": 9093},
+		{"name": "loki", "port": 3100},
+		{"name": "kps-grafana", "port": 3000},
+		{"name": "api@internal", "kind": "TraefikService"},
+		{"name": "argocd-server", "namespace": "argocd", "port": 80},
+		{"name": "kps-grafana", "namespace": "other", "port": 80},
+	] {
+		says(grafana_with(page_rule("Host(`grafana.bereket.dev`) && !PathPrefix(`/metrics`)", service)), not_grafanas)
+	}
+}
+
+test_prometheus_on_a_path_of_the_grafana_host_rejected if {
+	extra := page_rule("Host(`grafana.bereket.dev`) && PathPrefix(`/prometheus`)", {"name": "kps-prometheus", "port": 9090})
+	says(route_doc("monitoring", object.union(grafana_spec, {"routes": [grafana_login_route, grafana_page_route, extra]})), not_grafanas)
+}
+
+test_grafana_login_without_its_limit_rejected if {
+	says(route_doc("monitoring", object.union(grafana_spec, {"routes": [grafana_page_route]})), "has no route")
+	unlimited := json.remove(grafana_login_route, ["middlewares"])
+	says(route_doc("monitoring", object.union(grafana_spec, {"routes": [unlimited, grafana_page_route]})), not_grafanas)
+}
+
+test_grafana_page_route_missing_rejected if {
+	says(route_doc("monitoring", object.union(grafana_spec, {"routes": [grafana_login_route]})), "has no route")
+}
+
+test_a_middleware_on_the_grafana_page_route_rejected if {
+	says(grafana_with(object.union(grafana_page_route, {"middlewares": [{"name": "rewrite"}]})), not_grafanas)
+}
+
+test_grafana_route_in_another_namespace_rejected if {
+	says(route_doc("plane-prod", grafana_spec), "gives no console a public route but Grafana's")
+	says(route_doc("traefik", grafana_spec), "a route may sit only in namespace")
+	says(route_doc("argocd", grafana_spec), "a route may sit only in namespace")
+}
+
+test_plane_route_in_the_grafana_namespace_rejected if {
+	says(route_doc("monitoring", route_spec), not_grafanas)
+	says(route_doc("monitoring", route_spec), "must name only secretName grafana-tls")
+}
+
+middleware(namespace, name, spec) := {"kind": "Middleware", "metadata": {"name": name, "namespace": namespace}, "spec": spec}
+
+limit_with(criterion) := middleware("monitoring", "grafana-login-limit", {"rateLimit": {"average": 5, "period": "1m", "burst": 5, "sourceCriterion": criterion}})
+
+test_grafana_login_limit_accepted if {
+	count(hosted.deny) == 0 with input as limit_with({"ipStrategy": {"depth": 0}})
+}
+
+# Any of these counts what a client sends, so a client that changes it is never limited.
+test_a_limit_on_anything_but_the_connection_rejected if {
+	count(hosted.deny) == 1 with input as limit_with({"ipStrategy": {"depth": 1}})
+	count(hosted.deny) == 1 with input as limit_with({"ipStrategy": {"excludedIPs": ["0.0.0.0/0"]}})
+	count(hosted.deny) == 1 with input as limit_with({"requestHeaderName": "X-Forwarded-For"})
+	count(hosted.deny) == 1 with input as limit_with({"requestHost": true})
+}
+
+test_a_looser_limit_rejected if {
+	count(hosted.deny) == 1 with input as middleware("monitoring", "grafana-login-limit", {"rateLimit": {"average": 5000, "period": "1m", "burst": 5, "sourceCriterion": {"ipStrategy": {"depth": 0}}}})
+	count(hosted.deny) == 1 with input as middleware("monitoring", "grafana-login-limit", {"stripPrefix": {"prefixes": ["/x"]}})
+}
+
+test_another_middleware_beside_grafana_rejected if {
+	count(hosted.deny) == 1 with input as middleware("monitoring", "rewrite", {"replacePath": {"path": "/metrics"}})
+}
+
+test_middlewares_elsewhere_ignored if {
+	count(hosted.deny) == 0 with input as middleware("plane-prod", "plane-body-limit", {"buffering": {"maxRequestBodyBytes": 5242880}})
 }
 
 test_ingress_and_gateway_api_in_git_rejected if {

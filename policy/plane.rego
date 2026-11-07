@@ -117,7 +117,15 @@ deny contains msg if {
 	some route in input.spec.routes
 	needs_allow_list(route)
 	not names_allow_list(route)
+	not hosted_public_grafana(route)
 	msg := sprintf("%s: route %q sits in a namespace that holds an internal UI or states none, or names a UI by Service or host, so it must name the %s middleware", [identity, route.match, allow_list])
+}
+
+# Hosted production's Grafana answers the internet behind its own login, so no allow list could fit it. Only that route, in those words:
+# policy/hosted.rego writes them, and scripts/ci/check-cluster-separation.sh keeps that host out of the local trees.
+hosted_public_grafana(route) if {
+	input.metadata.namespace == data.hosted.grafana_namespace
+	data.hosted.grafana_routes[route]
 }
 
 needs_allow_list(_) if beside_internal_ui
