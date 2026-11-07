@@ -23,6 +23,8 @@ import secrets
 import socket
 import ssl
 import subprocess
+import sys
+import tempfile
 import threading
 import time
 import urllib.error
@@ -540,7 +542,12 @@ def run(arguments: argparse.Namespace) -> int:
     real = arguments.backend == "real"
     echo = None
     if not real:
-        echo = Echo(arguments.echo_port)
+        try:
+            echo = Echo(arguments.echo_port)
+        except OSError as error:
+            # Taken since the preflight, by a run that started at the same moment. Nothing was asked, so this is no exit 1.
+            print(f"cannot run: {echo_port_taken(arguments.echo_port, error)}", file=sys.stderr)
+            return 2
         echo.start()
     report = Report()
 
@@ -789,6 +796,22 @@ def real_tokens(report: Report, client: Client, direct: str) -> None:
         report.row("PASS" if who == "backend" and status == 200 else "FAIL", f"{method} {path} with that real session reaches Infisical and is answered", f"{status} from {who}")
 
 
+def echo_port_taken(port: int, error: OSError) -> str:
+    return (f"the echo server cannot listen on 127.0.0.1:{port}: {error.strerror or error}. Another run may hold it: give this one its own "
+            "port with INFISICAL_ROUTE_TEST_ECHO_PORT")
+
+
+def preflight(arguments: argparse.Namespace) -> str:
+    """Why a run cannot start, or "" when it can. The shell wrapper asks this before it starts Traefik, so a refused run starts nothing."""
+    if arguments.backend == "echo":
+        # Another run's echo server here would answer this run's Traefik, and this run's own would then fail to listen with no row asked.
+        try:
+            socket.create_server(("127.0.0.1", arguments.echo_port)).close()
+        except OSError as error:
+            return echo_port_taken(arguments.echo_port, error)
+    return ""
+
+
 def selftest() -> int:
     """This file's own verdicts, with no Docker, no Traefik and no Infisical, so CI can run it. It proves nothing about the route. What curl
     prints below is what curl 8.7.1 printed against the pinned Traefik on this machine."""
@@ -854,6 +877,17 @@ def selftest() -> int:
         assert report.exit_code() == 2, "a row that could not be asked is no pass"
         report.row("FAIL", "a row that got through")
         assert report.exit_code() == 1, "what got through outweighs what could not be asked"
+
+    # Another run's echo server on this run's port, which once ended this run with a traceback and exit 1, as if something got through.
+    with socket.create_server(("127.0.0.1", 0)) as held, tempfile.TemporaryDirectory() as directory:
+        port = held.getsockname()[1]
+        log = pathlib.Path(directory, "rows.log")
+        second = argparse.Namespace(port=1, echo_port=port, backend="echo", direct="", log=str(log))
+        assert "INFISICAL_ROUTE_TEST_ECHO_PORT" in preflight(second), "the preflight names the port, and how to give this run its own"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as said:
+            assert run(second) == 2, "a port taken after the preflight stops the run as one that could not run"
+        assert "INFISICAL_ROUTE_TEST_ECHO_PORT" in said.getvalue() and not log.exists(), said.getvalue()
+        assert preflight(argparse.Namespace(echo_port=port, backend="real", direct="")) == "", "a real backend needs no echo server"
     print("selftest ok")
     return 0
 
@@ -866,11 +900,19 @@ def main() -> int:
     # The backend's own address from this machine, past Traefik. Given with a copy nobody has claimed, real_tokens claims it and asks with what it hands out.
     parser.add_argument("--direct", default="")
     parser.add_argument("--log")
+    # Whether a run could start, and nothing more, so the shell wrapper can ask before it starts Traefik.
+    parser.add_argument("--preflight", action="store_true")
     # This file's own verdicts, with nothing started, so CI can run it.
     parser.add_argument("--selftest", action="store_true")
     arguments = parser.parse_args()
     if arguments.selftest:
         return selftest()
+    refusal = preflight(arguments)
+    if refusal:
+        print(f"cannot run: {refusal}", file=sys.stderr)
+        return 2
+    if arguments.preflight:
+        return 0
     if arguments.port is None or not arguments.log:
         parser.error("a run needs --port and --log")
     return run(arguments)
