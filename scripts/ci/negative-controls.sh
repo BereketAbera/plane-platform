@@ -254,6 +254,22 @@ plant_hosted_infisical_machine_only_call_let_through() { replace_first "$INFISIC
 # A body with the field gone is no proof that sign-up is closed, so it must not read claimed.
 plant_hosted_infisical_claim_from_a_missing_field() { replace_first scripts/hosted/lib-infisical-claim.sh '\.config\.allowSignUp != false' '.config.allowSignUp == true'; }
 plant_hosted_infisical_open_alert_late() { replace_first gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted.yaml '(- alert: InfisicalOpenToClaim\n\s+expr: [^\n]+\n)' '\1          for: 10m\n'; }
+# What watches the route, read as its alerts read it, and what reaches the namespace from Traefik's side and inside it.
+INFISICAL_PROBES=gitops/clusters/plane-prod/platform/monitoring-extras/infisical/probes.yaml
+INFISICAL_VALUES=gitops/clusters/plane-prod/values/infisical.yaml
+plant_hosted_infisical_claim_probe_on_another_module() { replace_first "$INFISICAL_PROBES" 'module: http_infisical_claimed' 'module: http_infisical_login'; }
+plant_hosted_infisical_claim_module_reads_no_body() { replace_first gitops/clusters/plane-prod/platform/monitoring-extras/shared/blackbox.yml '\n      fail_if_body_json_not_matches_cel: "body\.config\.initialized[^\n]*' ''; }
+plant_hosted_infisical_claim_watch_misses_the_module() { replace_first gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted.yaml '\n\s+or absent\(probe_failed_due_to_cel\{probe="infisical-claimed"\}\)' ''; }
+plant_hosted_infisical_guess_limit_gone() { replace_first "$INFISICAL_ROUTE" '(?s)---\n# A person.s guesses, measured per client.*?(?=---\n)' ''; }
+plant_hosted_infisical_session_probe_gone() { replace_first "$INFISICAL_PROBES" '(?s)---\n# The route.s session part.*\Z' ''; }
+plant_hosted_infisical_postgres_open_to_traefik() { replace_first gitops/clusters/plane-prod/platform/network-policies/infisical.yaml '(        - podSelector: \{ matchLabels: \{ app\.kubernetes\.io/component: backup \} \}\n)' '\1        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }\n'; }
+plant_hosted_traefik_egress_to_all_of_infisical() { replace_first gitops/clusters/plane-prod/platform/network-policies/traefik.yaml 'podSelector: \{ matchLabels: \{ app: infisical-standalone, component: infisical \} \}\n(\s+)ports:\n(\s+)- \{ protocol: TCP, port: 8080 \}' 'podSelector: {}\n\1ports:\n\2- { protocol: TCP, port: 8080 }\n\2- { protocol: TCP, port: 5432 }'; }
+plant_hosted_infisical_image_another_digest() { replace_first "$INFISICAL_VALUES" '@sha256:ca5cbd14' '@sha256:1a5cbd14'; }
+plant_hosted_infisical_public_sharing_on() { replace_first "$INFISICAL_VALUES" '\n    - name: DISABLE_PUBLIC_SECRET_SHARING\n      value: "true"' ''; }
+# The verdicts test-hosted.sh and host-terraform.sh read, which their selftests hold to tables.
+plant_hosted_infisical_refusal_read_without_reach() { replace_first scripts/hosted/test-hosted.sh 'if \[\[ "\$1" != PASS \]\]; then' 'if false; then'; }
+plant_hosted_terraform_import_unread() { replace_first scripts/hosted/host-terraform.sh '\(if \.change\.importing then "import" else "" end\)' '""'; }
+plant_hosted_terraform_without_its_state() { replace_first scripts/hosted/host-terraform.sh 'if \[\[ -s "\$1" \|\| "\$\{HOST_TERRAFORM_FIRST_STATE:-\}" == yes \]\]; then return 0; fi' 'return 0'; }
 # What the check adds for a solver, and no more: this is over the operator's surge and under one solver.
 plant_hosted_no_quota_room_for_a_solver() { yq -i '.quotas.monitoring."requests.memory" = "1690Mi"' infrastructure/hosted/plane-prod/capacity.yaml; }
 plant_hosted_node_port() {
@@ -532,6 +548,18 @@ control hosted-infisical-machine-only-call-let-through validate-manifests.sh "is
 control hosted-infisical-claim-from-a-missing-field lint.sh "Infisical claim verdict self check FAILED" plant_hosted_infisical_claim_from_a_missing_field
 CONTROL_SKIP_CHARTS=no control hosted-infisical-upgrade-unread validate-manifests.sh "Infisical's public route was read from v0.167.6" plant_hosted_infisical_upgrade_unread
 control hosted-infisical-open-alert-late validate-manifests.sh "promtool: hosted rule unit tests FAILED" plant_hosted_infisical_open_alert_late
+control hosted-infisical-claim-probe-on-another-module validate-manifests.sh "because Infisical's alerts read this Probe's module" plant_hosted_infisical_claim_probe_on_another_module
+control hosted-infisical-claim-module-reads-no-body validate-manifests.sh "blackbox module http_infisical_claimed is" plant_hosted_infisical_claim_module_reads_no_body
+control hosted-infisical-claim-watch-misses-the-module validate-manifests.sh "promtool: hosted rule unit tests FAILED" plant_hosted_infisical_claim_watch_misses_the_module
+control hosted-infisical-guess-limit-gone validate-manifests.sh "Middleware infisical/infisical-guess-limit is not" plant_hosted_infisical_guess_limit_gone
+control hosted-infisical-session-probe-gone validate-manifests.sh "Probe infisical/infisical-session is not" plant_hosted_infisical_session_probe_gone
+control hosted-infisical-postgres-open-to-traefik validate-manifests.sh "so nothing new reaches the secret store or its database" plant_hosted_infisical_postgres_open_to_traefik
+control hosted-traefik-egress-to-all-of-infisical validate-manifests.sh "where Traefik reaches only Infisical's server on 8080" plant_hosted_traefik_egress_to_all_of_infisical
+CONTROL_SKIP_CHARTS=no control hosted-infisical-image-another-digest validate-manifests.sh "Infisical's public route was read from v0.167.6" plant_hosted_infisical_image_another_digest
+CONTROL_SKIP_CHARTS=no control hosted-infisical-public-sharing-on validate-manifests.sh "sets DISABLE_PUBLIC_SECRET_SHARING to" plant_hosted_infisical_public_sharing_on
+control hosted-infisical-refusal-read-without-reach lint.sh "hosted test verdict self check FAILED" plant_hosted_infisical_refusal_read_without_reach
+control hosted-terraform-import-unread lint.sh "host Terraform plan check self check FAILED" plant_hosted_terraform_import_unread
+control hosted-terraform-without-its-state lint.sh "host Terraform plan check self check FAILED" plant_hosted_terraform_without_its_state
 CONTROL_SKIP_CHARTS=no control hosted-no-quota-room-for-a-solver check-capacity.sh "for the largest rollout, Job or solver), and its quota is 1690Mi" plant_hosted_no_quota_room_for_a_solver
 control hosted-node-port-in-the-tree validate-manifests.sh "no NodePort Service" plant_hosted_node_port
 control hosted-load-balancer-in-the-render validate-manifests.sh "no LoadBalancer Service" plant_hosted_load_balancer_in_the_render
