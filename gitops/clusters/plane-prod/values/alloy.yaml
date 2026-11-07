@@ -111,6 +111,12 @@ alloy:
 
       // No stage.cri: the API returns plain lines, and that stage only applies to log files.
       loki.process "pods" {
+        // Alertmanager logs a failed send to Telegram with its URL, and the bot's token is in that URL, unredacted. Loki would keep
+        // it for 168 hours. scripts/ci/validate-manifests.sh tries this on such a line, and make remote-test asks Loki for any left.
+        stage.replace {
+          expression = "bot([0-9]+:[A-Za-z0-9_-]+)"
+          replace    = "<redacted>"
+        }
         // Blackbox probes the API every 15s. Without this those access lines would outnumber real
         // requests in the Logs dashboard.
         stage.drop {

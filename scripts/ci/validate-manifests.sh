@@ -98,6 +98,7 @@ if has_yaml "$WORK/hosted"; then
   check "conftest: hosted tree" conftest_run gitops,workloads,plane,hosted "$WORK"/hosted/*.yaml
   check "hosted tree stands alone" hosted_tree_stands_alone "$WORK/hosted-alone"
   check "hosted tree: every image is listed" hosted_images_listed some "$WORK"/hosted/*.yaml
+  check "hosted Alloy scrubs a Telegram bot token" alloy_scrubs_the_telegram_token "$HOSTED_TREE/values/alloy.yaml"
 fi
 
 # Prometheus refuses a bad rule file at reload, and the operator's admission webhook is off to save its

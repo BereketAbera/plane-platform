@@ -308,6 +308,10 @@ plant_hosted_image_split_across_chart_values() {
   yq -i '.image.registry = "ghcr.io" | .image.repository = "bereketabera/wl/backend" | .image.digest = "sha256:'"$(printf '9%.0s' {1..64})"'"' gitops/clusters/plane-prod/values/traefik.yaml
 }
 plant_hosted_image_listed_and_gone() { printf 'docker.io/planted/gone@sha256:%s\n' "$(printf '9%.0s' {1..64})" >>policy/hosted-images.txt; }
+plant_hosted_alloy_without_the_scrub() {
+  python3 -B -c 'import re; p="gitops/clusters/plane-prod/values/alloy.yaml"; s=open(p).read(); t,c=re.subn(r"stage\.replace \{.*?\n\s*\}\n", "", s, count=1, flags=re.S); assert c==1; open(p,"w").write(t)'
+}
+plant_hosted_alloy_scrub_that_misses() { replace_first gitops/clusters/plane-prod/values/alloy.yaml 'expression = "bot\(\[0-9\]\+:\[A-Za-z0-9_-\]\+\)"' 'expression = "token=([0-9]+)"'; }
 plant_hosted_values_outside_the_trees() {
   plant_hosted_application "$HOSTED_REPO" deploy/plane-prod gitops/environments/prod
   yq -i 'del(.spec.source) | .spec.sources = [{"repoURL": "https://traefik.github.io/charts", "chart": "traefik", "targetRevision": "42.3.0", "helm": {"valueFiles": ["$values/helm/values/traefik.yaml"]}}, {"repoURL": strenv(HOSTED_REPO), "targetRevision": "deploy/plane-prod", "ref": "values"}]' gitops/clusters/plane-prod/applications/planted.yaml
@@ -479,6 +483,8 @@ CONTROL_SKIP_CHARTS=no control hosted-image-split-across-chart-values validate-m
 CONTROL_SKIP_CHARTS=no control hosted-image-listed-and-gone validate-manifests.sh "and nothing hosted runs them" plant_hosted_image_listed_and_gone
 control hosted-values-outside-the-trees validate-manifests.sh 'they must come from $values/gitops/clusters/plane-prod' plant_hosted_values_outside_the_trees
 control hosted-base-outside-the-trees validate-manifests.sh "does not build from the two hosted trees alone" plant_hosted_base_outside_the_trees
+control hosted-alloy-without-the-scrub validate-manifests.sh "no stage.replace ahead of what goes to Loki" plant_hosted_alloy_without_the_scrub
+control hosted-alloy-scrub-that-misses validate-manifests.sh "does not capture the token" plant_hosted_alloy_scrub_that_misses
 control hosted-render-drift validate-manifests.sh "render is up to date: hosted FAILED" plant_hosted_render_drift
 control hosted-dump-after-the-migrator validate-manifests.sh "must run before the migrator" plant_hosted_dump_after_the_migrator
 CONTROL_SKIP_CHARTS=no control hosted-chart-as-a-node-port validate-manifests.sh "no NodePort Service" plant_hosted_chart_as_a_node_port

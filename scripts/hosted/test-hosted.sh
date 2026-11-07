@@ -142,6 +142,23 @@ outside() {
       *) row FAIL "no public route for $ui" "Host $ui.$HOSTED_DOMAIN answers $code" ;;
     esac
   done
+
+  # The first POST to the admin sign-up owns an instance with no admin, and ENABLE_SIGNUP does not govern it. So that with 443 open to
+  # anyone is the one state here that is not just unfinished. -k, because a staging certificate is enough to ask this.
+  local setup stage
+  setup="$(curl -k -sS --max-time 15 "https://$HOSTED_DOMAIN/api/instances/" 2>/dev/null | jq -r '(.instance // .).is_setup_done | tostring' 2>/dev/null || true)"
+  case "$setup" in
+    true) row PASS "the instance has its first admin" ;;
+    false)
+      stage="$("$ROOT/scripts/hosted/edge.sh" status 2>/dev/null || true)"
+      if [[ "$stage" == *"ip saddr"*"dport 443 accept"* ]]; then
+        row INCOMPLETE "the instance has its first admin" "not yet, and 443 answers only the owner's address. Create it now"
+      else
+        row FAIL "the instance has its first admin" "not yet, and 443 is open, so whoever posts first owns this instance. Close it now: scripts/hosted/edge.sh owner <your ipv4>"
+      fi
+      ;;
+    *) row BLOCKED "the instance has its first admin" "/api/instances/ did not say, so Plane may not be deployed yet" ;;
+  esac
 }
 
 # ------ Argo CD --------------------------------------------------------------------------------------------------------
@@ -364,6 +381,25 @@ alerts() {
   fi
 
   synthetic_alert "$am"
+  telegram_token_in_loki
+}
+
+# Alertmanager logs a failed send to Telegram with its URL, and the bot's token is in that URL. Alloy scrubs that on the way to Loki
+# (values/alloy.yaml), so a line here means the scrub failed and the token is exposed. A count, so no value reaches this run's evidence.
+telegram_token_in_loki() {
+  local port count
+  port="$(hosted_free_port 19196)"
+  if ! hosted_forward_start monitoring svc/loki "$port" 3100; then
+    row BLOCKED "Loki holds no Telegram bot token" "could not port-forward to Loki"
+    return 0
+  fi
+  count="$(curl -fsS --max-time 60 -G "http://127.0.0.1:$port/loki/api/v1/query" --data-urlencode 'query=sum(count_over_time({namespace="monitoring"} |~ "bot[0-9]+:[A-Za-z0-9_-]+" [7d]))' |
+    jq -r '.data.result[0].value[1] // "0"' 2>/dev/null)" || count=""
+  case "$count" in
+    "") row BLOCKED "Loki holds no Telegram bot token" "could not ask Loki" ;;
+    0) row PASS "Loki holds no Telegram bot token" ;;
+    *) row FAIL "Loki holds no Telegram bot token" "$count lines hold one, so treat it as exposed: revoke it with BotFather, then run scripts/hosted/owner-inputs.sh telegram" ;;
+  esac
 }
 
 # One alert through Alertmanager, ending by itself in 5 minutes. Watchdog keeps pinging meanwhile, so what shows this one left has to
