@@ -181,6 +181,22 @@ grafana_public() {
     *) row FAIL "guessing at Grafana's login hits a limit per client" "answers:$answers" ;;
   esac
 
+  # "Per client" rests on Traefik seeing each client's own address, which hostPort's portmap should leave alone and nothing above shows.
+  # These tries are what it logged last, so what it read for them is this machine's address, as Traefik saw it.
+  if cluster_or_blocked "Traefik sees a client's own address"; then
+    local seen
+    seen="$(kc -n traefik logs deploy/traefik --tail=500 2>/dev/null |
+      jq -Rr --arg host "$host" 'fromjson? | select(.RequestHost == $host and .RequestPath == "/login" and .RequestMethod == "POST") | .ClientHost' |
+      LC_ALL=C sort -u | tr '\n' ' ' || true)"
+    if [[ -z "${seen// /}" ]]; then
+      row BLOCKED "Traefik sees a client's own address" "its log shows none of those tries"
+    elif [[ "$seen" =~ (^|\ )(10\.|127\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.) ]]; then
+      row FAIL "Traefik sees a client's own address" "it read $seen, so every client shares one count at the login's limit"
+    else
+      row PASS "Traefik sees a client's own address" "$seen"
+    fi
+  fi
+
   # Through curl's config on stdin, so neither value reaches a process list, and only the status reaches this run's evidence.
   if [[ -s "$LOCAL_DIR/grafana-admin-user" && -s "$LOCAL_DIR/grafana-admin-password" ]]; then
     code="$(printf 'user = "%s:%s"\n' "$(cat "$LOCAL_DIR/grafana-admin-user")" "$(cat "$LOCAL_DIR/grafana-admin-password")" |
