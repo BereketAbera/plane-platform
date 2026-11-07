@@ -68,7 +68,10 @@ ensure_file() { # name secret key. A file lost while the cluster lives is recove
   write_secret_file "$name" "$value"
 }
 
+# Every run on hosted production carries CONFIRM=plane-prod, because scripts/hosted/target.sh wants it, bootstrap included. So that cannot
+# also be what lets the two steps below replace a key, and nothing does: a person puts the right file back, from the recovery bundle.
 if [[ "${REGENERATE:-}" == yes ]]; then
+  [[ -z "${WAYLINE_TARGET:-}" ]] || die "REGENERATE=yes replaces ENCRYPTION_KEY, which would make hosted production's Infisical database unreadable, and nothing here does that."
   [[ "${CONFIRM:-}" == yes ]] || die "REGENERATE=yes replaces ENCRYPTION_KEY, which makes an existing Infisical database unreadable. Add CONFIRM=yes to proceed."
   archive="$SECRET_ZERO_DIR/archive-$(date -u +%Y%m%dT%H%M%SZ)"
   mkdir -p "$archive"
@@ -89,8 +92,9 @@ kc get namespace "$NS" >/dev/null 2>&1 \
 # Last line of defence against the scenario above: a key generated while the cluster was unreachable
 # must not replace the one the database is encrypted with.
 live_key="$(cluster_value infisical-secrets ENCRYPTION_KEY)"
-if [[ -n "$live_key" && "$live_key" != "$(cat "$SECRET_ZERO_DIR/ENCRYPTION_KEY")" && "${CONFIRM:-}" != yes ]]; then
-  die "the local ENCRYPTION_KEY differs from the one in Secret infisical-secrets. Refusing to replace it: the database is encrypted with the live one. Inspect both, then rerun with CONFIRM=yes if you are certain."
+if [[ -n "$live_key" && "$live_key" != "$(cat "$SECRET_ZERO_DIR/ENCRYPTION_KEY")" ]]; then
+  [[ -z "${WAYLINE_TARGET:-}" ]] || die "the local ENCRYPTION_KEY differs from the one in Secret infisical-secrets, and hosted production's database is encrypted with the live one. Nothing here replaces it. Put the right key in $SECRET_ZERO_DIR/ENCRYPTION_KEY, from the recovery bundle."
+  [[ "${CONFIRM:-}" == yes ]] || die "the local ENCRYPTION_KEY differs from the one in Secret infisical-secrets. Refusing to replace it: the database is encrypted with the live one. Inspect both, then rerun with CONFIRM=yes if you are certain."
 fi
 
 apply_secret() { # name, KEY=VALUE lines on stdin. Stdin keeps values out of argv.

@@ -30,6 +30,11 @@ IA_STATUS=""
 IA_BODY=""
 
 ia_init() {
+  # Reached only through a port-forward. Anything else, the default above most of all, is the local cluster's Infisical, while the files
+  # and kubeconfig these scripts hold are hosted production's. scripts/hosted/bootstrap.sh makes the port-forward and passes this.
+  if [[ -n "${WAYLINE_TARGET:-}" && ! "$INFISICAL_URL" =~ ^http://127\.0\.0\.1:[0-9]+$ ]]; then
+    die "WAYLINE_TARGET=$WAYLINE_TARGET and INFISICAL_URL is $INFISICAL_URL, which is not its port-forward. Run this through scripts/hosted/bootstrap.sh, or pass INFISICAL_URL=http://127.0.0.1:<port>"
+  fi
   umask 077
   mkdir -p "$SECRET_ZERO_DIR"
   chmod 700 "$SECRET_ZERO_DIR"

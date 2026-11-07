@@ -10,13 +10,20 @@
 # take, and it does not count here, so a habit cannot reach production.
 #
 # A script that must run with no cluster to compare with sets HOSTED_NO_CLUSTER=yes before sourcing this: the tunnel, the
-# kubeconfig fetch, and what works only on local files. `kube_system_uid: pending` admits nothing else.
+# kubeconfig fetch, and what works only on local files. `kube_system_uid: pending` admits nothing else. Only that script's own unexported
+# assignment counts. From the environment it would switch the check off for every script that sources this, so that is refused.
 #
 # shellcheck source=../lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 [[ "${TARGET:-}" == plane-prod ]] || die "this reaches hosted production, so it needs TARGET=plane-prod. Through make: make remote-<verb> TARGET=plane-prod"
 export TARGET
+
+hosted_no_cluster_attributes="$(declare -p HOSTED_NO_CLUSTER 2>/dev/null || true)"
+hosted_no_cluster_attributes="${hosted_no_cluster_attributes#declare -}"
+hosted_no_cluster_attributes="${hosted_no_cluster_attributes%% *}"
+[[ "$hosted_no_cluster_attributes" != *x* ]] || die "HOSTED_NO_CLUSTER is exported, which would switch off the check that this is the right cluster. Unset it: only a script's own assignment counts"
+unset hosted_no_cluster_attributes
 
 "$ROOT/scripts/install-tools.sh" yq kubectl >/dev/null
 

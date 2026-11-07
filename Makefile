@@ -163,7 +163,7 @@ remote-smoke: remote-guard ## Hosted: smoke over https on an existing account, a
 remote-test: remote-guard ## Hosted: outside scan, matrix, routes, PSA, Secrets, smoke, alerts, backups. Exits 0, 1 or 2: make remote-test TARGET=plane-prod CONFIRM=plane-prod [ONLY="outside backups"]
 	@./scripts/hosted/test-hosted.sh
 
-remote-netpol: remote-guard ## Hosted: the NetworkPolicy sentinel and matrix alone: make remote-netpol TARGET=plane-prod [FROM_NS=plane-prod]
+remote-netpol: remote-guard ## Hosted: the NetworkPolicy sentinel and matrix alone, which start probe pods: make remote-netpol TARGET=plane-prod CONFIRM=plane-prod [FROM_NS=plane-prod]
 	@WAYLINE_TARGET=plane-prod ./scripts/test-netpol.sh
 
 remote-backup: remote-guard ## Hosted: run tonight's backups now: make remote-backup TARGET=plane-prod CONFIRM=plane-prod [ONLY=plane-prod|infisical]
