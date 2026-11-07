@@ -1,0 +1,93 @@
+Unable to find image 'mirror.gcr.io/makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743' locally
+mirror.gcr.io/makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743: Pulling from makeplane/plane-backend
+aca07fe076f1: Pulling fs layer
+912cd573746f: Pulling fs layer
+589002ba0eae: Pulling fs layer
+ecb8fc92e63a: Pulling fs layer
+e9d42ca9a689: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+5b474430756e: Pulling fs layer
+1f2ca4d084c1: Pulling fs layer
+cdb7aef5c70b: Pulling fs layer
+04ab0579ee35: Pulling fs layer
+99be80f7fa3e: Pulling fs layer
+683d048e2bfd: Pulling fs layer
+35b497b928a1: Pulling fs layer
+75fdacf08b30: Pulling fs layer
+4e18f69996e7: Pulling fs layer
+2c2670e45981: Pulling fs layer
+7824ff08a70f: Pulling fs layer
+77e59d578b52: Pulling fs layer
+d011b59fd31c: Pulling fs layer
+195800ae7d6d: Pulling fs layer
+4f4fb700ef54: Already exists
+7824ff08a70f: Download complete
+99be80f7fa3e: Download complete
+5b474430756e: Download complete
+d011b59fd31c: Download complete
+35b497b928a1: Download complete
+44136fa355b3: Already exists
+683d048e2bfd: Download complete
+77e59d578b52: Download complete
+b4a64946a90d: Download complete
+195800ae7d6d: Download complete
+75fdacf08b30: Download complete
+cdb7aef5c70b: Download complete
+aca07fe076f1: Download complete
+e9d42ca9a689: Download complete
+912cd573746f: Download complete
+04ab0579ee35: Download complete
+1f2ca4d084c1: Download complete
+589002ba0eae: Download complete
+589002ba0eae: Pull complete
+aca07fe076f1: Pull complete
+ecb8fc92e63a: Download complete
+4e18f69996e7: Download complete
+77e59d578b52: Pull complete
+4e18f69996e7: Pull complete
+195800ae7d6d: Pull complete
+912cd573746f: Pull complete
+ecb8fc92e63a: Pull complete
+5b474430756e: Pull complete
+35b497b928a1: Pull complete
+1f2ca4d084c1: Pull complete
+2c2670e45981: Download complete
+7824ff08a70f: Pull complete
+683d048e2bfd: Pull complete
+75fdacf08b30: Pull complete
+e9d42ca9a689: Pull complete
+04ab0579ee35: Pull complete
+2c2670e45981: Pull complete
+4f4fb700ef54: Pull complete
+99be80f7fa3e: Pull complete
+d011b59fd31c: Pull complete
+cdb7aef5c70b: Pull complete
+Digest: sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+Status: Downloaded newer image for mirror.gcr.io/makeplane/plane-backend@sha256:9b75bf46cf4ffa94272a337450ab96a4577f2b81ceff00def11f5c71eb8dd743
+x86_64
+edit_strings: 37 edits applied to 25 files
+Collecting PyJWT==2.14.0 (from -r /opt/wayline/pyjwt-requirements.txt (line 4))
+  Downloading pyjwt-2.14.0-py3-none-any.whl (32 kB)
+Installing collected packages: PyJWT
+  Attempting uninstall: PyJWT
+    Found existing installation: PyJWT 2.13.0
+    Uninstalling PyJWT-2.13.0:
+      Successfully uninstalled PyJWT-2.13.0
+Successfully installed PyJWT-2.14.0
+
+== Licence headers under /
+PASS no file under / contains LicenseRef-Plane-Commercial 20868 files read
+PASS /code/plane/utils/email.py carries AGPL-3.0-only
+PASS /code/plane/utils/email.py is upstream's file at 86d9b158fa4edd0c5deebb29367b5dd9b821716f sha256 620fe6f7396669e20af5659611189618bf55ac563b1ccfd8a473cc4e95a2dbda
+
+== PyJWT as installed
+PASS PyJWT is 2.14.0, and backend/pyjwt-requirements.txt pins 2.14.0
+PASS one copy installed: ['2.14.0']
+PASS pip check No broken requirements found.
+
+RESULT PASS: 0 failed
+System check identified no issues (0 silenced).
+/usr/local/lib/python3.12/site-packages/django/core/management/commands/makemigrations.py:161: RuntimeWarning: Got an error checking a consistent migration history performed for database connection 'default': connection failed: connection to server at "127.0.0.1", port 1 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+  warnings.warn(
+No changes detected

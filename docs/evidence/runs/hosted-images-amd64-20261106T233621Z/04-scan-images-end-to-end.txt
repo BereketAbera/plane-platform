@@ -1,0 +1,37 @@
+$ bash /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/hosted/images-work/scan-e2e.sh /private/tmp/claude-501/-Users-bek-dev-pr/58f1388d-0d93-4cd1-966b-9c80982ad690/scratchpad/hosted/images-work localhost:5073/wayline/web@sha256:54e7d01ee299825c81a8a71afc64f85485cd08719f3eed3874b99a8f563317fe localhost:5073/wayline/web@sha256:6506bc117f67b9083d89108ca818348b054133aa276e4d0e8fea1779a122cc41
+2026-11-06T23:36:29Z
+PASS plain amd64, PLATFORM=linux/amd64: exit 0
+     ==> Reading each image for linux/amd64
+     Scanned for linux/amd64.
+     PASS: every image was scanned, and no image built here has a CRITICAL finding with a fix.
+PASS plain amd64, no PLATFORM (arm64 default): exit 1
+     ==> Reading each image for linux/arm64
+     Scanned for linux/arm64.
+     FAIL: 1 policy failure(s):
+       localhost:5073/wayline/web@sha256:54e7d01ee299825c81a8a71afc64f85485cd08719f3eed3874b99a8f563317fe is linux/amd64, and this scan is for linux/arm64. A digest dev runs under emulation on purpose can be allowed on a full scan
+PASS plain amd64, PLATFORM=linux/arm64: exit 1
+     ==> Reading each image for linux/arm64
+     Scanned for linux/arm64.
+     FAIL: 1 policy failure(s):
+       localhost:5073/wayline/web@sha256:54e7d01ee299825c81a8a71afc64f85485cd08719f3eed3874b99a8f563317fe is linux/amd64, and this scan is for linux/arm64. A digest dev runs under emulation on purpose can be allowed on a full scan
+PASS plain arm64, PLATFORM=linux/amd64: exit 1
+     ==> Reading each image for linux/amd64
+     Scanned for linux/amd64.
+     FAIL: 1 policy failure(s):
+       localhost:5073/wayline/web@sha256:6506bc117f67b9083d89108ca818348b054133aa276e4d0e8fea1779a122cc41 is linux/arm64, and this scan is for linux/amd64. A digest dev runs under emulation on purpose can be allowed on a full scan
+PASS plain arm64, no PLATFORM: exit 0
+     ==> Reading each image for linux/arm64
+     Scanned for linux/arm64.
+     PASS: every image was scanned, and no image built here has a CRITICAL finding with a fix.
+PASS SCAN_ONLY=built refuses SCAN_ALSO_PLATFORM: exit 1
+     fail SCAN_ONLY=built reads what was just built, which must be linux/amd64, so SCAN_ALSO_PLATFORM does not apply
+PASS a malformed PLATFORM is refused: exit 1
+     fail PLATFORM must be linux/amd64 or linux/arm64, got 'amd64'
+PASS a variant in PLATFORM is refused: exit 1
+     fail PLATFORM must be linux/amd64 or linux/arm64, got 'linux/arm64/v8'
+--- newest results: scan-images-20261106T233746Z
+linux/arm64
+image	scanned	os	architecture	platform
+localhost:5073/wayline/web@sha256:6506bc117f67b9083d89108ca818348b054133aa276e4d0e8fea1779a122cc41	yes	alpine 3.21.0	arm64	linux/arm64
+wayline-source-lockfiles	yes	none		none
+[exit 0]

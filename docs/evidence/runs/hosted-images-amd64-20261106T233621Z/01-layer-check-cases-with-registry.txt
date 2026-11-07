@@ -1,0 +1,150 @@
+$ python3 -B apps/wayline/checks/layer-check-cases.py --registry localhost:5073
+2026-11-06T23:36:23Z
+python 3.14.6, zstd read by compression.zstd
+
+== Each case through the Walk, in this process
+PASS a clean file: clean, expected clean
+PASS the replacement's bytes: clean, expected clean
+PASS a pyc at another path: clean, expected clean
+PASS a pyc of another name under code/: clean, expected clean
+PASS the identifier in a plain file: hit, expected hit. x/y.py: the identifier
+PASS lower case: hit, expected hit. x/y.py: the identifier
+PASS upper case: hit, expected hit. x/y.py: the identifier
+PASS UTF-16-LE: hit, expected hit. x/y.txt: the identifier in UTF-16
+PASS UTF-16-BE: hit, expected hit. x/y.txt: the identifier in UTF-16
+PASS UTF-16 with a BOM, lower case: hit, expected hit. x/y.txt: the identifier in UTF-16
+PASS across two reads: hit, expected hit. x/big.bin: the identifier
+PASS in UTF-16 across two reads: hit, expected hit. x/big.bin: the identifier in UTF-16
+PASS gz named x.body: hit, expected hit. x.body!gzip: the identifier
+PASS gz named .gz: hit, expected hit. x.gz!gzip: the identifier
+PASS bz2 with no suffix: hit, expected hit. x!bzip2: the identifier
+PASS xz named .txt: hit, expected hit. x.txt: the identifier; x.txt!xz: the identifier
+PASS tar named .dat: hit, expected hit. x.dat: the identifier; x.dat!email.py: the identifier
+PASS zip named .dat: hit, expected hit. x.dat!y.py: the identifier
+PASS tar.gz named .png: hit, expected hit. x.png!gzip: the identifier; x.png!gzip!email.py: the identifier
+PASS zipapp after a #! line: hit, expected hit. app!__main__.py: the identifier
+PASS nested to the limit: hit, expected hit. x!gzip!gzip!gzip: the identifier
+PASS in an entry's name: hit, expected hit. x/LicenseRef-Plane-Commercial.txt: the identifier
+PASS in a PAX header: hit, expected hit. clean/name.txt: the identifier
+PASS email pyc under code/: hit, expected hit. code/plane/utils/__pycache__/email.cpython-312.pyc: bytecode at the original's path
+PASS email_x pyc under code/, with ./: hit, expected hit. ./code/plane/__pycache__/email_x.cpython-312.pyc: bytecode at the original's path
+PASS email pyc under code/, in a tar: hit, expected hit. x.dat!code/plane/utils/__pycache__/email.cpython-312.pyc: bytecode at the original's path
+PASS nested past the limit: incomplete, expected incomplete. x!gzip!gzip!gzip: nested deeper than 3
+PASS lz4, which this cannot open: incomplete, expected incomplete. x: lz4, which this cannot open
+PASS gzip magic and nothing after: incomplete, expected incomplete. x.gz: could not open it as gzip: Compressed file ended before the end-of-stream marker was reached
+PASS x.tar.zst: hit, expected hit. x.tar.zst!zstd: the identifier; x.tar.zst!zstd!email.py: the identifier
+PASS zstd named .bin: hit, expected hit. x.bin: the identifier; x.bin!zstd: the identifier
+PASS zstd cut short: incomplete, expected incomplete. x.bin: could not open it as zstd: Compressed file ended before the end-of-stream marker was reached
+PASS the original's sha256 under another name: hit, expected hit. x/renamed.txt: the sha256 of the original
+PASS the original's sha256 in a gz named x.body: hit, expected hit. x.body!gzip: the sha256 of the original
+PASS zstd with nothing to read it: a layer is zstd and there is no zstd binary to read it with
+
+== An image of another architecture, on a registry served here
+
+-- oci_read.Image, given the platform
+PASS a plain amd64 image read for linux/amd64: reads its own config and layers
+PASS a plain arm64 image read for linux/arm64: reads its own config and layers
+PASS an index read for linux/amd64: reads its own config and layers
+PASS an index read for linux/arm64: reads its own config and layers
+PASS a plain amd64 image read for linux/arm64: refused. <registry>/cases/image@sha256:5ca1d14d2d433b4b7bc58f3de3c908f6c6ecc4e3cbdc91002fe6af71a2708d1c is linux/amd64, and this read is for linux/arm64. --platform or PLATFORM says which it should be
+PASS a plain arm64 image read for linux/amd64: refused. <registry>/cases/image@sha256:e0a1c4765bafa9a9deb7e4d17802f5384a71f16ce262cd62aa1ff555549f446a is linux/arm64, and this read is for linux/amd64. --platform or PLATFORM says which it should be
+PASS a config that names no architecture: refused. <registry>/cases/image@sha256:cda733f923729fe91eec453b2a7c14aff7e6d58b602305b0c7561c329db467b8 is linux/None, and this read is for linux/amd64. --platform or PLATFORM says which it should be
+PASS a config that names no OS: refused. <registry>/cases/image@sha256:6fda18c570b0a6f96ab581e4d6559944bddf130740b902a40b0c8a71c1551c8a is None/amd64, and this read is for linux/amd64. --platform or PLATFORM says which it should be
+PASS a plain amd64 image for another OS: refused. <registry>/cases/image@sha256:6a310447999f336762179a07f6e2681eb8c1bfd80125f8b825b08a1abb1a7a8a is windows/amd64, and this read is for linux/amd64. --platform or PLATFORM says which it should be
+PASS an index with no child for linux/amd64: refused. <registry>/cases/image@sha256:7a1cb895dcd243a7391d18853b903fad720fa4c4c1035a550bdad93fe9abbc24 has 0 manifests for linux/amd64
+PASS an index whose linux/amd64 child is arm64: refused. <registry>/cases/image@sha256:becc404a26ebcd3dd80b8c2e48bcc0b7fd450604ee5c9fd9319059093ff8f05a is linux/arm64, and this read is for linux/amd64. --platform or PLATFORM says which it should be
+PASS a platform with no OS: refused. amd64 is not <os>/<architecture>, such as linux/amd64
+PASS a platform with a variant, which nothing here reads: refused. linux/amd64/v3 is not <os>/<architecture>, such as linux/amd64
+
+-- layer-check.py, as a command
+PASS --platform linux/amd64 on plain amd64: exit 0, expected 0
+PASS --platform linux/arm64 on plain amd64: exit 2, expected 2
+PASS --report-only is no way round it: exit 2, expected 2
+PASS no --platform and no PLATFORM reads linux/arm64: plain arm64: exit 0, expected 0
+PASS no --platform and no PLATFORM reads linux/arm64: plain amd64: exit 2, expected 2
+PASS PLATFORM=linux/amd64 is followed: plain amd64: exit 0, expected 0
+PASS PLATFORM=linux/amd64 is followed: plain arm64: exit 2, expected 2
+PASS --platform beats PLATFORM: exit 2, expected 2
+PASS walks production's child: the hit is in the amd64 child, read for amd64: exit 1, expected 1
+PASS the same index read for arm64 does not read that child: exit 0, expected 0
+PASS the hit is in the arm64 child, read for amd64: exit 0, expected 0
+
+-- flatten-config.py and flatten-compare.py, as commands
+PASS flatten-config.py --platform linux/arm64 on plain amd64: exit 2, expected 2
+PASS flatten-config.py with no PLATFORM on plain amd64: exit 2, expected 2
+PASS flatten-config.py with PLATFORM=linux/amd64 on plain arm64: exit 2, expected 2
+PASS flatten-compare.py --platform linux/arm64 on plain amd64: exit 2, expected 2
+PASS flatten-compare.py --platform linux/amd64 on plain amd64: exit 0, expected 0
+PASS flatten-compare.py with PLATFORM=linux/amd64 on plain amd64: exit 0, expected 0
+
+== Each case as a real image in localhost:5073, through the command
+PASS a clean file: exit 0, expected 0 localhost:5073/layer-check-cases/0@sha256:e0a1c4765bafa9a9deb7e4d17802f5384a71f16ce262cd62aa1ff555549f446a
+PASS the replacement's bytes: exit 0, expected 0 localhost:5073/layer-check-cases/1@sha256:2525f3bbfc6401d2527c57eecd89cad16202edc3fd72f647d94f35f67bb4ff94
+PASS a pyc at another path: exit 0, expected 0 localhost:5073/layer-check-cases/2@sha256:d239911cabe5a9473ea576642f32ff02d0dbc2fd48ad8f3a909af98bc560e51e
+PASS a pyc of another name under code/: exit 0, expected 0 localhost:5073/layer-check-cases/3@sha256:c8645fbd2d55ab61f2748aeaa5e8e70a70e8ea1b45f2b917cdbd71a28954427b
+PASS the identifier in a plain file: exit 1, expected 1 localhost:5073/layer-check-cases/4@sha256:defbba3df2e60239c7ee310b0b2d48f29f6b64b02656f57002c8fed0f2e0839c
+     HIT layer 1 of 1: x/y.py: the identifier
+PASS lower case: exit 1, expected 1 localhost:5073/layer-check-cases/5@sha256:d8a554175a1ff6b9fb37d9c3087fee6499a45976f677fb40351593c46fc6b555
+     HIT layer 1 of 1: x/y.py: the identifier
+PASS upper case: exit 1, expected 1 localhost:5073/layer-check-cases/6@sha256:4cd63121f2f60095c41d3a584f402c9817bde32d00c3e1905616eee391686544
+     HIT layer 1 of 1: x/y.py: the identifier
+PASS UTF-16-LE: exit 1, expected 1 localhost:5073/layer-check-cases/7@sha256:94c9e714bee5cecdd53aee07bf103cef28106dc51f8589e696f3c65c4d4f3c38
+     HIT layer 1 of 1: x/y.txt: the identifier in UTF-16
+PASS UTF-16-BE: exit 1, expected 1 localhost:5073/layer-check-cases/8@sha256:b97aa0d61ac11c59bbd30d7ae6b1feef36898ecb225c9842c831ad5a156a7d72
+     HIT layer 1 of 1: x/y.txt: the identifier in UTF-16
+PASS UTF-16 with a BOM, lower case: exit 1, expected 1 localhost:5073/layer-check-cases/9@sha256:b2df6a6ce24d55b031ff8a2135f83955850908f6fe554ea2762c937d3f2c5139
+     HIT layer 1 of 1: x/y.txt: the identifier in UTF-16
+PASS across two reads: exit 1, expected 1 localhost:5073/layer-check-cases/10@sha256:5ee549e11979f731e4a79332484cd2127dc4ae98edb3c771552e97695521f4fc
+     HIT layer 1 of 1: x/big.bin: the identifier
+PASS in UTF-16 across two reads: exit 1, expected 1 localhost:5073/layer-check-cases/11@sha256:46a06683ece77dbddb75513f492e57efe9b3ee19f3729b9cd77436cd8339c505
+     HIT layer 1 of 1: x/big.bin: the identifier in UTF-16
+PASS gz named x.body: exit 1, expected 1 localhost:5073/layer-check-cases/12@sha256:052c0bdf3b6a099be636e79bbf0049a119c8140383488063999d061879925ec5
+     HIT layer 1 of 1: x.body!gzip: the identifier
+PASS gz named .gz: exit 1, expected 1 localhost:5073/layer-check-cases/13@sha256:c689088cee8d4e45347bfbe029769d0108bede1c7f42c054b9b72e4254cfd396
+     HIT layer 1 of 1: x.gz!gzip: the identifier
+PASS bz2 with no suffix: exit 1, expected 1 localhost:5073/layer-check-cases/14@sha256:9347ab4bf3a32b0b3439a5d81bab967b3e748587fc731329e06de5f0120b1b6a
+     HIT layer 1 of 1: x!bzip2: the identifier
+PASS xz named .txt: exit 1, expected 1 localhost:5073/layer-check-cases/15@sha256:d93f4c998f318c846ea2c5ab81ff3cf3018bd855998cbf715ebca6bb19f4a605
+     HIT layer 1 of 1: x.txt: the identifier
+     HIT layer 1 of 1: x.txt!xz: the identifier
+PASS tar named .dat: exit 1, expected 1 localhost:5073/layer-check-cases/16@sha256:d2ca0dc937bc0f72a85c5a43e296378d8907f464c68335adca63a3b2a283c714
+     HIT layer 1 of 1: x.dat: the identifier
+     HIT layer 1 of 1: x.dat!email.py: the identifier
+PASS zip named .dat: exit 1, expected 1 localhost:5073/layer-check-cases/17@sha256:6b9681d3a9512be63d7c08c7aa0ba4604b9b6e16fdb83eb755bb25cafd7cb8b3
+     HIT layer 1 of 1: x.dat!y.py: the identifier
+PASS tar.gz named .png: exit 1, expected 1 localhost:5073/layer-check-cases/18@sha256:5c67e516d7113ce2329fc52999cf0327c68a9041f4a88b9e94833970f183c3e6
+     HIT layer 1 of 1: x.png!gzip: the identifier
+     HIT layer 1 of 1: x.png!gzip!email.py: the identifier
+PASS zipapp after a #! line: exit 1, expected 1 localhost:5073/layer-check-cases/19@sha256:1f60a7817a42fcb58f331547e4c557711ad52412a598530c4606e653766aae5c
+     HIT layer 1 of 1: app!__main__.py: the identifier
+PASS nested to the limit: exit 1, expected 1 localhost:5073/layer-check-cases/20@sha256:042754b10eefa6f9b446baf51124780aeaf5e9051862e9d9508c953b85d8bcb0
+     HIT layer 1 of 1: x!gzip!gzip!gzip: the identifier
+PASS in an entry's name: exit 1, expected 1 localhost:5073/layer-check-cases/21@sha256:10a8d3b26de41752d56eae4c1204fb716eda833f33acf9e3b61ac6dedf7ee5be
+     HIT layer 1 of 1: x/LicenseRef-Plane-Commercial.txt: the identifier
+PASS in a PAX header: exit 1, expected 1 localhost:5073/layer-check-cases/22@sha256:83c11ab6698b553cf3b52729bead0c2516703007c61d8a5bcebfac21e92fa9fb
+     HIT layer 1 of 1: clean/name.txt: the identifier
+PASS email pyc under code/: exit 1, expected 1 localhost:5073/layer-check-cases/23@sha256:14a2fcb02680ce4ce7c33f6961a983907e8162243b3ce49dbfae9bc2360d8667
+     HIT layer 1 of 1: code/plane/utils/__pycache__/email.cpython-312.pyc: bytecode at the original's path
+PASS email_x pyc under code/, with ./: exit 1, expected 1 localhost:5073/layer-check-cases/24@sha256:7ed337df745f0e422602ea8f3b2c6ee892f2c9b048f63ffa49b5dc8b68f6a248
+     HIT layer 1 of 1: ./code/plane/__pycache__/email_x.cpython-312.pyc: bytecode at the original's path
+PASS email pyc under code/, in a tar: exit 1, expected 1 localhost:5073/layer-check-cases/25@sha256:a2873614f1738f9b47e4e9144cf3723d265cd577498ec90d0425c23e156d8aa9
+     HIT layer 1 of 1: x.dat!code/plane/utils/__pycache__/email.cpython-312.pyc: bytecode at the original's path
+PASS nested past the limit: exit 2, expected 2 localhost:5073/layer-check-cases/26@sha256:953e8604c798cd1b16e2f1632d6e67cf89bd620c353dc9a629e3451f576825d9
+     NOT OPENED layer 1 of 1: x!gzip!gzip!gzip: nested deeper than 3
+PASS lz4, which this cannot open: exit 2, expected 2 localhost:5073/layer-check-cases/27@sha256:82e10eb6e209ffe60ea3bc9f9a306e88dd05b1dc79a5868d741cf451acf6b72c
+     NOT OPENED layer 1 of 1: x: lz4, which this cannot open
+PASS gzip magic and nothing after: exit 2, expected 2 localhost:5073/layer-check-cases/28@sha256:962cbb9e174ab0198295026564e6b08f16f195aeaf190c965341a84f7087eaf5
+     NOT OPENED layer 1 of 1: x.gz: could not open it as gzip: Compressed file ended before the end-of-stream marker was reached
+PASS x.tar.zst: exit 1, expected 1 localhost:5073/layer-check-cases/29@sha256:8643546ae637044f2e85b08ba7da654cfea4eed4c3f791278c579ed124ae67c1
+     HIT layer 1 of 1: x.tar.zst!zstd: the identifier
+     HIT layer 1 of 1: x.tar.zst!zstd!email.py: the identifier
+PASS zstd named .bin: exit 1, expected 1 localhost:5073/layer-check-cases/30@sha256:2a46f2d641c06d468801ec5e0c02a5719169d3f93a19f9343e6726737ec8eeae
+     HIT layer 1 of 1: x.bin: the identifier
+     HIT layer 1 of 1: x.bin!zstd: the identifier
+PASS zstd cut short: exit 2, expected 2 localhost:5073/layer-check-cases/31@sha256:ca3ba7f673eb59c4a608c0a8ee653b344d526c6e8a28ffd59d5790284d755f9d
+     NOT OPENED layer 1 of 1: x.bin: could not open it as zstd: Compressed file ended before the end-of-stream marker was reached
+PASS a plain amd64 image read for linux/amd64: exit 0, expected 0 localhost:5073/layer-check-cases/amd64@sha256:5ca1d14d2d433b4b7bc58f3de3c908f6c6ecc4e3cbdc91002fe6af71a2708d1c
+PASS a plain amd64 image read for linux/arm64: exit 2, expected 2 localhost:5073/layer-check-cases/amd64@sha256:5ca1d14d2d433b4b7bc58f3de3c908f6c6ecc4e3cbdc91002fe6af71a2708d1c
+
+layer-check-cases: 0 wrong
+[exit 0]

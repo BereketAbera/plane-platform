@@ -1,0 +1,4 @@
+$ python3 -B scripts/ci/scan-images-report.py --selftest
+2026-11-06T23:36:28Z
+selftest ok
+[exit 0]

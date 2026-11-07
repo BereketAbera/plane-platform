@@ -1,0 +1,12 @@
+nginx amd64 1 CRITICAL with a fix
+nginx arm64 1 CRITICAL with a fix
+plane-backend amd64 1 CRITICAL with a fix
+plane-backend arm64 1 CRITICAL with a fix
+plane-space amd64 4 CRITICAL with a fix
+plane-space arm64 4 CRITICAL with a fix
+== plane-space only on amd64: [] only on arm64: []
+   on both: [('CVE-2026-104848', 'tinypool', '2.1.0', '2.1.1'), ('CVE-2026-104849', 'tinypool', '2.1.0', '2.1.2'), ('CVE-2026-114125', 'storybook', '10.4.6', '8.6.19, 9.1.21, 10.6.2, 11.0.0-alpha.6'), ('CVE-2026-90711', 'proxy-addr', '2.0.7', '2.0.8')]
+== nginx only on amd64: [] only on arm64: []
+   on both: [('CVE-2026-111497', 'brotli-libs', '1.2.0-r1', '1.2.1-r0')]
+== plane-backend only on amd64: [] only on arm64: []
+   on both: [('CVE-2026-102268', 'PyJWT', '2.13.0', '2.14.0')]

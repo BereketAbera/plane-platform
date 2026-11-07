@@ -1,0 +1,29 @@
+date_utc: 2026-11-07T00:15:56Z
+commit: 5dccc91
+command: scripts/ci/test-prod-gate.sh inside a throwaway ubuntu:24.04 container, on a clone of HEAD
+---
+Unable to find image 'ubuntu:24.04' locally
+24.04: Pulling from library/ubuntu
+Digest: sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852
+Status: Downloaded newer image for ubuntu:24.04
+debconf: delaying package configuration, since apt-utils is not installed
+HEAD 5dccc91 test(hosted): run two probes at a time on plane-prod, which is what its quota
+git version 2.43.0
+jq-1.7
+OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024
+GNU bash, version 5.2.21(1)-release (aarch64-unknown-linux-gnu)
+fetching kustomize v5.8.3
+fetching yq v4.53.2
+tools: 2 installed, 0 already current, in /work/.tools/bin
+gate exit 0
+
+real	0m13.010s
+user	0m7.905s
+sys	0m6.794s
+[1;32m ok[0m check-refuses-failed-smoke
+[1;32m ok[0m check-refuses-a-published-smoke-that-failed
+[1;32m ok[0m publish-refuses-failed-evidence
+[1;32m ok[0m record-newest-smoke-failed
+[1;32m ok[0m 158 gate scenario(s) passed
+[1;32m ok[0m 158 gate scenario(s) passed
+the image this pulled was removed

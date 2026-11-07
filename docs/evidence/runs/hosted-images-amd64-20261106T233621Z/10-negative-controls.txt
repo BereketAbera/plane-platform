@@ -1,0 +1,27 @@
+== mutant 1: oci_read reads a plain manifest of any architecture, as it did
+FAIL a plain amd64 image read for linux/arm64: was read
+FAIL a plain arm64 image read for linux/amd64: was read
+FAIL a config that names no architecture: was read
+FAIL a config that names no OS: was read
+FAIL a plain amd64 image for another OS: was read
+FAIL an index whose linux/amd64 child is arm64: was read
+FAIL --platform linux/arm64 on plain amd64: exit 0, expected 2
+FAIL --report-only is no way round it: exit 0, expected 2
+FAIL no --platform and no PLATFORM reads linux/arm64: plain amd64: exit 0, expected 2
+FAIL PLATFORM=linux/amd64 is followed: plain arm64: exit 0, expected 2
+FAIL --platform beats PLATFORM: exit 0, expected 2
+FAIL flatten-config.py --platform linux/arm64 on plain amd64: exit 1, expected 2
+FAIL flatten-config.py with no PLATFORM on plain amd64: exit 1, expected 2
+FAIL flatten-config.py with PLATFORM=linux/amd64 on plain arm64: exit 1, expected 2
+FAIL flatten-compare.py --platform linux/arm64 on plain amd64: exit 0, expected 2
+layer-check-cases: 15 wrong
+== mutant 2: PLATFORM is not followed
+FAIL PLATFORM=linux/amd64 is followed: plain amd64: exit 2, expected 0
+FAIL PLATFORM=linux/amd64 is followed: plain arm64: exit 0, expected 2
+FAIL flatten-config.py with PLATFORM=linux/amd64 on plain arm64: exit 1, expected 2
+FAIL flatten-compare.py with PLATFORM=linux/amd64 on plain amd64: exit 2, expected 0
+layer-check-cases: 4 wrong
+== mutant 3: the report has no platform rule
+AssertionError: a plain amd64 manifest in an arm64 scan must fail
+== mutant 4: the report lets an empty platform.txt through
+AssertionError: with nothing saying what was asked for, it must fail

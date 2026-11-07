@@ -1,0 +1,32 @@
+# 2026-11-06T22:59:36Z the node after provisioning. Scan run from the owner's Mac, no VPN.
+  22     open
+  80     closed
+  443    closed
+  6443   closed
+  10250  closed
+  9100   closed
+  2379   closed
+  30000  closed
+  32767  closed
+vmi3733427   Ready   control-plane   107s   v1.36.6+k3s1   5.253.234.127   <none>   Ubuntu 24.04.5 LTS   6.8.0-149-generic (amd64)   containerd://2.3.7-k3s1.36
+k3s version v1.36.6+k3s1 (fa45d6a5)
+Encryption Status: Enabled
+Current Rotation Stage: start
+permitrootlogin no
+passwordauthentication no
+authenticationmethods publickey
+table inet wayline_edge {
+	chain prerouting {
+		type filter hook prerouting priority mangle; policy accept;
+		iifname != "eth0" accept
+		ct state established,related accept
+		meta l4proto { icmp, ipv6-icmp } accept
+		tcp dport 22 accept
+		drop
+	}
+}
+enabled
+enabled
+enabled
+Mem:            47Gi       1.2Gi        45Gi       1.4Mi       1.1Gi        45Gi
+/dev/sda1       387G  2.7G  384G   1% /

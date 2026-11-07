@@ -1,0 +1,12 @@
+$ docker run --rm python:3.13-slim-bookworm bash -c set -uo pipefail
+for count in 700 850 950 1060; do a=$(for i in $(seq 1 $count); do echo "/usr/share/nginx/html/assets/instrument-sans-latin-ext-$i.woff2"; done); n=0; for i in $(seq 1 300); do if f="$(printf "%s\n" "$a" | head -1)"; then n=$((n+1)); fi; done; echo "listing of ${#a} bytes: printf into head -1 succeeded $n of 300"; done
+html=$(python3 -c "print(\"<p>Plane brand all over this page, and more text here</p>\n\"*2000)"); oldfail=0; oldpass=0; newfail=0; newpass=0
+for i in $(seq 1 200); do if printf "%s" "$html" | grep -oE ".{0,20}(Plane|plane\.so|makeplane).{0,20}" | grep -vqE "Built on Plane Community Edition"; then oldfail=$((oldfail+1)); else oldpass=$((oldpass+1)); fi; matches="$(grep -oE ".{0,20}(Plane|plane\.so|makeplane).{0,20}" <<<"$html")"; if grep -vqE "Built on Plane Community Edition" <<<"$matches"; then newfail=$((newfail+1)); else newpass=$((newpass+1)); fi; done
+echo "a page carrying the brand 2000 times, 200 reads. As it was: FAIL $oldfail, wrongly PASS $oldpass. Now: FAIL $newfail, wrongly PASS $newpass"
+2026-11-06T23:38:08Z
+listing of 45391 bytes: printf into head -1 succeeded 300 of 300
+listing of 55141 bytes: printf into head -1 succeeded 262 of 300
+listing of 61641 bytes: printf into head -1 succeeded 299 of 300
+listing of 68852 bytes: printf into head -1 succeeded 0 of 300
+a page carrying the brand 2000 times, 200 reads. As it was: FAIL 0, wrongly PASS 200. Now: FAIL 200, wrongly PASS 0
+[exit 0]

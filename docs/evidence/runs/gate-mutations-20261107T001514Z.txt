@@ -1,0 +1,158 @@
+date_utc: 2026-11-07T00:20:00Z
+commit: 5dccc91
+command: scripts/ci/test-prod-gate.sh --mutations
+---
+[1;32m ok[0m check-refuses-tampered-json went red without: refuse "the signature on
+[1;32m ok[0m check-refuses-wrong-signer went red without: refuse "the signature on
+[1;32m ok[0m check-refuses-wrong-namespace went red without: -I "$SIGNER" -n "$SIGNER" -s
+[1;32m ok[0m check-refuses-another-principal went red without: -I "$SIGNER" -n "$SIGNER" -s
+[1;32m ok[0m check-refuses-signers-only-in-the-tree went red without: at_commit "$SIGNERS" >"$WORK/signers"
+[1;32m ok[0m check-reads-evidence-from-the-commit went red without: at_commit "$EVIDENCE" >"$WORK/evidence.json"
+[1;32m ok[0m check-reads-the-render-from-the-commit went red without: at_commit "$MANIFESTS" >"$WORK/manifests.yaml"
+[1;32m ok[0m check-refuses-an-edited-check went red without: refuse "$SCRIPT is not what commit
+[1;32m ok[0m check-refuses-an-argument went red without: refuse "this takes no arguments
+[1;32m ok[0m check-ignores-gits-environment went red without: unset $(git rev-parse --local-env-vars)
+[1;32m ok[0m check-refuses-shallow-history went red without: refuse "shallow clone
+[1;32m ok[0m check-refuses-failed-smoke went red without: (if $e.smoke.result != "PASS" then
+[1;32m ok[0m check-refuses-branding-not-pass went red without: (if $e.smoke.branding_overlay != "PASS" then
+[1;32m ok[0m check-refuses-stale-smoke went red without: $started >= $ended else $started >= $began end
+[1;32m ok[0m check-refuses-a-container-started-with-the-smoke went red without: $started >= $ended else $started >= $began end
+[1;32m ok[0m check-refuses-a-replaced-container-beyond-the-worker went red without: any(.replaced_by_smoke == true) and $i.component != "backend"
+[1;32m ok[0m check-refuses-only-replaced-containers went red without: ($i.containers // []) | all(.replaced_by_smoke == true)
+[1;32m ok[0m check-refuses-a-replacement-after-the-smoke went red without: then $started >= $ended else
+[1;32m ok[0m check-refuses-a-set-covering-some-images went red without: refuse "$EVIDENCE does not cover exactly
+[1;32m ok[0m check-refuses-a-digest-not-in-the-set went red without: refuse "$EVIDENCE is not in this commit
+[1;32m ok[0m check-refuses-a-mix-of-two-sets went red without: refuse "$EVIDENCE is not in this commit
+[1;32m ok[0m check-refuses-a-digest-outside-the-images went red without: refuse "$MANIFESTS holds a digest outside
+[1;32m ok[0m check-refuses-an-image-with-no-digest went red without: refuse "$MANIFESTS names an image that is not pinned
+[1;32m ok[0m check-refuses-null-digest-with-application went red without: refuse "$PLANE_APPLICATION exists and $MANIFESTS still names
+[1;32m ok[0m check-refuses-half-null went red without: refuse "$MANIFESTS names the null digest beside
+[1;32m ok[0m check-refuses-an-application-with-no-render went red without: refuse "$PLANE_APPLICATION exists and $MANIFESTS does not
+[1;32m ok[0m check-refuses-another-application-reading-the-render went red without: refuse "$file also reads the Plane render
+[1;32m ok[0m check-refuses-application-with-another-path went red without: (if $application.spec.source.path != $path then
+[1;32m ok[0m check-refuses-application-on-another-branch went red without: (if $application.spec.source.targetRevision != $branch then
+[1;32m ok[0m check-refuses-application-from-another-repository went red without: (if $application.spec.source.repoURL != $repository then
+[1;32m ok[0m check-refuses-application-with-a-second-source went red without: (if $application.spec.sources != null then
+[1;32m ok[0m check-refuses-a-stray-file-beside-the-render went red without: refuse "Argo CD reads all of
+[1;32m ok[0m check-refuses-a-wayline-image-elsewhere went red without: refuse "only $MANIFESTS may name a Wayline image
+[1;32m ok[0m check-refuses-no-containers went red without: (if ($i.containers | type) != "array" or ($i.containers | length) == 0 then
+[1;32m ok[0m check-refuses-arm64-entry went red without: (if $i.platform != "linux/amd64" then
+[1;32m ok[0m check-refuses-index-entry went red without: (if ($i.media_type | plain) | not then
+[1;32m ok[0m check-refuses-arm64-production-child went red without: (if $i.production_runs.platform != "linux/amd64" or
+[1;32m ok[0m check-refuses-an-index-with-no-dev-child went red without: (if $i.dev_ran.platform != "linux/arm64" or (($i.dev_ran.digest | digest) | not) then
+[1;32m ok[0m check-refuses-wayline-recorded-as-upstream went red without: (if ($i.production_repository | startswith($ghcr)) then
+[1;32m ok[0m check-refuses-another-execution-claim went red without: (if $e.executed_under != "rosetta-on-arm64" then
+[1;32m ok[0m check-refuses-another-environment went red without: (if $e.environment != "plane-dev" then
+[1;32m ok[0m check-refuses-a-wrong-set-hash-inside went red without: (if $e.set_hash != $set_hash then
+[1;32m ok[0m check-refuses-a-smoke-file-that-changed went red without: refuse "$smoke_path is not the file
+[1;32m ok[0m check-refuses-a-missing-smoke-file went red without: refuse "$EVIDENCE names $smoke_path, which is not in this commit
+[1;32m ok[0m check-refuses-a-published-smoke-that-failed went red without: (if $published[0].result != "PASS" then
+[1;32m ok[0m check-refuses-a-published-smoke-of-other-digests went red without: (if (step("branding-overlay").data.branded // {}) != $branded then
+[1;32m ok[0m check-refuses-other-smoke-times went red without: (if $published[0].started_at != $e.smoke.started_at or
+[1;32m ok[0m check-refuses-argo-revision-off-history went red without: refuse "$EVIDENCE says dev ran commit
+[1;32m ok[0m check-refuses-a-dev-overlay-that-disagrees went red without: refuse "$EVIDENCE says dev ran these at
+[1;32m ok[0m check-refuses-image-revision-off-history went red without: refuse "$EVIDENCE says an image was built from
+[1;32m ok[0m check-status-3-from-a-tool-is-a-refusal went red without: status=1
+  fi
+[1;32m ok[0m check-passes went red without: printf 'set_hash=%s\n' "$SET_HASH"
+[1;32m ok[0m check-not-promoted went red without: not_yet_promoted "no Application reads
+[1;32m ok[0m check-not-promoted-all-null went red without: not_yet_promoted "no Application reads
+[1;32m ok[0m check-nothing-there-yet went red without: not_yet_promoted "this commit has no
+[1;32m ok[0m check-ignores-signers-in-the-tree went red without: at_commit "$SIGNERS" >"$WORK/signers"
+[1;32m ok[0m check-refuses-a-check-not-in-the-commit went red without: refuse "$SELF is not in commit
+[1;32m ok[0m check-refuses-a-hidden-image-field went red without: .. | objects | select(has("image"))
+[1;32m ok[0m check-refuses-a-jsonnet-application went red without: refuse "$file: Argo CD would read it
+[1;32m ok[0m check-refuses-a-published-branding-skip went red without: (if (step("branding-overlay").status) != "PASS" then
+[1;32m ok[0m check-refuses-a-published-smoke-of-another-mode went red without: (if $published[0].tool != "tests/e2e/smoke.py" or $published[0].environment != "dev" or $published[0].mode != "full" then
+[1;32m ok[0m check-refuses-a-revision-with-a-bad-shape went red without: (if ($i.revision | hex40) | not then
+[1;32m ok[0m check-refuses-a-smaller-set-under-its-own-name went red without: refuse "$EVIDENCE is not in this commit
+[1;32m ok[0m check-refuses-a-smoke-path-outside-runs went red without: refuse "$EVIDENCE names no published smoke
+[1;32m ok[0m check-refuses-a-time-it-cannot-read went red without: ($started == null or (if
+[1;32m ok[0m check-refuses-an-application-it-cannot-read went red without: refuse "$file is not YAML
+[1;32m ok[0m check-refuses-an-image-in-a-job went red without: refuse "$EVIDENCE is not in this commit
+[1;32m ok[0m check-refuses-an-unknown-kind went red without: "is of kind \($i.kind), which this does not know"
+[1;32m ok[0m check-refuses-another-file-named-plane-prod went red without: .metadata.name == "plane-prod" or 
+[1;32m ok[0m check-refuses-another-repository went red without: refuse "$EVIDENCE is not in this commit
+[1;32m ok[0m check-refuses-another-schema went red without: (if $e.schema != 1 then
+[1;32m ok[0m check-refuses-application-of-another-namespace went red without: (if $application.spec.destination.namespace != "plane-prod" then
+[1;32m ok[0m check-refuses-evidence-it-cannot-read went red without: printf 'refused: this check stopped
+[1;32m ok[0m check-refuses-missing-signature went red without: refuse "$EVIDENCE has no signature
+[1;32m ok[0m check-refuses-no-images went red without: refuse "$MANIFESTS names no image
+[1;32m ok[0m check-refuses-no-signers-file went red without: refuse "$SIGNERS is not in this commit
+[1;32m ok[0m check-refuses-null-digest-in-one-image went red without: refuse "$PLANE_APPLICATION exists and $MANIFESTS still names
+[1;32m ok[0m check-refuses-real-digests-with-no-evidence-and-no-application went red without: if [[ -n "$null_references" ]]; then
+[1;32m ok[0m promote-refuses-what-the-check-refuses went red without: die "check-prod-evidence.sh answered
+[1;32m ok[0m promote-refuses-a-bad-hash went red without: die "a set hash is 64
+[1;32m ok[0m promote-refuses-a-dirty-overlay went red without: die "uncommitted changes under
+[1;32m ok[0m promote-first-promotion went red without: cp "$TEMPLATE" "$APPLICATION"
+[1;32m ok[0m promote-second-promotion went red without: if [[ ! -e "$APPLICATION" ]]; then
+[1;32m ok[0m promote-already-holds-the-set went red without: if ! grep -qxF "$name"$'\t'"$repository"$'\t'"$tag"$'\t'"$digest" "$WORK/overlay.tsv"; then
+[1;32m ok[0m promote-first-refusal-leaves-no-application went red without: restore_from_head "${PATHS[@]}" ||
+[1;32m ok[0m promote-refuses-a-digest-field-it-cannot-use went red without: die "$EVIDENCE names an image this cannot use
+[1;32m ok[0m promote-refuses-an-unknown-set went red without: die "HEAD has no $EVIDENCE
+[1;32m ok[0m promote-refuses-uncommitted-evidence went red without: die "HEAD has no $EVIDENCE
+[1;32m ok[0m publish-refuses-going-backwards went red without: die "$BRANCH was released from
+[1;32m ok[0m publish-later-release-has-the-tip-as-parent went red without: || unchanged=no
+[1;32m ok[0m publish-no-op-when-the-trees-match went red without: if [[ "$unchanged" == yes ]]; then
+[1;32m ok[0m publish-rerun-of-the-same-commit-changes-nothing went red without: if [[ "$unchanged" == yes ]]; then
+[1;32m ok[0m publish-refuses-failed-evidence went red without: die "check-prod-evidence.sh refused
+[1;32m ok[0m publish-refuses-a-digest-with-no-evidence-on-the-first-release went red without: die "check-prod-evidence.sh refused
+[1;32m ok[0m publish-keeps-tokens-off-the-command-line went red without: curl -fsS --retry 3 -K - "https://ghcr.io/token
+[1;32m ok[0m publish-needs-a-run went red without: die "this is the release-plane-prod job
+[1;32m ok[0m publish-needs-a-token-to-read-ghcr went red without: die "reading GHCR takes GITHUB_TOKEN
+[1;32m ok[0m publish-no-cluster-tree went red without: if ! in_commit "$CLUSTER_TREE"; then
+[1;32m ok[0m publish-writes-the-job-summary went red without: printf '%s\n' "$1" >>"$GITHUB_STEP_SUMMARY"
+[1;32m ok[0m publish-refuses-off-main went red without: die "$COMMIT is not on origin
+[1;32m ok[0m publish-refuses-what-ghcr-lacks went red without: die "GHCR does not serve $repository@$digest"
+[1;32m ok[0m publish-refuses-an-index-on-ghcr went red without: die "$repository@$digest is not a plain image manifest
+[1;32m ok[0m publish-refuses-arm64-on-ghcr went red without: die "$repository@$digest is for $found
+[1;32m ok[0m publish-refuses-bytes-that-do-not-hash went red without: die "what GHCR served for $repository@$digest does not hash
+[1;32m ok[0m publish-refuses-a-config-that-does-not-hash went red without: die "what GHCR served as the config
+[1;32m ok[0m publish-refuses-another-revision-on-ghcr went red without: die "$repository@$digest says it was built from
+[1;32m ok[0m publish-refuses-foreign-files-on-the-branch went red without: die "$BRANCH at $TIP holds more than
+[1;32m ok[0m publish-refuses-a-tip-with-no-release went red without: die "$BRANCH at $TIP has no RELEASE.json
+[1;32m ok[0m publish-refuses-an-unreadable-origin went red without: die "could not read origin
+[1;32m ok[0m publish-holds-only-the-hosted-trees went red without: git update-index --add --cacheinfo "100644,
+[1;32m ok[0m publish-later-release-has-the-tip-as-parent went red without: PARENTS=(-p "$TIP")
+[1;32m ok[0m publish-refuses-a-branch-that-moved went red without: "$RELEASE:refs/heads/$BRANCH"
+[1;32m ok[0m publish-platform-only went red without: export GIT_AUTHOR_NAME='github-actions[bot]' GIT_AUTHOR_EMAIL='41898282+github-actions[bot]@users.noreply.github.com'
+[1;32m ok[0m promote-first-promotion went red without: export GIT_AUTHOR_NAME=promote-prod GIT_AUTHOR_EMAIL=promote-prod@invalid GIT_COMMITTER_NAME=promote-prod GIT_COMMITTER_EMAIL=promote-prod@invalid
+[1;32m ok[0m record-newest-smoke-failed went red without: (if .result != "PASS" then
+[1;32m ok[0m record-passes-and-the-check-accepts-it went red without: executed_under: "rosetta-on-arm64", 
+[1;32m ok[0m record-no-key went red without: die "$KEY does not exist
+[1;32m ok[0m record-no-revision-label went red without: die "$reference has no revision label
+[1;32m ok[0m record-no-smoke-at-all went red without: die "no dev smoke
+[1;32m ok[0m record-only-the-replaced-worker-runs-backend went red without: (if ($mine | length) > 0 and ($checked | all(.replaced_by_smoke)) then
+[1;32m ok[0m record-overlay-has-a-null-digest went red without: die "$DEV_OVERLAY at $ARGO_REVISION holds an image with no real digest
+[1;32m ok[0m record-refuses-a-smoke-it-cannot-read went red without: die "$file is not JSON
+[1;32m ok[0m record-worker-started-after-the-smoke went red without:  and .started_at < $ended
+[1;32m ok[0m record-newest-smoke-by-what-it-says went red without: if [[ "$started" > "$SMOKE_STARTED" ]]; then
+[1;32m ok[0m record-branding-overlay-skipped went red without: (if step("branding-overlay").status != "PASS" then
+[1;32m ok[0m record-a-branded-image-skipped went red without: if step("branding-" + $image).status != "PASS" then
+[1;32m ok[0m record-smoke-in-verify-mode went red without: (if .mode != "full" then
+[1;32m ok[0m record-smoke-not-published went red without: die "$PUBLISHED does not exist
+[1;32m ok[0m record-published-copy-differs went red without: die "$PUBLISHED does not say what
+[1;32m ok[0m record-argo-not-synced went red without: die "Application plane-dev is $status
+[1;32m ok[0m record-argo-revision-off-main went red without: die "plane-dev is at $ARGO_REVISION, which is not on
+[1;32m ok[0m record-smoke-of-other-digests went red without: die "the newest smoke checked other branded digests
+[1;32m ok[0m record-digest-not-running went red without: (if ($mine | length) == 0 then
+[1;32m ok[0m record-image-id-is-what-counts went red without: .running == $entry.digest
+[1;32m ok[0m record-container-not-ready went red without: map(select(.ready | not)
+[1;32m ok[0m record-container-started-during-smoke went red without: select((.replaced_by_smoke | not) and (.started_at == "" or .started_at >= $began))
+[1;32m ok[0m record-young-worker-with-no-negative-control went red without: ($worker_replaced and $entry.component == "backend"
+[1;32m ok[0m record-older-digest-still-running went red without: ($older | map(
+[1;32m ok[0m record-ignores-a-pod-on-its-way-out went red without: select(.metadata.deletionTimestamp == null and .status.phase == "Running")
+[1;32m ok[0m record-ignores-a-finished-pod went red without: select(.metadata.deletionTimestamp == null and .status.phase == "Running")
+[1;32m ok[0m record-node-not-arm64 went red without: die "a node here is not arm64
+[1;32m ok[0m record-branded-is-an-index went red without: die "$reference is $media_type
+[1;32m ok[0m record-branded-is-arm64 went red without: die "$reference is $platform
+[1;32m ok[0m record-branded-not-on-ghcr went red without: docker_read_problem "$1"
+  [[
+[1;32m ok[0m record-bytes-do-not-hash went red without: die "what the registry serves for
+[1;32m ok[0m record-revision-off-main went red without: die "$reference says it was built from
+[1;32m ok[0m record-no-successful-run went red without: select(.headSha == $commit and .conclusion == "success")
+[1;32m ok[0m record-digest-not-in-the-run-log went red without: if grep -qF "$digest" "$run_log"; then
+[1;32m ok[0m record-upstream-is-not-an-index went red without: die "$reference is not an index
+[1;32m ok[0m record-key-the-signers-do-not-accept went red without: die "$KEY made a signature
+[1;32m ok[0m 150 mutation(s), and each one turned its scenario red
+exit 0 after 484s

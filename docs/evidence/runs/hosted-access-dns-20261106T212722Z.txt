@@ -1,0 +1,46 @@
+# 2026-11-06T21:27:22Z access and DNS for hosted production. Read from Contabo's API, the server and public resolvers. Nothing secret.
+
+## Contabo API, cntb v1.7
+{'instanceId': 203733427, 'name': 'vmi3733427', 'status': 'running', 'productId': 'V156', 'productName': 'Cloud VPS 12 (2026) (no setup)', 'productType': 'ssd', 'region': 'EU', 'dataCenter': 'European Union 2', 'cpuCores': 12, 'ramMb': 49152, 'diskMb': 409600, 'defaultUser': 'root', 'createdDate': '2026-11-06T20:38:48Z'}
+ipv4 5.253.234.127 ipv6 2a02:c207:2373:3427:0000:0000:0000:0001
+
+## Server, before any change
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+Linux 6.8.0-147-generic x86_64
+12
+Mem:            47Gi       789Mi        46Gi       1.0Mi       317Mi        46Gi
+/dev/sda1      ext4  387G  2.2G  385G   1% /
+5
+Status: inactive
+0
+
+## Vercel records for bereket.dev, before and after
+<claude-code-hint v="1" type="plugin" value="vercel@claude-plugins-official" />
+bereket.dev
+     id    name    type     value                                       created    
+                   CAA      0 issue "pki.goog"                          default    
+                   CAA      0 issue "sectigo.com"                       default    
+           *       ALIAS    cname.vercel-dns-017.com.                   default    
+                   ALIAS    c861bd0a64cd766c.vercel-dns-017.com         default    
+                   CAA      0 issue "letsencrypt.org"                   default    
+
+<claude-code-hint v="1" type="plugin" value="vercel@claude-plugins-official" />
+bereket.dev
+                                   id    name       type     value                                  
+         rec_7bb71d1e8b1ea3f06e3bb895    wayline    A        5.253.234.127                          
+                                                    CAA      0 issue "pki.goog"                     
+                                                    CAA      0 issue "sectigo.com"                  
+                                         *          ALIAS    cname.vercel-dns-017.com.              
+                                                    ALIAS    c861bd0a64cd766c.vercel-dns-017.com    
+                                                    CAA      0 issue "letsencrypt.org"              
+
+## Lookups
+ns1.vercel-dns.com: 5.253.234.127 
+ns2.vercel-dns.com: 5.253.234.127 
+8.8.8.8: 5.253.234.127 
+1.1.1.1: 5.253.234.127 
+apex from ns1: 216.198.79.1 64.29.17.1 
+www from ns1: 216.198.79.1 216.198.79.65 
+NS from 8.8.8.8: ns2.vercel-dns.com. ns1.vercel-dns.com. 
+AAAA for wayline: dig: couldn't get address for 'ns2.vercel-dns.com': failure
+0

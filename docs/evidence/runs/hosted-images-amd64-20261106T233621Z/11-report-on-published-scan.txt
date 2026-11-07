@@ -1,0 +1,6 @@
+  quay.io/argoproj/argocd:v3.5.7@16df57da6f22
+Reported, not failing: 1 image(s) on an end-of-life OS, where trivy's OS findings may be incomplete:
+  docker.io/library/redis:7.2.17-alpine@2c933526722b
+PASS: every image was scanned, and no image built here has a CRITICAL finding with a fix.
+[exit 0, published run's exit code was 0]
+[held to linux/amd64: exit 1, 31 images refused]

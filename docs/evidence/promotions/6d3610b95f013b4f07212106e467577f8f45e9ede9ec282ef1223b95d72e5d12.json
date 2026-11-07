@@ -1,0 +1,230 @@
+{
+  "argo_revision": "201c85bdff8fec341e4c28b558ae2dc0cafa1d3f",
+  "environment": "plane-dev",
+  "executed_under": "rosetta-on-arm64",
+  "images": [
+    {
+      "built_by_run": 42318206339,
+      "chart_image": "artifacts.plane.so/makeplane/plane-admin",
+      "component": "admin",
+      "containers": [
+        {
+          "container": "plane-admin",
+          "pod": "plane-admin-wl-697787f68b-dp7mx",
+          "started_at": "2026-11-07T05:10:23Z"
+        }
+      ],
+      "dev_repository": "localhost:5001/wayline/admin",
+      "digest": "sha256:c8edb3cbabedf7bace4137ad7c431ec0be1c5483dc2eeb2547816bfb45e0b177",
+      "kind": "branded",
+      "media_type": "application/vnd.oci.image.manifest.v1+json",
+      "platform": "linux/amd64",
+      "production_repository": "ghcr.io/bereketabera/wayline/admin",
+      "revision": "5161bf93e424943e35809e3958983a1f9b11f087",
+      "tag": null
+    },
+    {
+      "built_by_run": 42318206339,
+      "chart_image": "artifacts.plane.so/makeplane/plane-backend",
+      "component": "backend",
+      "containers": [
+        {
+          "container": "plane-api",
+          "pod": "plane-api-wl-6469654bb9-jd24q",
+          "started_at": "2026-11-07T05:10:10Z"
+        },
+        {
+          "container": "plane-beat-worker",
+          "pod": "plane-beat-worker-wl-778b874f79-mt45f",
+          "started_at": "2026-11-07T05:10:11Z"
+        },
+        {
+          "container": "plane-worker",
+          "pod": "plane-worker-wl-76b8d6fcdb-f49tx",
+          "replaced_by_smoke": true,
+          "started_at": "2026-11-07T05:14:15Z"
+        }
+      ],
+      "dev_repository": "localhost:5001/wayline/backend",
+      "digest": "sha256:9df47b8afbd642288902044d0ec434e6c219a5f210be1b0cc9598f3d365fe8e2",
+      "kind": "branded",
+      "media_type": "application/vnd.oci.image.manifest.v1+json",
+      "platform": "linux/amd64",
+      "production_repository": "ghcr.io/bereketabera/wayline/backend",
+      "revision": "5161bf93e424943e35809e3958983a1f9b11f087",
+      "tag": null
+    },
+    {
+      "chart_image": "artifacts.plane.so/makeplane/plane-live",
+      "component": "plane-live",
+      "containers": [
+        {
+          "container": "plane-live",
+          "pod": "plane-live-wl-5744d85f8b-6wgcw",
+          "started_at": "2026-11-07T00:41:03Z"
+        }
+      ],
+      "dev_ran": {
+        "digest": "sha256:93c8e9528194d4ec8e7929cbcbb43b5924298d5431813832b4c06361341d7c52",
+        "platform": "linux/arm64"
+      },
+      "dev_repository": "docker.io/makeplane/plane-live",
+      "digest": "sha256:30741b6d6552533ba3fa80c43a0282e2d6be7769f2840ce9792c1fdacdbce91e",
+      "kind": "upstream-index",
+      "production_repository": "docker.io/makeplane/plane-live",
+      "production_runs": {
+        "digest": "sha256:a0c5e26c407c517595931fe4c277b9cc2009cd43260874878cb9c42bd509493e",
+        "platform": "linux/amd64"
+      },
+      "tag": "v1.4.3"
+    },
+    {
+      "chart_image": "postgres",
+      "component": "postgres",
+      "containers": [
+        {
+          "container": "plane-pgdb",
+          "pod": "plane-pgdb-wl-0",
+          "started_at": "2026-11-07T00:40:06Z"
+        }
+      ],
+      "dev_ran": {
+        "digest": "sha256:188e422ad801eaf156d9b9e276064d931553a81f4281a18db98752178dbc061d",
+        "platform": "linux/arm64"
+      },
+      "dev_repository": "docker.io/library/postgres",
+      "digest": "sha256:54e0dd8e8cddcdbb9156c2486eed5a43eccb7214d7c6828097d41ce049fb3984",
+      "kind": "upstream-index",
+      "production_repository": "docker.io/library/postgres",
+      "production_runs": {
+        "digest": "sha256:1d4031d6ed0a9b774b365f99a3c16127217eb19f699d8d43fc43b732748601ef",
+        "platform": "linux/amd64"
+      },
+      "tag": "15.19-alpine"
+    },
+    {
+      "chart_image": "rabbitmq",
+      "component": "rabbitmq",
+      "containers": [
+        {
+          "container": "plane-rabbitmq",
+          "pod": "plane-rabbitmq-wl-0",
+          "started_at": "2026-11-07T00:40:00Z"
+        }
+      ],
+      "dev_ran": {
+        "digest": "sha256:b4b0031e94add1d722255065f2a769163f33086ebe07d51b3c8c30f01ee7b3d5",
+        "platform": "linux/arm64"
+      },
+      "dev_repository": "docker.io/library/rabbitmq",
+      "digest": "sha256:606d8c0d6b3c18d1da9afc53bc7cdb2a8d5486df91b5a9830e9e07626c9ae281",
+      "kind": "upstream-index",
+      "production_repository": "docker.io/library/rabbitmq",
+      "production_runs": {
+        "digest": "sha256:3c498e636fd64462480c5f9ff842eb224ab84160a8ada1ded5375e9569e9230c",
+        "platform": "linux/amd64"
+      },
+      "tag": "3.13.7-management-alpine"
+    },
+    {
+      "chart_image": "docker.io/pgsty/silo",
+      "component": "silo",
+      "containers": [
+        {
+          "container": "plane-minio",
+          "pod": "plane-minio-wl-0",
+          "started_at": "2026-11-07T00:40:06Z"
+        }
+      ],
+      "dev_ran": {
+        "digest": "sha256:3d923a0d52eb3cbc9d9160418492f7cc5dcba15a4dfd26dcfafc83ab5c13b008",
+        "platform": "linux/arm64"
+      },
+      "dev_repository": "docker.io/pgsty/silo",
+      "digest": "sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885",
+      "kind": "upstream-index",
+      "production_repository": "docker.io/pgsty/silo",
+      "production_runs": {
+        "digest": "sha256:9d5416756143c9740ab839f1765062d1b2e83602f6a7911a3824b14009f54535",
+        "platform": "linux/amd64"
+      },
+      "tag": "RELEASE.2026-10-26T00-00-00Z-distroless"
+    },
+    {
+      "built_by_run": 42318206339,
+      "chart_image": "artifacts.plane.so/makeplane/plane-space",
+      "component": "space",
+      "containers": [
+        {
+          "container": "plane-space",
+          "pod": "plane-space-wl-d99f4cdd9-vm5rn",
+          "started_at": "2026-11-07T05:10:22Z"
+        }
+      ],
+      "dev_repository": "localhost:5001/wayline/space",
+      "digest": "sha256:a0cf0e9a719765a9f3daa8024f08a133206a7cb729422a30061cf22366dca7fa",
+      "kind": "branded",
+      "media_type": "application/vnd.oci.image.manifest.v1+json",
+      "platform": "linux/amd64",
+      "production_repository": "ghcr.io/bereketabera/wayline/space",
+      "revision": "5161bf93e424943e35809e3958983a1f9b11f087",
+      "tag": null
+    },
+    {
+      "chart_image": "valkey/valkey",
+      "component": "valkey",
+      "containers": [
+        {
+          "container": "plane-redis",
+          "pod": "plane-redis-wl-0",
+          "started_at": "2026-11-07T00:40:00Z"
+        }
+      ],
+      "dev_ran": {
+        "digest": "sha256:68debcd66a8867ade357c4815a3043bb2812236134ea6f65aa2d30287b42fba6",
+        "platform": "linux/arm64"
+      },
+      "dev_repository": "docker.io/valkey/valkey",
+      "digest": "sha256:f8c1a646f4b31ae4dc3980ff06723a20b533ea1123b9796d450d78ed53ad6d3e",
+      "kind": "upstream-index",
+      "production_repository": "docker.io/valkey/valkey",
+      "production_runs": {
+        "digest": "sha256:a4d999bf67c51f2b4adef2667f2704ae8a7ada37e6e1eddd594044d8a2aac93f",
+        "platform": "linux/amd64"
+      },
+      "tag": "7.2.15-alpine"
+    },
+    {
+      "built_by_run": 42318206339,
+      "chart_image": "artifacts.plane.so/makeplane/plane-frontend",
+      "component": "web",
+      "containers": [
+        {
+          "container": "plane-web",
+          "pod": "plane-web-wl-54cf979b97-dl7gv",
+          "started_at": "2026-11-07T05:10:24Z"
+        }
+      ],
+      "dev_repository": "localhost:5001/wayline/web",
+      "digest": "sha256:2389044368df01dba95e4599efab8e30bcfab6947919065b8118115146b678ab",
+      "kind": "branded",
+      "media_type": "application/vnd.oci.image.manifest.v1+json",
+      "platform": "linux/amd64",
+      "production_repository": "ghcr.io/bereketabera/wayline/web",
+      "revision": "5161bf93e424943e35809e3958983a1f9b11f087",
+      "tag": null
+    }
+  ],
+  "recorded_at": "2026-11-07T05:15:48Z",
+  "schema": 1,
+  "set_hash": "6d3610b95f013b4f07212106e467577f8f45e9ede9ec282ef1223b95d72e5d12",
+  "smoke": {
+    "branding_overlay": "PASS",
+    "finished_at": "2026-11-07T05:14:55Z",
+    "published_path": "docs/evidence/runs/smoke-dev-20261107T051309Z-98217.json",
+    "result": "PASS",
+    "run_id": "8f16ed1a",
+    "sha256": "418575c5b3ddd1cdb1404d115e825eec98b654d50983973174914b85359d54ae",
+    "started_at": "2026-11-07T05:13:09Z"
+  }
+}

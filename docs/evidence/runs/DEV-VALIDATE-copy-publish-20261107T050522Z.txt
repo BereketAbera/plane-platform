@@ -1,0 +1,27 @@
+started: 20261107T050522Z
+commit: 201c85bdff8fec341e4c28b558ae2dc0cafa1d3f
+commands: scripts/ci/copy-to-local-registry.sh ghcr.io/bereketabera/wayline dev; make gitops-publish
+#1 [internal] pushing localhost:5001/wayline/admin
+#1 0.001 copying sha256:c8edb3cbabedf7bace4137ad7c431ec0be1c5483dc2eeb2547816bfb45e0b177 from ghcr.io/bereketabera/wayline/admin@sha256:c8edb3cbabedf7bace4137ad7c431ec0be1c5483dc2eeb2547816bfb45e0b177 to localhost:5001/wayline/admin
+#1 16.30 pushing sha256:c8edb3cbabedf7bace4137ad7c431ec0be1c5483dc2eeb2547816bfb45e0b177 to localhost:5001/wayline/admin:c8edb3cbabed
+#1 DONE 16.3s
+[1;32m ok[0m localhost:5001/wayline/admin@sha256:c8edb3cbabedf7bace4137ad7c431ec0be1c5483dc2eeb2547816bfb45e0b177
+#1 [internal] pushing localhost:5001/wayline/backend
+#1 0.000 copying sha256:9df47b8afbd642288902044d0ec434e6c219a5f210be1b0cc9598f3d365fe8e2 from ghcr.io/bereketabera/wayline/backend@sha256:9df47b8afbd642288902044d0ec434e6c219a5f210be1b0cc9598f3d365fe8e2 to localhost:5001/wayline/backend
+#1 45.20 pushing sha256:9df47b8afbd642288902044d0ec434e6c219a5f210be1b0cc9598f3d365fe8e2 to localhost:5001/wayline/backend:9df47b8afbd6
+#1 DONE 45.2s
+[1;32m ok[0m localhost:5001/wayline/backend@sha256:9df47b8afbd642288902044d0ec434e6c219a5f210be1b0cc9598f3d365fe8e2
+#1 [internal] pushing localhost:5001/wayline/web
+#1 0.000 copying sha256:2389044368df01dba95e4599efab8e30bcfab6947919065b8118115146b678ab from ghcr.io/bereketabera/wayline/web@sha256:2389044368df01dba95e4599efab8e30bcfab6947919065b8118115146b678ab to localhost:5001/wayline/web
+#1 21.48 pushing sha256:2389044368df01dba95e4599efab8e30bcfab6947919065b8118115146b678ab to localhost:5001/wayline/web:2389044368df
+#1 DONE 21.5s
+[1;32m ok[0m localhost:5001/wayline/web@sha256:2389044368df01dba95e4599efab8e30bcfab6947919065b8118115146b678ab
+#1 [internal] pushing localhost:5001/wayline/space
+#1 0.000 copying sha256:a0cf0e9a719765a9f3daa8024f08a133206a7cb729422a30061cf22366dca7fa from ghcr.io/bereketabera/wayline/space@sha256:a0cf0e9a719765a9f3daa8024f08a133206a7cb729422a30061cf22366dca7fa to localhost:5001/wayline/space
+#1 138.6 pushing sha256:a0cf0e9a719765a9f3daa8024f08a133206a7cb729422a30061cf22366dca7fa to localhost:5001/wayline/space:a0cf0e9a7197
+#1 DONE 138.6s
+[1;32m ok[0m localhost:5001/wayline/space@sha256:a0cf0e9a719765a9f3daa8024f08a133206a7cb729422a30061cf22366dca7fa
+[1;32m ok[0m 4 image(s) present in the local registry
+copy exit 0
+[1;32m ok[0m published main 201c85bdff8f to /Users/bek/dev/pr/plane-platform/.local/git/plane-platform.git
+publish exit 0

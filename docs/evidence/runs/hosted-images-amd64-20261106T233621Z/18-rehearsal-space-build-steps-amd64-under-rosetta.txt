@@ -1,0 +1,82 @@
+Unable to find image 'mirror.gcr.io/makeplane/plane-space@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88' locally
+mirror.gcr.io/makeplane/plane-space@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88: Pulling from makeplane/plane-space
+1b31ac1da879: Pulling fs layer
+d37cdf13287a: Pulling fs layer
+e1cc2a4940ce: Pulling fs layer
+3c9b483752d6: Pulling fs layer
+7246d4c6a55d: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+7b229517ed22: Pulling fs layer
+1dd60302fe74: Pulling fs layer
+8776aa3d2ba7: Pulling fs layer
+304511616d6a: Pulling fs layer
+7c09d1d1707e: Pulling fs layer
+2cbdad4d0a63: Pulling fs layer
+b75ee12dd71a: Pulling fs layer
+bedacec8a2ee: Pulling fs layer
+c6acffc38b0d: Pulling fs layer
+4f4fb700ef54: Already exists
+304511616d6a: Download complete
+d37cdf13287a: Download complete
+44136fa355b3: Already exists
+1dd60302fe74: Download complete
+2cbdad4d0a63: Download complete
+b75ee12dd71a: Download complete
+e1cc2a4940ce: Download complete
+7c09d1d1707e: Download complete
+410658d82ded: Download complete
+1b31ac1da879: Download complete
+7246d4c6a55d: Download complete
+c6acffc38b0d: Download complete
+7b229517ed22: Download complete
+7b229517ed22: Pull complete
+bedacec8a2ee: Download complete
+8776aa3d2ba7: Download complete
+304511616d6a: Pull complete
+1dd60302fe74: Pull complete
+2cbdad4d0a63: Pull complete
+b75ee12dd71a: Pull complete
+7c09d1d1707e: Pull complete
+7246d4c6a55d: Pull complete
+c6acffc38b0d: Pull complete
+8776aa3d2ba7: Pull complete
+e1cc2a4940ce: Pull complete
+bedacec8a2ee: Pull complete
+3c9b483752d6: Download complete
+4f4fb700ef54: Pull complete
+d37cdf13287a: Pull complete
+1b31ac1da879: Pull complete
+3c9b483752d6: Pull complete
+Digest: sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+Status: Downloaded newer image for mirror.gcr.io/makeplane/plane-space@sha256:af9b955874a2ea44f5121bc669200074428081301f950a8e4eeaf1a140e98a88
+x86_64
+x64
+proxy-addr tarball: 5670 bytes, integrity sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==
+removed storybook@10.4.6 and tinypool@2.1.0, 21 links to them and 19 .bin shims
+replaced proxy-addr@2.0.7 with proxy-addr@2.0.8, 2 links repointed
+
+== What the server bundle imports
+30 static imports and 25 import() or require() of a package, across 533 bundle files
+131 packages in node_modules reachable from them and from @react-router/serve
+PASS every import and required dependency resolves
+PASS storybook and tinypool are not reachable
+PASS no bundle file mentions storybook or tinypool
+note: these names follow import( or require( in comments or bundled code, and no package is installed under them, so nothing loads them: hast, parse5, unist, unist-util-is, unist-util-visit-parents, hast-util-is-element, mdast, mdast-util-from-markdown, mdast-util-to-markdown, markdown-table, micromark-extension-gfm-footnote, micromark-extension-gfm-strikethrough, micromark-util-types, unified, trough, vfile, ReactPropTypes, highlight.js, highlight.js/private, prosemirror-state, prosemirror-model, yjs, markdown-it, markdown-it-for-inline, @tiptap/core
+
+== What is gone from the store
+PASS storybook is gone
+PASS tinypool is gone
+PASS proxy-addr@2.0.7 is gone
+PASS nothing links to them
+
+== proxy-addr, as express resolves it
+PASS express resolves proxy-addr 2.0.8 /app/node_modules/.pnpm/proxy-addr@2.0.8/node_modules/proxy-addr/index.js
+PASS the CVE-2026-90711 subnet does not trust an arbitrary IPv4 address
+PASS a plain IPv4 subnet still trusts its own addresses
+
+== X-Forwarded-For: 203.0.113.9, 198.51.100.7 from 127.0.0.1, through this express
+PASS with no trust proxy, which is how react-router-serve runs, the header is ignored {"ip":"127.0.0.1","ips":[]}
+PASS trust proxy loopback takes the nearest untrusted address {"ip":"198.51.100.7","ips":["198.51.100.7"]}
+PASS trust proxy ::ffff:10.0.0.0/8 does not let the client choose its address {"ip":"127.0.0.1","ips":[]}
+
+space-deps: 0 failed

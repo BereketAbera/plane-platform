@@ -1,0 +1,21 @@
+Python 3.12.3
+--- the cases on this Python, with no zstd installed
+layer-check-cases: 0 wrong
+cases exit 0
+selftest ok
+--- the cases on this Python, with zstd
+/*stdin*\ : Read error (39) : premature end 
+layer-check-cases: 0 wrong
+cases exit 0
+--- the script before this change, web only, five runs
+run 1: exit 1, 0 PASS, 0 FAIL, last line: mkdir: cannot create directory '/old/.build': Read-only file system
+run 2: exit 1, 0 PASS, 0 FAIL, last line: mkdir: cannot create directory '/old/.build': Read-only file system
+run 3: exit 1, 0 PASS, 0 FAIL, last line: mkdir: cannot create directory '/old/.build': Read-only file system
+run 4: exit 1, 0 PASS, 0 FAIL, last line: mkdir: cannot create directory '/old/.build': Read-only file system
+run 5: exit 1, 0 PASS, 0 FAIL, last line: mkdir: cannot create directory '/old/.build': Read-only file system
+--- the script after this change, web only, five runs
+run 1: exit 0, 373 PASS, 0 FAIL, last line: smoke-images: 0 failure(s)
+run 2: exit 0, 373 PASS, 0 FAIL, last line: smoke-images: 0 failure(s)
+run 3: exit 0, 373 PASS, 0 FAIL, last line: smoke-images: 0 failure(s)
+run 4: exit 0, 373 PASS, 0 FAIL, last line: smoke-images: 0 failure(s)
+run 5: exit 0, 373 PASS, 0 FAIL, last line: smoke-images: 0 failure(s)
