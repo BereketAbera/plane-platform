@@ -6,8 +6,8 @@
 #   scripts/hosted/test-hosted.sh --selftest   the verdicts on Grafana's rows, from a table, with no cluster, so CI can run it
 #
 # CONFIRM, because it starts short-lived probe pods, mints 10-minute tokens, signs in, and sends one synthetic alert, which reaches
-# the owner's phone if Telegram is set. It also spends this machine's login tries at Grafana's public route, so a login from here within
-# a minute of it may read 429.
+# the owner's phone if Telegram is set. It also spends this machine's login tries at Grafana's and Infisical's public routes, so a login
+# from here within a minute of it may read 429. At Infisical's it spends no real credential: the tries are a made-up address.
 #
 # Exit, as scripts/test.sh: 0 every row passed, 1 something failed, 2 nothing failed and something could not say yes:
 #   BLOCKED     it could not run, and that says nothing about the platform.
@@ -182,6 +182,8 @@ fi
 HOSTED_NO_CLUSTER=yes
 # shellcheck source=lib.sh
 source "$(dirname "$0")/lib.sh"
+# shellcheck source=lib-infisical-claim.sh
+source "$(dirname "$0")/lib-infisical-claim.sh"
 hosted_require_confirm "this starts probe pods and sends a synthetic alert"
 
 for tool in curl jq openssl python3 nc; do
@@ -231,10 +233,10 @@ cluster_or_blocked() { # section name
 
 STAGING=no
 
-# Every console's name under the two zones, except Grafana's one public host. grafana under Wayline's domain stays in the list, because
-# that route is one host and this is any other.
+# Every console's name under the two zones, except the two public hosts, Grafana's and Infisical's. grafana and infisical under Wayline's
+# domain stay in the list, because each of those routes is one host and this is any other.
 PARENT_DOMAIN="${HOSTED_GRAFANA_DOMAIN#*.}"
-ADMIN_HOSTS="argocd.$HOSTED_DOMAIN grafana.$HOSTED_DOMAIN prometheus.$HOSTED_DOMAIN alertmanager.$HOSTED_DOMAIN infisical.$HOSTED_DOMAIN argocd.$PARENT_DOMAIN prometheus.$PARENT_DOMAIN alertmanager.$PARENT_DOMAIN infisical.$PARENT_DOMAIN"
+ADMIN_HOSTS="argocd.$HOSTED_DOMAIN grafana.$HOSTED_DOMAIN prometheus.$HOSTED_DOMAIN alertmanager.$HOSTED_DOMAIN infisical.$HOSTED_DOMAIN argocd.$PARENT_DOMAIN prometheus.$PARENT_DOMAIN alertmanager.$PARENT_DOMAIN"
 
 # Every privileged port, the NodePort range and what K3s and this platform listen on. Threads, because a drop only times out.
 scan_ports() { # host
@@ -296,8 +298,8 @@ served_certificate() { # host, and the Certificate that serves it
   fi
 }
 
-# The one console on the internet: its login page answers, its login is all that opens it, and the rest of it stays shut. -k, because the
-# certificate has its own row above and a staging one is enough to ask these.
+# One of the two consoles on the internet: its login page answers, its login is all that opens it, and the rest of it stays shut. -k,
+# because the certificate has its own row above and a staging one is enough to ask these.
 grafana_public() {
   local host="$HOSTED_GRAFANA_DOMAIN" url code page attempt path
   url="https://$host"
@@ -388,6 +390,127 @@ grafana_public() {
   fi
 }
 
+# Traefik's own refusal: its 404 page, with none of the headers Infisical puts on everything it sends.
+traefik_refused() { # method path [header]
+  local answer
+  local -a extra=()
+  [[ -z "${3:-}" ]] || extra=(-H "$3")
+  answer="$("${INFISICAL_ASK[@]}" -X "$1" -D - -o - -H 'Content-Type: application/json' ${extra[@]+"${extra[@]}"} --data-binary '{}' \
+    "https://$HOSTED_INFISICAL_DOMAIN$2" 2>/dev/null || true)"
+  if [[ -z "$answer" ]]; then
+    printf 'no answer'
+  elif [[ "$answer" == *"404 page not found"* && "$answer" != *[Xx]-[Dd]ownload-[Oo]ptions* ]]; then
+    printf 'refused'
+  else
+    printf '%s' "$(head -1 <<<"$answer" | tr -d '\r')"
+  fi
+}
+
+# The other console on the internet, and the secret store: its sign-in page answers, it reads claimed and closed to sign-up, what it refuses
+# is refused by Traefik before it gets there, and guessing at its sign-in meets a limit. Every try here is a made-up address and password,
+# so no real credential is spent and the admin's own count of failures does not move.
+infisical_public() {
+  local host="$HOSTED_INFISICAL_DOMAIN" url code page verdict method path got
+  url="https://$host"
+  INFISICAL_ASK=(curl -k -sS --path-as-is --max-time 15 --resolve "$host:443:$HOSTED_HOST")
+
+  page="$("${INFISICAL_ASK[@]}" -w '\n%{http_code}' "$url/login" 2>/dev/null || true)"
+  code="${page##*$'\n'}"
+  if [[ "$code" == 000 || -z "$code" ]]; then
+    row BLOCKED "Infisical's sign-in page answers" "no answer"
+  elif [[ "$code" == 200 && "$page" == *'<title id="initial-document-title">Infisical</title>'* ]]; then
+    row PASS "Infisical's sign-in page answers" "$code"
+  else
+    row FAIL "Infisical's sign-in page answers" "$code, and not Infisical's page"
+  fi
+
+  verdict="$("${INFISICAL_ASK[@]}" "$url/api/v1/admin/config" 2>/dev/null | infisical_claim_verdict)"
+  case "$verdict" in
+    claimed) row PASS "Infisical has its admin and is closed to sign-up" ;;
+    unreadable) row BLOCKED "Infisical has its admin and is closed to sign-up" "its config did not answer" ;;
+    *) row FAIL "Infisical has its admin and is closed to sign-up" "it reads $verdict: scripts/hosted/README.md, section Infisical reads open" ;;
+  esac
+
+  # A few of each kind the route refuses, by name and by another spelling, each of which Traefik itself refuses. An encoded slash is not one
+  # of those: Traefik passes it on encoded, and Fastify's router finds no route for it. tests/routes/infisical-public-route.sh asks every one,
+  # in every spelling, against the pinned Traefik, and with Infisical behind it.
+  while read -r method path; do
+    got="$(traefik_refused "$method" "$path")"
+    case "$got" in
+      refused) row PASS "Traefik refuses $method $path" ;;
+      "no answer") row BLOCKED "Traefik refuses $method $path" "no answer" ;;
+      *) row FAIL "Traefik refuses $method $path" "it reached Infisical: $got" ;;
+    esac
+  done <<'PATHS'
+POST /api/v1/auth/universal-auth/login
+POST /api/v1/auth/kubernetes-auth/login
+POST /api/v1/auth/token/renew
+GET /api/v1/identities/details
+POST /api/v2/gateways
+GET /api/v2/service-token
+POST /api/v1/admin/bootstrap
+POST /api/v1/admin/signup
+POST /api/v3/signup/email/signup
+POST /api/v1/account-recovery/send-email
+POST /api/v1/shared-secrets/public
+GET /api/docs
+GET /api/docs/json
+GET /api/v1/scim/Users
+GET /api/v3/secrets/raw
+GET /signup
+GET /admin/signup
+POST /api/v1/auth/universal-auth/login/
+POST //api/v1/admin/bootstrap
+GET /API/docs
+GET /%61pi/docs
+POST /api/v1/organization/../admin/bootstrap
+GET /assets/../api/v1/scim/Users
+PATHS
+
+  # A machine's credential is refused on the calls a browser makes too. These are its shape and not a credential: a token whose payload
+  # begins as a machine identity's does, a service token's prefix, and an API key's header. None is signed, and Traefik reads only the header.
+  # The token is made here, so no token-shaped string sits in the repository for a secret scanner to flag.
+  local kind header token
+  token="$(for part in '{"alg":"HS256","typ":"JWT"}' '{"identityId":"00000000-0000-4000-8000-000000000000"}' 'not-signed'; do
+    printf '%s' "$part" | openssl base64 -A | tr '+/' '-_' | tr -d '='
+    printf '.'
+  done)"
+  while IFS='|' read -r kind header; do
+    got="$(traefik_refused GET /api/v1/organization "$header")"
+    case "$got" in
+      refused) row PASS "Traefik refuses $kind on a browser's call" ;;
+      "no answer") row BLOCKED "Traefik refuses $kind on a browser's call" "no answer" ;;
+      *) row FAIL "Traefik refuses $kind on a browser's call" "it reached Infisical: $got" ;;
+    esac
+  done <<HEADERS
+a machine identity's token|Authorization: Bearer ${token%.}
+a service token|Authorization: Bearer st.00000000-0000-4000-8000-000000000000.not-a-token
+an API key|X-Api-Key: not-a-key
+HEADERS
+
+  # Reaches Infisical, which wants a session: the route passes what a browser asks, and Infisical's own login stands behind it.
+  code="$("${INFISICAL_ASK[@]}" -o /dev/null -w '%{http_code}' "$url/api/v4/secrets?projectId=x&environment=prod" 2>/dev/null || true)"
+  case "$code" in
+    401) row PASS "an anonymous read of Infisical's secrets is refused by Infisical" "$code" ;;
+    000 | "") row BLOCKED "an anonymous read of Infisical's secrets is refused by Infisical" "no answer" ;;
+    *) row FAIL "an anonymous read of Infisical's secrets is refused by Infisical" "$code" ;;
+  esac
+
+  # A made-up account and a new X-Forwarded-For with each try, which the limit must not read. The limit is 10 a minute.
+  local answers="" attempt
+  for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
+    code="$("${INFISICAL_ASK[@]}" -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' -H "X-Forwarded-For: 203.0.113.$attempt" \
+      --data-binary '{"email":"test-hosted-rate-limit@invalid.example","password":"not-a-password"}' "$url/api/v3/auth/login" 2>/dev/null || true)"
+    answers="$answers $code"
+    [[ "$code" != 429 ]] || break
+  done
+  case "$code" in
+    429) row PASS "guessing at Infisical's sign-in hits a limit per client" "answers:$answers" ;;
+    000 | "") row BLOCKED "guessing at Infisical's sign-in hits a limit per client" "no answer" ;;
+    *) row FAIL "guessing at Infisical's sign-in hits a limit per client" "answers:$answers" ;;
+  esac
+}
+
 outside() {
   section "From outside: this machine is not on the VPS"
   local open extra
@@ -407,12 +530,12 @@ outside() {
   fi
 
   local host
-  for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN"; do resolves_to_the_node "$host"; done
+  for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN" "$HOSTED_INFISICAL_DOMAIN"; do resolves_to_the_node "$host"; done
 
   if [[ " $open " != *" 80 "* ]]; then
     row BLOCKED "http redirects to https" "port 80 is closed. Move the firewall on: scripts/hosted/edge.sh"
   else
-    for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN"; do redirects_to_https "$host"; done
+    for host in "$HOSTED_DOMAIN" "$HOSTED_GRAFANA_DOMAIN" "$HOSTED_INFISICAL_DOMAIN"; do redirects_to_https "$host"; done
   fi
 
   if [[ " $open " != *" 443 "* ]]; then
@@ -422,7 +545,9 @@ outside() {
 
   served_certificate "$HOSTED_DOMAIN" wayline-tls
   served_certificate "$HOSTED_GRAFANA_DOMAIN" grafana-tls
+  served_certificate "$HOSTED_INFISICAL_DOMAIN" infisical-tls
   grafana_public
+  infisical_public
 
   # Asked by the public name's handshake, so sniStrict lets it through and only the Host decides. A route would answer anything else.
   local code
@@ -565,6 +690,7 @@ secrets() {
   section "Rendered Secrets, and who can read them"
   cluster_or_blocked "Rendered Secrets" || return 0
   grafana_token
+  infisical_token
   if ! kc -n plane-prod get secret plane-pgdb >/dev/null 2>&1; then
     row BLOCKED "Rendered Secrets" "Plane is not deployed, so no Secret has rendered"
     return 0
@@ -583,9 +709,9 @@ secrets() {
   identity_refusal
 }
 
-# Grafana's is the one pod on the internet, and its token is what a bug in it would hold. That token reads the ConfigMaps its dashboard sidecar
-# needs, and no Secret, in monitoring or through a binding for every namespace. The API server's RBAC, asked as that ServiceAccount. Each
-# question is its own call, and the tunnel can drop between them, so grafana_token_verdict counts only a no as a no.
+# Grafana's is one of the two pods on the internet, and its token is what a bug in it would hold. That token reads the ConfigMaps its dashboard
+# sidecar needs, and no Secret, in monitoring or through a binding for every namespace. The API server's RBAC, asked as that ServiceAccount.
+# Each question is its own call, and the tunnel can drop between them, so grafana_token_verdict counts only a no as a no.
 grafana_token() {
   local who=system:serviceaccount:monitoring:kps-grafana configmaps scope verb answer
   local -a answers=() where
@@ -602,6 +728,20 @@ grafana_token() {
     done
   fi
   verdict_row "Grafana's token reads ConfigMaps and no Secret" "$(grafana_token_verdict "$configmaps" ${answers[@]+"${answers[@]}"})"
+}
+
+# Infisical's is the other, and holds no Kubernetes token at all: its ServiceAccount turns the mount off, because Kubernetes Auth reviews each
+# login with the client's own token. A bug in it reaches every secret anyway, which docs/adr/0017-infisical-public-route.md says, and this
+# shows it reaches nothing more. Read from the running pods, so a chart that mounted one regardless would show here.
+infisical_token() {
+  local what="Infisical's pod holds no Kubernetes token" pods mounted
+  pods="$(kc -n infisical get pods -l app=infisical-standalone,component=infisical -o json 2>/dev/null || true)"
+  if [[ -z "$pods" || "$(jq '.items | length' <<<"$pods" 2>/dev/null || echo 0)" == 0 ]]; then
+    row BLOCKED "$what" "no pod of Infisical's server answered"
+    return 0
+  fi
+  mounted="$(jq -r '[.items[] | select([.spec.volumes[]?.projected.sources[]?.serviceAccountToken] | length > 0) | .metadata.name] | join(" ")' <<<"$pods")"
+  if [[ -n "$mounted" ]]; then row FAIL "$what" "mounted in: $mounted"; else row PASS "$what" "no token volume in $(jq '.items | length' <<<"$pods") pod(s)"; fi
 }
 
 # Only plane-prod's ServiceAccount may log in as plane-prod's identity. The right one first, so a dead route cannot pass as a refusal.
