@@ -37,8 +37,10 @@ ports:
     hostPort: 443
     transport:
       respondingTimeouts:
-        # The default of 60s includes the request body, so it would cut a 5 MiB upload below about 85 KB/s. A guess, not measured.
-        readTimeout: 180s
+        # Covers a request's whole body, and every host shares it. One upload is one PUT to Silo through here, so 900s is what lets a whole
+        # 500 MiB through at about 4.7 Mbit/s of upload (platform/frameflow/config.yaml). Changing this rolls Traefik once, a brief outage of
+        # every host. A longer one also lets a slow client hold a connection for that long.
+        readTimeout: 900s
 
 # No certificatesResolvers and no certResolver: cert-manager is the only certificate owner.
 tlsOptions:
