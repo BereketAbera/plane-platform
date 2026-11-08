@@ -73,6 +73,10 @@ spec:
       app.kubernetes.io/name: frameflow-api
   template:
     metadata:
+      annotations:
+        # Kubernetes does not restart a pod when its ConfigMap changes, and the API reads frameflow-env when it starts. Raise this with
+        # any change to a setting it reads, so that Argo CD rolls it.
+        frameflow.bereket.dev/config-revision: "2"
       labels:
         app.kubernetes.io/name: frameflow-api
         app.kubernetes.io/component: api

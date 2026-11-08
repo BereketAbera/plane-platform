@@ -449,11 +449,11 @@ releases, with a token minted by hand between them.
 | `frameflow-api`, `api` | Deployment, 1 replica, `Recreate`. The `backend` image's default command, Fastify: it signs uploads, queues each video with Hatchet, takes the worker's reports and serves playback | 4000 | PVC `frameflow-data`, 1Gi, holding the SQLite file `/data/app.db` |
 | `frameflow-worker`, `worker` | Deployment, 1 replica, `Recreate`. The `backend` image as a Hatchet worker, running FFmpeg | 8001, its health, for the kubelet alone | emptyDir `/scratch`, 8Gi |
 | `frameflow-cleanup` and `frameflow-reconcile`, `maintenance` | CronJobs, hourly and every 10 minutes, from the `backend` image | none | `frameflow-data` |
-| `frameflow-silo`, `s3` | StatefulSet, 1. The Silo image and digest Plane's render runs | 9000 S3, 9090 console | PVC 25Gi, for bucket `frameflow-media`, held to 12GiB |
+| `frameflow-silo`, `s3` | StatefulSet, 1. The Silo image and digest Plane's render runs | 9000 S3, 9090 console | PVC 25Gi, for bucket `frameflow-media`, held to 18GiB |
 | `frameflow-silo-setup`, `s3-setup` | Job, an Argo CD Sync hook, so it runs again at every sync of `frameflow`, with `pgsty/mc` | none | none |
 | `hatchet`, `hatchet` | Deployment, 1 replica, `Recreate`. hatchet-lite v0.114.2: the engine, its REST API and its dashboard in one process | 7070 gRPC, 8080 REST, 8888 dashboard with the REST API under `/api`, 8733 health for the kubelet | `/config`, in memory, 16Mi |
 | `hatchet-postgres`, `postgres` | StatefulSet, 1. Postgres 16.15: Hatchet's database, and its queue | 5432 | PVC 5Gi |
-| `plane-backup`, `backup` | CronJob, nightly at 02:47 UTC, in Application `backup`: [backups](#frameflow-backups-and-restore) | none | PVC `backups`, 24Gi, and an emptyDir of 20Gi |
+| `plane-backup`, `backup` | CronJob, nightly at 02:47 UTC, in Application `backup`: [backups](#frameflow-backups-and-restore) | none | PVC `backups`, 24Gi, and an emptyDir of 22Gi |
 | `iso-frameflow` | Infisical's operator, for this namespace alone, as plane-prod has `iso-prod`: Application `infisical-operator-frameflow` | none | none |
 
 Every pod runs as a user that is not root, with no capability, as the namespace's Pod Security level, `restricted`, requires, and on a
@@ -817,17 +817,24 @@ from `frameflow-silo-backup` instead: that user can list and read the bucket and
 |---|---|---|
 | Videos at once | 1, `FRAMEFLOW_MAX_CONCURRENT_VIDEOS=1`. The rest wait in Hatchet's queue, for up to 12 hours, `FRAMEFLOW_SCHEDULE_TIMEOUT` | The node is Wayline's too |
 | Renditions at once | 1, `FRAMEFLOW_WORKER_SLOTS=1` and `MAX_CONCURRENT_ENCODES=1`: 360p and 720p one after the other, the second waiting in Hatchet's queue and not inside its own timeout | |
-| The worker's CPU and memory | Requests 500m and 1Gi, limits 3 CPU and 3Gi, and FFmpeg's `FFMPEG_THREADS=3` | The limit caps an encode, and Wayline's larger requests keep its share when the CPU is contended |
+| The worker's CPU and memory | Requests 500m and 2Gi, limits 3 CPU and 6Gi, and FFmpeg's `FFMPEG_THREADS=3` | The limit caps an encode, and Wayline's larger requests keep its share when the CPU is contended |
 | Scratch | emptyDir `/scratch` of 8Gi, in an ephemeral-storage limit of 10Gi. Past either, the kubelet evicts the pod, and the Deployment starts another with an empty scratch | One disk holds everything on the node |
-| Upload size | 100 MiB, `MAX_UPLOAD_BYTES=104857600` | One PUT must finish within Traefik's `readTimeout` of 180s, which every host shares, and 100 MiB takes about 4.7 Mbit/s of upload to do so |
+| Upload size | 500 MiB, `MAX_UPLOAD_BYTES=524288000` | One PUT must finish within Traefik's `readTimeout` of 180s, which every host shares, so a whole 500 MiB takes about 23 Mbit/s of upload, and 10 Mbit/s gets about 215 MiB through |
 | Upload URL | 15 minutes, `S3_PRESIGNED_UPLOAD_TTL_SECONDS=900` | |
 | Source | MP4, at least 1280x720 | The probe fails a smaller one, with `SOURCE_TOO_SMALL` |
-| Task timeouts | validate 2m, probe 15m, each encode 30m, publish 15m, complete 2m. The probe, the encodes and publish retry twice | |
-| Stopping | `terminationGracePeriodSeconds: 600` | A stopping worker finishes its task first. Ten minutes covers an encode of a 100 MiB source on 3 threads, and one cut off is retried |
+| Task timeouts | validate 2m, probe 15m, each encode 30m, publish 15m, complete 2m. The probe, the encodes and publish retry twice | At the measured 2.06x, 30 minutes fits about 60 minutes of 720p at 30 fps. A longer source passes every size check and fails after three tries, up to 90 minutes holding the only worker |
+| Stopping | `terminationGracePeriodSeconds: 600` | A stopping worker finishes its task first. Ten minutes covers an encode of about 20 minutes of 720p, at the 2.06x measured on 3 threads, and one cut off is retried |
 
-The studio's own text says up to 500 MB, and checks that much in the browser. The API's 100 MiB is the limit, and above it the upload
-stops with `The declared upload exceeds the configured size limit.` Raising it takes a faster uplink, or a longer `readTimeout` for every
-host.
+The studio's page says up to 500 MB and checks that much in the browser, and the API holds the same limit. Past it, the API answers
+`The declared upload exceeds the configured size limit.` The page's number is built into the web image, so a higher limit needs a new
+web image as well as `MAX_UPLOAD_BYTES`. A file within the limit can still be cut off at 180s on a slow uplink, and getting those
+through takes a longer `readTimeout` for every host. `MAX_UPLOAD_BYTES` reaches the API only when it restarts, so a change to it goes
+with a new `frameflow.bereket.dev/config-revision` on the pod template in `api.yaml`.
+
+To raise the worker's memory, apply `capacity.yaml` with Terraform first, because past the LimitRange's `max` a new pod is refused and the
+worker is on Recreate. To lower it, merge first, wait until the worker runs at the lower size, and apply `capacity.yaml` last: a quota below
+what is running refuses every new pod, Silo's setup hook among them, and Frameflow's sync cannot finish. Lowering the bucket's quota below
+what it holds refuses every write until videos are deleted.
 
 What removes what:
 
@@ -836,11 +843,15 @@ What removes what:
 - Each task deletes its own scratch when it ends, on success or failure, and the worker clears what a killed one left when it starts.
 - Hatchet drops runs after 7 days, `SERVER_LIMITS_DEFAULT_TENANT_RETENTION_PERIOD=168h`. Frameflow's own record of each video stays.
 - Silo drops an incomplete multipart upload after 24 hours, at a sweep every 6, as this release does by default and as Docker showed.
-- The bucket's quota is 12GiB, and past it Silo refuses every write, the worker's renditions among them. `FrameflowBucketNearQuota` warns
-  at 80% and `FrameflowBucketFull` pages at 95%.
+- The bucket's quota is 18GiB, and past it Silo refuses every write, the worker's renditions among them. Silo enforces it from a count that
+  lags the writes by minutes, so a bucket can pass it by what is written meanwhile. `FrameflowBucketNearQuota` warns at 80% and
+  `FrameflowBucketFull` pages at 95%.
 - Nothing deletes the owner's videos: sources, renditions and failed videos stay until deleted in the studio. When the bucket fills,
-  delete some there, or raise the quota, in the setup Job and in the two rules together, and within Silo's 25Gi volume and the backup's
-  20Gi of scratch, which holds the whole bucket each night.
+  delete some there. The quota is in the setup Job, the two rules and their test, and 18GiB is about as far as it goes as sized: it has to
+  stay within Silo's 25Gi volume and the backup's 22Gi of scratch, which holds the whole bucket each night with the dumps beside it. At a full
+  bucket the backup's 24Gi volume leaves about 6GiB for videos deleted in the last three months. Past that the repository outgrows what
+  `capacity.yaml` counts, with no error and no alert short of the node's disk. Growing the bucket further grows all three, which counts about
+  three times against the disk in `capacity.yaml`.
 
 ### Frameflow: backups and restore
 
@@ -938,7 +949,7 @@ Job below ran in Docker on this machine, with stand-ins for the pinned images, s
            - {name: backups, persistentVolumeClaim: {claimName: backups, readOnly: true}}
            - {name: restic-password, secret: {secretName: restic-password, defaultMode: 0440}}
            - {name: data, persistentVolumeClaim: {claimName: frameflow-data}}
-           - {name: work, emptyDir: {sizeLimit: 20Gi}}
+           - {name: work, emptyDir: {sizeLimit: 22Gi}}
            - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
          initContainers:
            - name: unseal
@@ -1034,7 +1045,7 @@ Job below ran in Docker on this machine, with stand-ins for the pinned images, s
            - name: objects
              image: $RCLONE_IMAGE
              securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: [ALL]}}
-             resources: {requests: {cpu: 25m, memory: 32Mi}, limits: {cpu: 500m, memory: 192Mi}}
+             resources: {requests: {cpu: 25m, memory: 32Mi}, limits: {cpu: 500m, memory: 512Mi}}
              env:
                - {name: HOME, value: /tmp}
                - {name: RCLONE_CONFIG, value: /tmp/rclone.conf}
@@ -1239,13 +1250,13 @@ Silo's answer, which names its error in XML.
 
 | The studio says | Why | What to do |
 |---|---|---|
-| `The declared upload exceeds the configured size limit.` (413, from the API) | The file is over 100 MiB. The studio's own text says 500 MB, and the API's limit is the one that holds | A smaller file. [Processing limits](#frameflow-processing-limits-and-retention) says what raising it takes |
+| `The declared upload exceeds the configured size limit.` (413, from the API) | The file is over 500 MiB | A smaller file. [Processing limits](#frameflow-processing-limits-and-retention) says what raising it takes |
 | `Only MP4 uploads are supported.` (415) | Another container or extension | An MP4 |
 | `Object storage rejected the upload.`, with Silo's 403 `SignatureDoesNotMatch` | The request's Host or Content-Type is not what the URL was signed for, or the app user's secret key in `frameflow-app` is not the one Silo holds | Traefik passes the Host on by default, so look for a change to the upload route. For the keys, sync `frameflow`, which runs the setup Job: [secrets](#frameflow-secrets) |
 | The same, with 403 `AccessDenied` and an expired request | More than 15 minutes since the URL was made | Upload again |
 | The same, with 403 `InvalidAccessKeyId` | Silo has no user by the app's access key, as after a new one in Infisical before the setup Job ran | Sync `frameflow` |
 | The same, with a quota error | The bucket is full | [Retention](#frameflow-processing-limits-and-retention) |
-| `Could not reach object storage.` | The connection broke: often Traefik's 180s `readTimeout`, which a 100 MiB PUT needs about 4.7 Mbit/s of upload to beat | A faster link or a smaller file. Traefik's log shows the PUT's `Duration` near 180s |
+| `Could not reach object storage.` | The connection broke: often Traefik's 180s `readTimeout`, which a whole 500 MiB PUT needs about 23 Mbit/s of upload to beat, and 10 Mbit/s gets about 215 MiB through | A faster link or a smaller file. Traefik's log shows the PUT's `Duration` near 180s. If Traefik answers before it closes the connection, the page can say `Object storage rejected the upload.` instead, with no error from Silo. The video stays `uploading` until the hourly cleanup expires it |
 | `The upload authorization expired.` (410) | The upload finished more than 15 minutes after its URL was made, and the API no longer takes it | Upload again |
 | `The uploaded object size does not match the declared size.` (400) | The PUT stopped short, or the object Silo holds is not the size declared | Upload again |
 | `Upload storage is unavailable.` (503) | The API could not sign the URL. Signing calls nothing, so this is the API's S3 settings, not Silo | `kc -n frameflow logs deployment/frameflow-api --tail=50` |

@@ -78,10 +78,10 @@ spec:
               secret: {secretName: restic-password, defaultMode: 0440}
             - name: data
               persistentVolumeClaim: {claimName: frameflow-data}
-            # A full copy of the bucket each night, whose quota is 12GiB, and the dumps beside it. Fills up, and the pod is evicted,
-            # and the failure alerts, rather than the node filling.
+            # A full copy of the bucket each night, whose quota is 18GiB, with room for what Silo lets past the quota while its count lags, and
+            # the dumps beside it. Fills up, and the pod is evicted, and the failure alerts, rather than the node filling.
             - name: work
-              emptyDir: {sizeLimit: 20Gi}
+              emptyDir: {sizeLimit: 22Gi}
             - name: tmp
               emptyDir: {sizeLimit: 64Mi}
           initContainers:
@@ -258,9 +258,11 @@ spec:
                 - {name: RCLONE_CONFIG_SRC_ACCESS_KEY_ID, valueFrom: {secretKeyRef: {name: frameflow-silo-backup, key: S3_BACKUP_ACCESS_KEY_ID, optional: true}}}
                 - {name: RCLONE_CONFIG_SRC_SECRET_ACCESS_KEY, valueFrom: {secretKeyRef: {name: frameflow-silo-backup, key: S3_BACKUP_SECRET_ACCESS_KEY, optional: true}}}
                 - {name: BUCKET, value: frameflow-media}
+              # rclone check --download buffers 16 MiB per stream of an object of 16 MiB or more, two streams for each of its 8 checkers, so a
+              # bucket of large sources can ask for 256 MiB. An init container, so the pod's limit stays seal's 1Gi and the quota does not move.
               resources:
                 requests: {cpu: 25m, memory: 32Mi}
-                limits: {cpu: 500m, memory: 192Mi}
+                limits: {cpu: 500m, memory: 512Mi}
               volumeMounts:
                 - {name: work, mountPath: /work}
                 - {name: tmp, mountPath: /tmp}

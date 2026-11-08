@@ -2,7 +2,7 @@
 # 360p and 720p renditions with FFmpeg, publishes them to Silo, and reports each step to the API. It refuses to start without the Hatchet
 # client token. No Service: nothing calls it, and the kubelet reaches its health server from the node.
 #
-# One replica, and Recreate. A rolling update would start a second worker beside the first, with another 3Gi that frameflow's quota has
+# One replica, and Recreate. A rolling update would start a second worker beside the first, with another 6Gi that frameflow's quota has
 # no room for (infrastructure/hosted/plane-prod/capacity.yaml), so the rollout would stop there. Hatchet queues the next video meanwhile,
 # for up to FRAMEFLOW_SCHEDULE_TIMEOUT in config.yaml, which also holds the limits that keep it to one video and one rendition at a time.
 apiVersion: apps/v1
@@ -40,7 +40,8 @@ spec:
       serviceAccountName: worker
       automountServiceAccountToken: false
       # On SIGTERM, which tini passes on, SDK 1.43 asks Hatchet's REST API to stop assigning it tasks, and lets a running task finish
-      # before it exits. Ten minutes covers an encode of a 100 MiB source on 3 threads. A longer one is cut off, and Hatchet runs it again.
+      # before it exits. Ten minutes covers an encode of about 20 minutes of 720p, at the 2.06x measured on 3 threads. A longer one is cut
+      # off, and Hatchet runs it again.
       terminationGracePeriodSeconds: 600
       securityContext:
         # UID and GID 1000 are node in the image, which its Dockerfile runs as by number.
@@ -97,16 +98,19 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
-          # FFmpeg runs on 3 threads, FFMPEG_THREADS in config.yaml, within these 3 CPUs. Starting values for one video at a time, not yet
-          # measured on this node. ephemeral-storage bounds what scratch, /tmp and the logs take of the node's disk together.
+          # FFmpeg runs on 3 threads, FFMPEG_THREADS in config.yaml, within these 3 CPUs, for one video at a time. A 720p encode peaked at
+          # 412 MB on this node, so the memory is room for larger sources, and it does not speed an encode up. Past the LimitRange's max, a
+          # new pod is refused. So to raise this, capacity.yaml's numbers go first, through Terraform, and to lower it they go last, once the
+          # worker runs at the lower size, because a quota below what is running refuses every new pod. ephemeral-storage bounds what scratch,
+          # /tmp and the logs take of the node's disk together.
           resources:
             requests:
               cpu: 500m
-              memory: 1Gi
+              memory: 2Gi
               ephemeral-storage: 1Gi
             limits:
               cpu: "3"
-              memory: 3Gi
+              memory: 6Gi
               ephemeral-storage: 10Gi
           volumeMounts:
             - name: scratch
@@ -115,7 +119,7 @@ spec:
               mountPath: /tmp
       volumes:
         # WORKER_TEMP_DIR in config.yaml: each task's copy of its source and an encode's HLS output, one task at a time, of a source of up
-        # to 100 MiB. The worker clears what a start before it in this pod left, and the kubelet evicts the pod past 8Gi.
+        # to 500 MiB. The worker clears what a start before it in this pod left, and the kubelet evicts the pod past 8Gi.
         - name: scratch
           emptyDir:
             sizeLimit: 8Gi

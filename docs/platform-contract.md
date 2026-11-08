@@ -503,12 +503,12 @@ makes, and Terraform applies them. Quotas cap and do not reserve:
 | `monitoring-agents` | 20m | 48Mi | 128Mi | 2 | 0 | 0 |
 | `rillmark` | 50m | 160Mi | 256Mi | 5 | 0 | 0 |
 | `awushi-cloudgarden` | 50m | 160Mi | 256Mi | 5 | 0 | 0 |
-| `frameflow` | 1500m | 3584Mi | 10752Mi | 16 | 4 | 55Gi |
+| `frameflow` | 1500m | 4608Mi | 13824Mi | 16 | 4 | 55Gi |
 
 `plane-prod`'s `limits.memory` is 12624Mi steady and 2064Mi of room for one surge, the api's, or a backup's or migrator's. The node is
 counted as 12 CPU, 47Gi and 386Gi, the root filesystem as measured, less the system's share: 1500m and 5Gi, which `kubelet.conf` reserves
-or keeps free for eviction, and 40Gi of disk for the OS, K3s's data and the images. `frameflow`'s is the limits of its seven pods, 8320Mi,
-and 2432Mi of room for what may run beside them, and its emptyDirs take up to 30Gi of the disk beside its claims, which no quota counts:
+or keeps free for eviction, and 40Gi of disk for the OS, K3s's data and the images. `frameflow`'s is the limits of its seven pods, 11392Mi,
+and 2432Mi of room for what may run beside them, and its emptyDirs take up to 32Gi of the disk beside its claims, which no quota counts:
 the worker's scratch and the nightly's work space. `scripts/ci/check-capacity.sh` runs in CI's Manifests job and fails unless every quota's
 sum, with the system's share and that scratch, still fits the node. A quota sized for the steady state alone would stop a rollout, so each
 leaves room for its largest surge, and several surging together go one after another.

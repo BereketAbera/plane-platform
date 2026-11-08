@@ -126,7 +126,7 @@ spec:
         - name: tmp
           emptyDir:
             sizeLimit: 64Mi
-  # 25Gi for a bucket whose quota is 12GiB (silo-setup.yaml), which leaves room for Silo's own system area and for the parts of an upload
+  # 25Gi for a bucket whose quota is 18GiB (silo-setup.yaml), which leaves room for Silo's own system area and for the parts of an upload
   # that never finished, which this release removes once they are 24h old, at a sweep every 6h. local-path enforces no size, and a
   # volumeClaimTemplate cannot change later.
   volumeClaimTemplates:
