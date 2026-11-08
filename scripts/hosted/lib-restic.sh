@@ -6,7 +6,7 @@
 # The VPS holds no credential for anywhere off it. This machine holds them all, and reads the node over SFTP, so a compromised
 # VPS can neither reach nor delete a copy. The cost: nothing leaves the VPS while this machine is off.
 
-BACKUP_NAMESPACES="infisical plane-prod"
+BACKUP_NAMESPACES="infisical plane-prod frameflow"
 RESTIC_PASSWORD_LOCAL="$LOCAL_DIR/restic-password"
 PULL_USER="wayline-pull"
 PULL_KEY="$LOCAL_DIR/wayline-pull_ed25519"

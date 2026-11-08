@@ -323,5 +323,5 @@ runbook: its first deploy in two releases, its owner access key, secrets, backup
   lands before it has run brings InfisicalStaticSecret `hatchet-client-token`, which reads Degraded, and holds Frameflow's sync and the root's.
 - `ui.sh hatchet` forwards to port 18888 and no other, the one Hatchet's `SERVER_URL`, `http://localhost:18888`, names. Open the dashboard as
   localhost, because its sign-in cookie is for that name. `ui.sh frameflow-silo` forwards Silo's console.
-- `backup.sh` and `restore-test.sh` take `ONLY=frameflow`. Frameflow joins `lib-restic.sh`'s `BACKUP_NAMESPACES` only once its first backup has
-  sealed, so until then nothing pulls it off the VPS.
+- `backup.sh` and `restore-test.sh` take `ONLY=frameflow`. Frameflow is in `lib-restic.sh`'s `BACKUP_NAMESPACES` since its first backup sealed
+  (2026-11-08), so `pull-backups.sh` and `backup-dest.sh` copy and verify it with Plane's and Infisical's.
