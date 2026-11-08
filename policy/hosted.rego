@@ -6,6 +6,24 @@ package hosted
 import data.lib.kube
 import rego.v1
 
+# The two private node-imported artifacts are addressed by digest. A Docker Hub pull must never be attempted.
+snakebrawl_node_image if {
+	startswith(input.metadata.name, "snakebrawl-")
+	some c in kube.containers(input)
+	component := trim_prefix(input.metadata.name, "snakebrawl-")
+	expected := sprintf("^docker[.]io/library/snake-production-%s@sha256:[a-f0-9]{64}$", [component])
+	regex.match(expected, c.image)
+	c.imagePullPolicy == "Never"
+	count(kube.containers(input)) == 1
+}
+
+deny contains msg if {
+	input.kind == "Deployment"
+	this_namespace == "snakebrawl"
+	not snakebrawl_node_image
+	msg := sprintf("%s: expected one locally verified SnakeBrawl image pinned by digest with imagePullPolicy Never", [identity])
+}
+
 public_url := "https://wayline.bereket.dev"
 
 tls_secret := "wayline-tls"
@@ -232,6 +250,15 @@ infisical_limit_specs := {
 # person reads. Each host is bound to its namespace both ways, below, as policy/plane.rego binds Plane's. Each Service is bound to the
 # pods it sends to, by their app.kubernetes.io/component, and to their port, by number or by name, because a route names only a Service.
 app_routes := {
+	"snakebrawl": {
+		"host": "snakebrawl.io",
+		"hosts": ["snakebrawl.io", "www.snakebrawl.io", "ws.snakebrawl.io"],
+		"tls_secret": "snakebrawl-tls",
+		"backends": {
+			"snakebrawl-web": {"port": 3100, "component": "web", "target_ports": {3100, "http"}},
+			"snakebrawl-arena": {"port": 2567, "component": "arena", "target_ports": {2567, "game"}},
+		},
+	},
 	"frameflow": {
 		"host": "frameflow.bereket.dev",
 		"tls_secret": "frameflow-tls",
@@ -694,8 +721,38 @@ deny contains msg if {
 	app := app_routes[this_namespace]
 	some route in input.spec.routes
 	match := object.get(route, "match", "")
+	this_namespace != "snakebrawl"
 	not data.plane.stays_on_host(match, app.host)
 	msg := sprintf("%s: route %q must be limited to %s, with any other condition ANDed to it", [identity, match, data.plane.host_matcher(app.host)])
+}
+
+# Restrict the websocket host to matchmaking, health, and room upgrades. /metrics and bare arena routes stay private.
+snakebrawl_routes := {
+	{"kind": "Rule", "match": "Host(`snakebrawl.io`)", "services": [{"name": "snakebrawl-web", "port": 3100}]},
+	{"kind": "Rule", "match": "Host(`www.snakebrawl.io`)", "middlewares": [{"name": "canonical"}], "services": [{"name": "snakebrawl-web", "port": 3100}]},
+	{"kind": "Rule", "match": "Host(`ws.snakebrawl.io`) && (Path(`/health`) || Path(`/parties`) || Path(`/matchmake/joinOrCreate/garden`) || PathRegexp(`^/parties/[A-Za-z0-9]{6}$`) || PathRegexp(`^/matchmake/reconnect/[A-Za-z0-9_-]+$`) || (HeaderRegexp(`Upgrade`,`(?i)^websocket$`) && PathRegexp(`^/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$`)))", "services": [{"name": "snakebrawl-arena", "port": 2567}]},
+}
+
+snakebrawl_canonical := {"redirectRegex": {"regex": "^https://www\\.snakebrawl\\.io(.*)", "replacement": "https://snakebrawl.io${1}", "permanent": true}}
+
+deny contains msg if {
+	input.kind == "IngressRoute"
+	this_namespace == "snakebrawl"
+	some route in input.spec.routes
+	not snakebrawl_routes[route]
+	msg := sprintf("%s: SnakeBrawl route must match the canonical web, www redirect, or the public Colyseus protocol", [identity])
+}
+
+deny contains msg if {
+	input.kind == "Middleware"
+	this_namespace == "snakebrawl"
+	not snakebrawl_redirect
+	msg := sprintf("%s: only the canonical www redirect belongs to SnakeBrawl", [identity])
+}
+
+snakebrawl_redirect if {
+	input.metadata.name == "canonical"
+	input.spec == snakebrawl_canonical
 }
 
 # The other direction: only an app's namespace may name its host, so a route anywhere else cannot take it, however it spells it. Grafana's
@@ -743,6 +800,7 @@ app_rate_limit_source := {"ipStrategy": {"depth": 0}}
 deny contains msg if {
 	input.kind == "Middleware"
 	app_routes[this_namespace]
+	this_namespace != "snakebrawl"
 	not app_rate_limit(object.get(input, "spec", {}))
 	msg := sprintf("%s: a Middleware in namespace %s may only be a rateLimit of average, period and burst, with sourceCriterion exactly %v, because any other kind reaches past the Services its routes name", [identity, this_namespace, app_rate_limit_source])
 }
@@ -1043,7 +1101,7 @@ deny contains msg if {
 # platform/certificates writes it: another host, another field or another issuer is a change here that a person reads.
 app_certificate_spec(app) := {
 	"secretName": app.tls_secret,
-	"dnsNames": [app.host],
+	"dnsNames": object.get(app, "hosts", [app.host]),
 	"privateKey": {"algorithm": "ECDSA", "size": 256, "rotationPolicy": "Always"},
 	"revisionHistoryLimit": 3,
 	"issuerRef": {"name": "letsencrypt-production", "kind": "ClusterIssuer", "group": "cert-manager.io"},

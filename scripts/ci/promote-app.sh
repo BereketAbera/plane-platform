@@ -22,14 +22,14 @@ source "$(dirname "$0")/../lib/commit-lock.sh"
 # shellcheck source=lib-manifests.sh
 source "$(dirname "$0")/lib-manifests.sh"
 
-[[ $# -eq 3 ]] || die "usage: $0 <rillmark|awushi-cloudgarden|frameflow> <component> sha256:<64 hex>, with TAG=<12-character commit> to name that commit in the tag"
+[[ $# -eq 3 ]] || die "usage: $0 <rillmark|awushi-cloudgarden|frameflow|snakebrawl> <component> sha256:<64 hex>, with TAG=<12-character commit> to name that commit in the tag"
 APP="$1"
 COMPONENT="$2"
 DIGEST="$3"
 TAG="${TAG:-}"
 case "$APP" in
-  rillmark | awushi-cloudgarden | frameflow) ;;
-  *) die "the apps beside Wayline are rillmark, awushi-cloudgarden and frameflow, and got '$APP'" ;;
+  rillmark | awushi-cloudgarden | frameflow | snakebrawl) ;;
+  *) die "the apps beside Wayline are rillmark, awushi-cloudgarden, frameflow and snakebrawl, and got '$APP'" ;;
 esac
 # Also what keeps each of these a piece of an image name and a path, and nothing else.
 [[ "$COMPONENT" =~ ^[a-z]([a-z0-9-]{0,38}[a-z0-9])?$ ]] || die "a component is a lower-case name such as web or backend, and got '$COMPONENT'"
@@ -38,6 +38,14 @@ esac
 [[ -z "$TAG" || "$TAG" =~ ^[a-f0-9]{12}$ ]] || die "TAG is the first 12 characters of the commit the image was built from, as the app's images.yml tags it, and got '$TAG'"
 
 REPOSITORY="ghcr.io/bereketabera/$APP/$COMPONENT"
+if [[ "$APP" == snakebrawl ]]; then
+  case "$COMPONENT" in web|arena) ;; *) die "snakebrawl components are web and arena" ;; esac
+  [[ -z "$TAG" ]] || die "node imports use the manifest digest without a mutable tag"
+  REPOSITORY="docker.io/library/snake-production-$COMPONENT"
+  INVENTORY="$ROOT/policy/node-images/${DIGEST#sha256:}"
+  [[ -s "$INVENTORY.cdx.json.gz" && -s "$INVENTORY.json" ]] ||
+    die "commit the verified release archive SBOM and metadata before promoting a node import"
+fi
 APP_DIR="$HOSTED_TREE/platform/$APP"
 MESSAGE="$ROOT/.build/promote-app-message.txt"
 PATHS=("$APP_DIR" "$HOSTED_IMAGE_LIST")

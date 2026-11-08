@@ -25,8 +25,9 @@ on:
           - rillmark
           - awushi-cloudgarden
           - frameflow
+          - snakebrawl
       component:
-        description: The image to move, as in ghcr.io/bereketabera/<app>/<component>, such as web or backend.
+        description: The component to promote, such as web, backend or SnakeBrawl's arena.
         required: true
         default: web
         type: string
@@ -35,7 +36,7 @@ on:
         required: true
         type: string
       tag:
-        description: The first 12 characters of the commit that run built, as it tags the image. Leave empty to keep the tag there now.
+        description: Optional 12-character commit tag. Leave empty for SnakeBrawl node imports.
         required: false
         type: string
 
@@ -70,7 +71,7 @@ jobs:
           DIGEST: ${{ inputs.digest }}
           TAG: ${{ inputs.tag }}
         run: |
-          [[ "$APP" =~ ^(rillmark|awushi-cloudgarden|frameflow)$ ]] || { echo '::error::app is rillmark, awushi-cloudgarden or frameflow'; exit 1; }
+          [[ "$APP" =~ ^(rillmark|awushi-cloudgarden|frameflow|snakebrawl)$ ]] || { echo '::error::invalid hosted application'; exit 1; }
           [[ "$COMPONENT" =~ ^[a-z]([a-z0-9-]{0,38}[a-z0-9])?$ ]] || { echo '::error::component is a lower-case name such as web or backend'; exit 1; }
           [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || { echo '::error::digest is sha256: and 64 lower-case hex characters'; exit 1; }
           [[ "$TAG" =~ ^([a-f0-9]{12})?$ ]] || { echo '::error::tag is empty, or the first 12 lower-case hex characters of a commit'; exit 1; }
@@ -131,6 +132,8 @@ jobs:
 
             in `gitops/clusters/plane-prod/platform/${{ steps.check.outputs.app }}/` and on the same line of `policy/hosted-images.txt`.
             `scripts/ci/validate-manifests.sh` passed on this change before this pull request opened. Nothing was built.
+
+            For SnakeBrawl, verify the archive on the node and the committed digest-specific CycloneDX inventory. See `docs/snakebrawl.md`.
 
             **Nothing looked this digest up.** This job's token cannot read the app's private package, and `publish-release.sh` confirms
             Wayline's digests on GHCR and no others. Before merging, check that it is the digest the app repository's `images.yml` recorded
