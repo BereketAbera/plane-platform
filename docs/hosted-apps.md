@@ -238,6 +238,48 @@ branch, which `check-deploy-branch.yml` and `make remote-status` would report.
 The static sites hold no data, so the image is all there is to roll back. If a rollout failed, the old pod is probably still serving:
 `maxUnavailable: 0` keeps it until the new one is ready.
 
+## Backing out the first deploy
+
+The first deploy comes out newest first: Frameflow's release B, then the second merge, then the first. Only the second is a revert on
+`main`, through a pull request, and it takes steps by hand before it. Not tried: this is read from the manifests and from how Argo CD
+behaves, as [Argo CD](argocd.md) records it.
+
+1. **Release B.** In place, and not by a revert, which would prune Frameflow's database volume:
+   [Frameflow: rolling back](#frameflow-rolling-back) says how.
+2. **The second merge.** Its revert takes the apps' namespaces out of Traefik's provider lists, so Traefik rolls once, a brief outage of
+   every host, Wayline's among them, as at the merge. Each child the merge changed puts its part back by itself at its next sync: Traefik's
+   values, the NetworkPolicies, the Certificates, the Probes and rules, the backup and the token reviewer's subject. Root prunes the four
+   Applications the merge added. `rillmark` and `awushi-cloudgarden` carry the resources finalizer, so their pods, Services and routes go
+   with them. `frameflow` and `infisical-operator-frameflow` carry none, so everything they deployed would stay and run with nothing
+   managing it: behind the default deny that `network-policies/frameflow.yaml` holds on `main` before the merge, which lets no pod reach
+   DNS, Hatchet's Postgres or Infisical, and with Frameflow's rules gone, so nothing would page. So take Frameflow out by hand first, while
+   its policies stand, and only then merge the revert:
+   ```bash
+   # Root first, or its self-heal makes both Applications again from the files still in Git.
+   kc -n argocd patch application root --type merge -p '{"spec":{"syncPolicy":{"automated":{"enabled":false}}}}'
+   for a in frameflow infisical-operator-frameflow; do
+     kc -n argocd patch application "$a" --type merge -p '{"metadata":{"finalizers":["resources-finalizer.argocd.argoproj.io"]}}'
+   done
+   kc -n argocd delete application frameflow --timeout=15m     # returns once Argo CD has deleted what it deployed
+   kc -n frameflow get deployments,statefulsets,cronjobs,infisicalstaticsecrets,pvc
+   kc -n argocd delete application infisical-operator-frameflow --timeout=10m
+   ```
+   The operator goes last, after the Infisical CRs it served. Its chart installs no CRDs, so deleting it reaches nothing of `iso-prod`'s.
+   What stays: the claims of Hatchet's Postgres and Silo, which come from `volumeClaimTemplates` and which Argo CD does not track, and the
+   volume of every claim deleted, `frameflow-data` among them, `Released` on `local-path-retain` with its folder. Then merge the revert,
+   wait for its release, and put root's auto-sync back:
+   `kc -n argocd patch application root --type json -p '[{"op":"remove","path":"/spec/syncPolicy/automated/enabled"}]'`. Root then prunes
+   the sites' Applications. If its operation does not end, because a child it waits on never finishes, end it as
+   [End an operation](runbooks/argo-sync-stuck.md#end-an-operation) says, and ask for a hard refresh.
+3. **The first merge.** Its namespaces, quotas, LimitRanges, AppProjects, CoreDNS rewrites, DNS records and Infisical project can stay:
+   Argo CD reads none of them, and they cost nothing with nothing in them. Keep them at least until the four Applications are gone,
+   because an Application whose project does not exist holds root with no retry. Taking them out is a Terraform change of its own, planned
+   and read like any other, and prod-host's records each carry `prevent_destroy`, which that change takes off first. Do not revert the
+   merge on `main` ahead of that change. Terraform's state exists once, and from a tree without the merge, as `main` would then be,
+   `make remote-bootstrap` applies the prod root with no plan to read, which destroys the apps' objects, and
+   `scripts/infisical-bootstrap.sh` destroys project `frameflow-prod`, whose slug then stays reserved for 14 days
+   ([terraform.md](terraform.md)).
+
 ## Certificates
 
 One per host, in the app's namespace: `rillmark-tls` in `rillmark` and `devops-tls` in `awushi-cloudgarden`. Each has issuer
@@ -540,6 +582,7 @@ token's CR, then the API, the worker and the CronJobs, and the upload route.
    kc -n frameflow rollout status deployment/hatchet --timeout=10m
    kc -n frameflow logs job/frameflow-silo-setup
    ```
+   If that Job fails, [Silo's setup Job fails](#silos-setup-job-fails) says where to look, and root waits until it passes.
    The site then shows its pages, and every call they make to the API fails, until release B. So does the nightly backup, whose pod
    mounts the API's volume: take release B the same day, or `PlaneBackupFailed` says so the next morning. `make remote-test` can run now
    too, and its matrix rows that dial `frameflow-api` read INCONCLUSIVE until release B.
@@ -714,6 +757,27 @@ Revert the promotion's commit, as [Rolling back](#rolling-back) says for the sit
 - **Hatchet's schema**, after a new Hatchet: an older hatchet-lite on a newer database is not supported. Restore Hatchet's database from
   the dump before the upgrade, with the same keysets.
 - **Videos.** Those the newer worker processed stay as they are: their renditions in Silo, their records in SQLite.
+
+**Taking release B back out.** Do it in place: revert the promotion that brought the trouble, as above. To stop it altogether, set
+`replicas: 0` on `frameflow-api` and `frameflow-worker` and `suspend: true` on both CronJobs, through a pull request: videos then wait in
+Hatchet's queue, the pages load and their calls fail, as before release B, and `FrameflowApiUnavailable` and
+`FrameflowWorkerUnavailable` fire until it comes back. Never take its five files out of `kustomization.yaml`'s list: `frameflow` would
+prune them, and claim `frameflow-data` with them. Its volume, on `local-path-retain`, would go to `Released` with `app.db` still in its
+folder, and nothing binds a released volume again. The nightly mounts that claim too, so its next run would wait in `Pending` until its
+deadline, and `PlaneBackupFailed` fires. Listed again, the claim gets a new, empty volume, and the API starts on an empty catalogue: the
+sources and renditions stay in Silo and the runs in Hatchet, and no record names them. If the files were taken out anyway, then before
+they are listed again, keep the old volume for the claim of that name, so that the claim the listing makes binds to it and not to a new
+one. Not tried:
+
+```bash
+kc get pv -o custom-columns='NAME:.metadata.name,STATUS:.status.phase,CLAIM:.spec.claimRef.name,MADE:.metadata.creationTimestamp' \
+  | grep -E '^NAME|frameflow-data'
+# Available again, and kept for frameflow/frameflow-data alone:
+kc patch pv <the Released one> --type merge -p '{"spec":{"claimRef":{"uid":null,"resourceVersion":null}}}'
+kc -n frameflow get pvc frameflow-data -o jsonpath='{.spec.volumeName}{"\n"}'   # after the release: that volume
+```
+
+Or restore the database from the nightly, with only `unseal` and `sqlite`: [Restoring](#frameflow-backups-and-restore).
 
 ### Frameflow: consoles
 
@@ -1107,6 +1171,34 @@ By the log:
 Every start runs the migrations and the seed, which do nothing on a database Hatchet made. On an empty one, the first start was ready in
 3 seconds in Docker.
 
+#### Silo's setup Job fails
+
+`frameflow-silo-setup` is a Sync hook at wave 2, so a run that fails fails `frameflow`'s sync, and nothing in the later waves is applied
+until one passes: on a first deploy, the web server and its route are not there yet. One run is up to four pods (`backoffLimit: 3`) within
+900 seconds. The sync then retries without limit, 30 seconds and then up to 5 minutes apart, and each retry makes the Job again:
+`BeforeHookCreation` deletes the one before, with its pods, so `kc -n frameflow logs job/frameflow-silo-setup` shows the current run's or
+nothing. Loki keeps the earlier ones, `{namespace="frameflow", pod=~"frameflow-silo-setup-.*"}`, and each pod's last state says how it
+ended:
+
+```bash
+kc -n frameflow get pods -l app.kubernetes.io/name=frameflow-silo-setup \
+  -o custom-columns='NAME:.metadata.name,PHASE:.status.phase,ENDED:.status.containerStatuses[0].state.terminated.reason'
+kc -n frameflow get events --sort-by=.lastTimestamp | grep silo-setup
+kc -n argocd get application frameflow -o jsonpath='{.status.operationState.message}{"\n"}'
+```
+
+- **`OOMKilled`**: `mc admin user add` encrypts its request with a key it derives by argon2id, 64 MiB at a time. At a 128Mi limit, two of
+  the first three runs on the live Silo died there (2026-11-08). Raise `limits.memory` in `silo-setup.yaml`, within the namespace's
+  LimitRange and quota.
+- **`frameflow-silo:9000 did not answer ready in 2 minutes`**: Silo is not Ready, or restarted under the Job
+  (`kc -n frameflow get pods -l app.kubernetes.io/component=s3`), or a policy refuses `s3-setup` its connection to Silo, in
+  `network-policies/frameflow.yaml`: `make remote-netpol TARGET=plane-prod CONFIRM=plane-prod FROM_NS=frameflow`.
+- **`mc` refuses root's keys**: those in `frameflow-silo-setup` are not the ones Silo started with, as after a change in Infisical before
+  Silo restarted: [secrets](#frameflow-secrets).
+
+A fix under `platform/frameflow/` lands at the next retry, up to 5 minutes later, with no step by hand, because a sync that fails reads the
+newest commit each time it tries again. Root waits meanwhile: [Root waits on frameflow](#root-waits-on-frameflow).
+
 #### The pages load, and nothing in them does
 
 The API is down, and `FrameflowApiUnavailable` fires after 5 minutes. Its readiness, `/health/ready`, fails while SQLite or Silo does:
@@ -1156,8 +1248,9 @@ Silo's answer, which names its error in XML.
 
 Before the token is written, `hatchet-client-token` finds no `HATCHET_CLIENT_TOKEN`, and reads Degraded. `frameflow`'s sync then fails at
 that wave and retries, and the API, the worker and the CronJobs wait behind it. That is why the CR comes in release B, after the token.
-`frameflow` is root's last wave, so root's operation does not finish either, and no later change to an Application file applies until this
-is fixed or the operation is ended: [docs/runbooks/argo-sync-stuck.md](runbooks/argo-sync-stuck.md), End an operation.
+`frameflow` reads Degraded meanwhile, and it is root's last wave, so root's operation does not finish either: its sync fails there and
+tries again, up to 5 minutes apart, and `ArgoAppDegraded` pages. Each of root's tries reads the newest commit, so changes to Application
+files still land. What holds root with no retry is in the next section, [Root waits on frameflow](#root-waits-on-frameflow).
 
 ```bash
 kc -n frameflow get infisicalstaticsecret hatchet-client-token -o jsonpath='{.status.conditions}{"\n"}'
@@ -1165,6 +1258,33 @@ make remote-frameflow-token TARGET=plane-prod CONFIRM=plane-prod
 ```
 
 The CR reads Healthy at the operator's next read, within 60 seconds, and the sync goes on at its next retry, up to 5 minutes later.
+
+#### Root waits on frameflow
+
+`frameflow` is root's last wave, and root's operation waits on it while it reads Progressing or Missing, with no retry and no timeout.
+Root's check of it, in `values/argocd.yaml`, also reads a Healthy `frameflow` as Progressing while its own sync is still open, or while it
+is not Synced. Until `frameflow` finishes or root's operation is ended, root applies no later change to an Application file, the
+platform's charts and Wayline's own Application among them. What each child reads from its own path still syncs. A child that reads
+Degraded fails root's sync instead, and each retry of root's reads the newest commit, so changes to Application files still land.
+
+```bash
+kc -n argocd get application root -o jsonpath='{.status.operationState.phase} {.status.operationState.message}{"\n"}'
+kc -n argocd get application frameflow \
+  -o jsonpath='{.status.health.status} {.status.sync.status} {.status.operationState.phase} {.status.operationState.message}{"\n"}'
+```
+
+What holds `frameflow` short of Degraded is one of two things:
+
+- **A sync that fails and tries again** while what it made reads Healthy, as on a Sync hook that keeps failing,
+  [above](#silos-setup-job-fails), or an object the apply refuses, past the quota for one, which stays Missing. Each try reads the newest
+  commit, so a fix under `platform/frameflow/` lands by itself.
+- **A sync that waits** on something that never turns Ready: a StatefulSet's pod, since a StatefulSet has no progress deadline, such as
+  Silo's or Hatchet's Postgres's on a failed pull or a crash loop, or an Infisical CR that is never read. That sync never fails, so it never
+  tries again. Publish the fix, then end `frameflow`'s operation, and its next automated sync takes the fix.
+
+`ArgoSyncFailed` (15m) and `ArgoAppStuckProgressing` (30m) name `frameflow`, and `ArgoRootSyncStuck` names root at 60m. To land a change
+to an Application file meanwhile, a revert among them, end root's operation too. Both as
+[End an operation](runbooks/argo-sync-stuck.md#end-an-operation) says, which has not been tried on hosted production.
 
 #### A video fails, or stays queued
 
