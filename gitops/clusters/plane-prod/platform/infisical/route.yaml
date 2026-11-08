@@ -84,8 +84,11 @@ spec:
     secretName: infisical-tls
 ---
 # A person's guesses, measured per client, as Grafana's login is. The connection's address and no header, because this entry point trusts no
-# forwarded header and a client could otherwise send a new one with each try. One correct sign-in spends 2, and with three mistakes 5, so
-# ten leaves room for twice that in a minute, and after it one more try every 6 seconds.
+# forwarded header and a client could otherwise send a new one with each try. One correct sign-in spends 2, and with three mistakes 5, so a
+# burst of ten leaves room for twice that, and after it one more try comes every 6 seconds. That is no cap of 10 a minute. Traefik forgets an
+# address after about 7 seconds with no request from it, 1 + 60/10, and starts it again with a full burst, so a client that waits about 8
+# seconds between bursts of 10 gets about 70 tries a minute, as measured against this Traefik in Docker. The password and two-factor bound
+# guessing. This only slows it.
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:

@@ -41,8 +41,9 @@ infisical:
     # Token review goes through safeRequest, which rejects private IPs, and kubernetes.default.svc
     # is 10.96.0.1. It also relaxes SSRF protection globally. Bounded here by the default-deny egress
     # of platform/network-policies/infisical.yaml, which allows only its database, Redis, the API server and kube-dns on 53,
-    # so whatever address a caller of the public route got it to dial, nothing else would answer. A name it looks up does leave the
-    # node, as a query CoreDNS forwards.
+    # and policy/hosted.rego holds each NetworkPolicy in namespace infisical whole and refuses any other there, so whatever
+    # address a caller of the public route got it to dial, nothing else would answer. A name it looks up does leave the node, as a
+    # query CoreDNS forwards.
     - name: ALLOW_INTERNAL_IP_CONNECTIONS
       value: "true"
     # Its public route, gitops/clusters/plane-prod/platform/infisical/route.yaml. The links it writes and CORS name this, and the tunnel still
