@@ -301,8 +301,8 @@ On 2026-11-07 the platform went live on the owner's Contabo VPS, at https://wayl
 
 | Constraint | Effect on the design |
 |---|---|
-| One VPS: 12 vCPU, 47 GiB as the OS reports it, a 400 GB disk | One node, so no high availability. Quotas cap every namespace so that frameflow, another of the owner's apps, keeps 18 GiB, 6 CPU and 100 GiB of disk free |
-| The owner's DNS zone stays at Vercel, with records of his that must not change | Terraform owns three A records by id, and nothing else in the zone |
+| One VPS: 12 vCPU, 47 GiB as the OS reports it, a 400 GB disk | One node, so no high availability. Quotas cap every namespace, the owner's other apps' among them, and CI holds their sum to the node |
+| The owner's DNS zone stays at Vercel, with records of his that must not change | Terraform owns six A records by id, three of them the apps', and nothing else in the zone |
 | GitHub Free and a private repository, as before | No protected branch, so a push to the branch production reads can be detected and not prevented |
 | No SMTP | No mail from Plane or Infisical, so no second factor by email and no reset by mail. Alerts go to Telegram |
 | Credentials come from the owner | By his rule, no agent types a password into a production site. He signed in himself, and typed each secret at a hidden prompt in a terminal |

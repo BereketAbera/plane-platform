@@ -542,11 +542,11 @@ is at that version already.
 
 | Fact | Detail |
 |---|---|
-| Class | `local-path-retain`: `rancher.io/local-path`, reclaim `Retain`, `WaitForFirstConsumer`, made by Terraform. Plane's, Infisical's and monitoring's claims use it |
+| Class | `local-path-retain`: `rancher.io/local-path`, reclaim `Retain`, `WaitForFirstConsumer`, made by Terraform. Plane's, Infisical's, monitoring's and Frameflow's claims use it |
 | Location | `/var/lib/rancher/k3s/storage` on the node's one disk. There is no replication or snapshot, and the backups are the copy elsewhere |
 | Requested size | Not enforced, as on kind. The quotas' `requests.storage` caps what claims may ask, and only the disk alerts bound what a volume holds |
 | Deleting a claim or a namespace | Leaves the volume and its data on the disk, because of `Retain`, and nothing binds it again by itself |
-| Backups | Static `hostPath` volumes on `/srv/wayline/backups/plane-prod` and `/srv/wayline/backups/infisical`, 40Gi and 10Gi, reclaim `Retain`, each bound to a claim `backups`, from Application `backup`. The nightly CronJobs seal into them with restic. See [data-operations.md](data-operations.md) |
+| Backups | Static `hostPath` volumes on `/srv/wayline/backups/plane-prod`, `/srv/wayline/backups/infisical` and `/srv/wayline/backups/frameflow`, 40Gi, 10Gi and 24Gi, reclaim `Retain`, each bound to a claim `backups`, from Application `backup`. The nightly CronJobs seal into them with restic. See [data-operations.md](data-operations.md) |
 
 The quotas come from `infrastructure/hosted/plane-prod/capacity.yaml`, which Terraform applies as `ResourceQuota/budget`:
 
@@ -559,15 +559,16 @@ The quotas come from `infrastructure/hosted/plane-prod/capacity.yaml`, which Ter
 | `monitoring` | 300m | 1792Mi | 4416Mi | 14 | 3 | 27Gi |
 | `monitoring-agents` | 20m | 48Mi | 128Mi | 2 | 0 | 0 |
 | `infisical` | 300m | 1664Mi | 2400Mi | 6 | 3 | 13Gi |
-| `frameflow` | | | | 0 | 0 | 0 |
+| `rillmark` | 50m | 160Mi | 256Mi | 5 | 0 | 0 |
+| `awushi-cloudgarden` | 50m | 160Mi | 256Mi | 5 | 0 | 0 |
+| `frameflow` | 1500m | 3584Mi | 10752Mi | 16 | 4 | 55Gi |
 
-Unlike the kind cluster's, these cap `requests.cpu` too, because requests are what the scheduler holds back and they must fit one node,
-and each `LimitRange/defaults` gives a container with no request 10m of CPU, so such a pod stays admissible. Each `limits.memory` is
-what every pod there may reach at once, plus room for one rollout's surge: a quota with no room for the largest pod would stop that
-rollout for good. Frameflow is not deployed. Its reservation, 18Gi of memory, 6 CPU of requests and 100Gi of disk, exists only as what the
-other quotas leave free, and `scripts/ci/check-capacity.sh` fails CI unless their sum, with the system's share and Frameflow's, fits the
-node. In `infisical` the quota fits one of a server rollout, the nightly backup or a certificate's solver at a time, so they wait for each
-other: `scripts/hosted/README.md`, section The first certificate.
+Unlike the kind cluster's, these cap `requests.cpu` too, because requests are what the scheduler holds back and they must fit one node, and
+each `LimitRange/defaults` gives a container with no request 10m of CPU, so such a pod stays admissible. Each `limits.memory` is what every
+pod there may reach at once, plus room for one rollout's surge: a quota with no room for the largest pod would stop that rollout for good.
+Frameflow's emptyDirs take up to 30Gi more of the disk, which no quota counts, and `scripts/ci/check-capacity.sh` fails CI unless the
+quotas' sum, with the system's share and that scratch, fits the node. In `infisical` the quota fits one of a server rollout, the nightly
+backup or a certificate's solver at a time, so they wait for each other: `scripts/hosted/README.md`, section The first certificate.
 
 ### What differs from kind
 

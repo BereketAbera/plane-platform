@@ -230,7 +230,7 @@ Each resource has one owner, and [contract section 4](docs/platform-contract.md#
 | Infisical | Secret values and their history |
 | Scripts, via `.local/secret-zero/` | The few secrets that must exist before Infisical does |
 
-On hosted production the owners differ. `scripts/hosted/provision-node.sh` installs K3s and the host's firewall. Terraform in `infrastructure/terraform/environments/prod-host` owns three DNS records in Vercel and only reads the VPS. Terraform in `environments/prod` owns what the cluster needs before Argo CD: namespaces, quotas, LimitRanges, a storage class, the CoreDNS rewrite, the Argo CD release and its projects. CI's `release-plane-prod` job owns branch `deploy/plane-prod`. Argo CD owns everything else on the node, and scripts own the secrets that come from `.local/hosted/plane-prod/`. [Contract section 4](docs/platform-contract.md#4-ownership-exactly-one-owner-per-resource) has both tables.
+On hosted production the owners differ. `scripts/hosted/provision-node.sh` installs K3s and the host's firewall. Terraform in `infrastructure/terraform/environments/prod-host` owns six DNS records in Vercel and only reads the VPS. Terraform in `environments/prod` owns what the cluster needs before Argo CD: namespaces, quotas, LimitRanges, a storage class, the CoreDNS rewrite, the Argo CD release and its projects. CI's `release-plane-prod` job owns branch `deploy/plane-prod`. Argo CD owns everything else on the node, and scripts own the secrets that come from `.local/hosted/plane-prod/`. [Contract section 4](docs/platform-contract.md#4-ownership-exactly-one-owner-per-resource) has both tables.
 
 ## Quick start
 

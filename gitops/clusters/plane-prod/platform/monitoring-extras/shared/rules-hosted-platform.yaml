@@ -29,8 +29,8 @@ spec:
           labels: { severity: warning, component: pod }
           annotations:
             summary: "{{ $labels.namespace }}/{{ $labels.pod }} container {{ $labels.container }} is at {{ $value | humanizePercentage }} of its memory limit"
-        # The quotas leave Frameflow's reservation free, and it runs nothing yet, so this should stay quiet. Limits may still add
-        # up past what is free once it does.
+        # Every quota's limits.memory, with the system's share, fits the node, and CI holds it there (check-capacity.sh), so this should stay
+        # quiet. Only what no quota counts can take more: K3s and kube-system's pods, past the system's share.
         - alert: NodeMemoryLow
           expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1
           for: 5m
