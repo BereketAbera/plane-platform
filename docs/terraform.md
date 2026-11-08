@@ -446,7 +446,7 @@ in, and a destroyed project's slug stays reserved for 14 days. Do not use it to 
 
 | Root | What `terraform destroy` would do |
 |---|---|
-| `prod` | Delete the namespaces, and with them every claim. The volumes stay, on reclaim `Retain`, but nothing would be bound to them. The root Application has no finalizer, so the children would not cascade, and the six with a finalizer would hold namespace `argocd`, as locally |
+| `prod` | Delete the namespaces, and with them every claim. The volumes stay, on reclaim `Retain`, but nothing would be bound to them. The root Application has no finalizer, so the children would not cascade, and the eight with a finalizer, the six as locally and Rillmark's and Awushi Cloudgarden's, would hold namespace `argocd` |
 | `prod-host` | Stop at `prevent_destroy` on each record. The VPS is a data source, so no destroy can reach it, which is why it is one |
 | `infisical/terraform`, hosted | Delete projects `plane-prod` and `frameflow-prod` and their identities, as locally, so the operator in `plane-prod` could no longer log in, nor Frameflow's in `frameflow` once it runs |
 

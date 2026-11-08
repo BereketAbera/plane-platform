@@ -3,8 +3,8 @@
 # job moves what production reads, after this merges. This job's token could push that branch too, as any with contents: write can, and
 # only publish-release.sh and check-deploy-branch.yml would notice.
 #
-# It does not look the digest up on GHCR, because the app's packages are private and this job's token cannot read them: none of them
-# grants this repository access. So the pull request says what was checked and what the person merging it has to check first.
+# It does not look the digest up on GHCR, because the app's packages are private and this job's token cannot read them: it asks for
+# no packages permission. So the pull request says what was checked and what the person merging it has to check first.
 #
 # One branch per app, promote/<app>. A second dispatch for the same app before the first pull request merges replaces that pull
 # request's change with its own, so promote an app's components one at a time.
