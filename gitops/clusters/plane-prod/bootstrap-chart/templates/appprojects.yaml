@@ -53,3 +53,100 @@ spec:
       kind: LimitRange
     - group: networking.k8s.io
       kind: NetworkPolicy
+---
+# Each other app has a project like plane-prod's, so what its Application syncs stays in its own namespace, and cannot touch the
+# platform's policies, quotas or cluster-scoped objects, or ask cert-manager for anything. Its certificate comes from the platform's
+# certificates Application, for its own host alone (policy/hosted.rego), and the ClusterIssuer's solver answers for any host, so a
+# Certificate synced from here could be for Wayline's.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: frameflow
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  description: Frameflow. Namespaced workloads and Infisical CRs in frameflow only.
+  sourceRepos:
+    - "{{ .Values.gitRepoURL }}"
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: frameflow
+  # clusterResourceWhitelist is deliberately absent: cluster scope is allow-list, so nothing passes.
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: cert-manager.io
+      kind: Certificate
+    - group: cert-manager.io
+      kind: CertificateRequest
+    - group: cert-manager.io
+      kind: Issuer
+    - group: acme.cert-manager.io
+      kind: Order
+    - group: acme.cert-manager.io
+      kind: Challenge
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: rillmark
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  description: Rillmark's documentation site, rillmark.bereket.dev. Namespaced workloads in rillmark only.
+  sourceRepos:
+    - "{{ .Values.gitRepoURL }}"
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: rillmark
+  # clusterResourceWhitelist is deliberately absent: cluster scope is allow-list, so nothing passes.
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: cert-manager.io
+      kind: Certificate
+    - group: cert-manager.io
+      kind: CertificateRequest
+    - group: cert-manager.io
+      kind: Issuer
+    - group: acme.cert-manager.io
+      kind: Order
+    - group: acme.cert-manager.io
+      kind: Challenge
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: awushi-cloudgarden
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  description: Awushi Cloudgarden's site, devops.bereket.dev. Namespaced workloads in awushi-cloudgarden only.
+  sourceRepos:
+    - "{{ .Values.gitRepoURL }}"
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: awushi-cloudgarden
+  # clusterResourceWhitelist is deliberately absent: cluster scope is allow-list, so nothing passes.
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: cert-manager.io
+      kind: Certificate
+    - group: cert-manager.io
+      kind: CertificateRequest
+    - group: cert-manager.io
+      kind: Issuer
+    - group: acme.cert-manager.io
+      kind: Order
+    - group: acme.cert-manager.io
+      kind: Challenge
