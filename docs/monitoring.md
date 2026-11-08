@@ -5,7 +5,7 @@ deployment and the platform around it are observed: what is scraped, why Plane n
 which alerts exist, what each can and cannot see, where they go, and how the path is tested. It covers the kind
 cluster, where dev and prod-sim run, and [hosted production](#hosted-production), the K3s node at https://wayline.bereket.dev.
 
-**Hosted production, 2026-11-07.** Alerts reach the owner through Telegram, and `Watchdog` pings Healthchecks.io. What has run there, and what is PENDING tonight, is under [Hosted production](#hosted-production).
+**Hosted production, 2026-11-07.** Alerts reach the owner through Telegram, and `Watchdog` pings Healthchecks.io. What has run there, and what is still PENDING, is under [Hosted production](#hosted-production).
 
 **Kind cluster.** The stack ran on a local kind cluster on 2026-11-04 and 2026-11-05, and from about 08:12Z on 2026-11-05 on three clusters in turn, each restored from backup, with the cold install's own cluster between the first two. A reading with no later date comes from the first cluster, and a later one from the first restored cluster, unless it says otherwise. Targets, rules, dashboards, log search and
 several alerts were proved by queries, not by pod status, and each result links its file under
@@ -132,9 +132,9 @@ receivers were still the sink ([hosted-bootstrap-20261107T050333Z.txt](evidence/
 
 | What | When, UTC | Result | Evidence |
 |---|---|---|---|
-| `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=alerts`: delivery COMPLETE, every scrape target up, nothing critical firing, `Watchdog` firing, a synthetic alert taken, Alertmanager's Telegram counter up and its failure counter not, and no Telegram bot token in Loki | 2026-11-07 07:31 | PASS, every row | Not yet published: `test-hosted-20261107T073149Z.txt` |
-| `make remote-restart-check TARGET=plane-prod CONFIRM=plane-prod`, which takes Plane's API away for a minute or two, so `PlaneApiDown` and its `Cleared` should reach Telegram | 2026-11-07, tonight | PENDING | |
-| The whole `make remote-test`, its alerts section among the rest | 2026-11-07, tonight | PENDING | |
+| `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=alerts`: delivery COMPLETE, every scrape target up, nothing critical firing, `Watchdog` firing, a synthetic alert taken, Alertmanager's Telegram counter up and its failure counter not, and no Telegram bot token in Loki | 2026-11-07 07:31 | PASS, every row | [test-hosted-20261107T073149Z.txt](evidence/runs/test-hosted-20261107T073149Z.txt) |
+| `make remote-restart-check TARGET=plane-prod CONFIRM=plane-prod`, which takes Plane's API away for a minute or two, so `PlaneApiDown` and its `Cleared` should reach Telegram | Not yet: it waits for the owner | PENDING | |
+| The whole `make remote-test`, its alerts section among the rest: delivery COMPLETE, every scrape target up, nothing critical firing, with `CPUThrottlingHigh` firing, `Watchdog` firing, a synthetic alert taken, the Telegram counter up and the failed one not, and no Telegram bot token in Loki | 2026-11-07 21:40 to 22:07 | PASS on all 7 alert rows. The run as a whole read FAIL, on the port scan's 8080 alone, with its smoke BLOCKED | [test-hosted-20261107T214054Z.txt](evidence/runs/test-hosted-20261107T214054Z.txt) |
 
 No test reads the phone. The synthetic row reads Alertmanager's own counter, and only the owner reads Healthchecks. The hosted handoff
 notes record that a real outage during the first restart check, at 07:52Z, reached the owner's Telegram. No file in `docs/evidence` holds
@@ -149,15 +149,17 @@ lines. `make remote-test`'s alerts section asks Loki for any token left.
 Grafana is at https://grafana.bereket.dev, behind one admin login: `make remote-grafana-admin TARGET=plane-prod VERB=login` prints the URL and
 username and copies the password. [Security](security.md#what-is-public) has what guards that login. It holds 26 dashboards: Wayline's four,
 copies of the local ones, and the chart's 22. A read of the cluster on 2026-11-07 counted 26 in the ConfigMaps labelled `grafana_dashboard`,
-and screenshots of all 26 are not yet published (`grafana-dashboards-20261107/`). `Persistent Volumes` shows no data there, as on kind,
+and screenshots of 25 of them are published ([grafana-dashboards-20261107/](evidence/runs/grafana-dashboards-20261107/)). The 26th, `09-logs.jpg`,
+is withheld, because four of its log lines show a client address. `Persistent Volumes` shows no data there, as on kind,
 because local-path volumes emit no `kubelet_volume_stats_*`.
 
 Grafana keeps its database in an `emptyDir`, so every restart signs everyone out and loses what was made in its UI: saved dashboards, stars,
 preferences, tokens and annotations. A datasource change restarts it too, because datasources are now set in `grafana.datasources` in the
 values file and the pod rolls on their checksum. Dashboards come from Git, and Grafana rereads their folder every 30 seconds.
 
-On this VM the chart's CPU panels overstate use, against what `top` reports. That is the hosted handoff's reading of 2026-11-07, no file in
-`docs/evidence` holds it yet, and [resource utilization](resource-utilization.md) is where its numbers belong.
+On this VM the chart's CPU panels overstate use, against what `top` reports. That was the hosted handoff's reading of 2026-11-07, and the
+capture of 12 hours to 19:31Z shows the same gap ([capture](evidence/runs/hosted-resources-20261107T193041Z.txt)). [Resource utilization](resource-utilization.md#cpu)
+works out its numbers.
 
 ### What hosted monitoring cannot see
 

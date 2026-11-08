@@ -90,8 +90,9 @@ among others ([access and DNS](../evidence/runs/hosted-access-dns-20261106T21272
 Added 2026-11-07.
 
 - **`wayline-tls` serves.** The hosted smoke's `tls-certificate` step read TLSv1.3, issued by Let's Encrypt, 89 days left, valid for
-  `wayline.bereket.dev`, at 06:41Z and 06:45Z, and the second run read PASS on all 21 steps (`smoke-plane-prod-20261107T064131Z.json` and
-  `smoke-plane-prod-20261107T064551Z.json`, not published yet).
+  `wayline.bereket.dev`, at 06:41Z and 06:45Z, and the second run read PASS on all 21 steps
+  ([smoke-plane-prod-20261107T064131Z.json](../evidence/runs/smoke-plane-prod-20261107T064131Z.json) and
+  [smoke-plane-prod-20261107T064551Z.json](../evidence/runs/smoke-plane-prod-20261107T064551Z.json)).
 - **A new Certificate paged before its first issue.** cert-manager reports an expiry of 0 for a Certificate with no certificate yet, so
   `grafana-tls`'s first order read as long expired and `CertificateExpiringSoon` paged at 07:08Z, within a minute of the Certificate being
   created. `ec76d65` leaves a zero expiry to `CertificateNotReady`, with a promtool test, as the rule's comment records. It went out with
@@ -100,4 +101,6 @@ Added 2026-11-07.
 - **`infisical-tls` serves.** It was ordered once its route was released. The outside run of
   `make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY="outside secrets routes"` at 19:31Z read a publicly trusted certificate for
   `infisical.bereket.dev` with 89 days left, issued by Let's Encrypt, and at 19:47:29Z the Certificate read Ready from
-  `letsencrypt-production` (`test-hosted-20261107T193135Z.txt` and `hosted-routes-20261107T194729Z.txt`, not published yet).
+  `letsencrypt-production` ([test-hosted-20261107T193135Z.txt](../evidence/runs/test-hosted-20261107T193135Z.txt) and
+  [hosted-routes-20261107T194729Z.txt](../evidence/runs/hosted-routes-20261107T194729Z.txt)). The whole suite at 21:40Z read a publicly
+  trusted certificate with 89 days left for each of the three hosts ([test-hosted-20261107T214054Z.txt](../evidence/runs/test-hosted-20261107T214054Z.txt)).
