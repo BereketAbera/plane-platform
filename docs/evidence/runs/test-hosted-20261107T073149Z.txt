@@ -1,0 +1,17 @@
+
+[1mContext and node[0m
+PASS        this is plane-prod                                         kube-system UID and node name match target.yaml, one context, through the tunnel
+
+[1mPrometheus and Alertmanager[0m
+PASS        alert delivery                                             alert delivery COMPLETE: alerts go to Telegram, and Watchdog pings Healthchecks
+PASS        every scrape target is up                                  
+PASS        nothing critical is firing                                 others firing: CPUThrottlingHigh
+PASS        Watchdog fires, so rules evaluate                          
+PASS        Alertmanager takes a synthetic alert                       
+[1;34m==>[0m Waiting up to 150 s for a notification to leave. group_wait is 30 s.
+PASS        a notification leaves Alertmanager                         the Telegram counter rose, and the failed one did not. Your phone should show WaylineSyntheticTest
+PASS        Loki holds no Telegram bot token                           
+
+[1mSummary[0m
+[1;34m==>[0m Evidence: .local/evidence-raw/test-hosted-20261107T073149Z.txt
+[1;32m ok[0m every row passed

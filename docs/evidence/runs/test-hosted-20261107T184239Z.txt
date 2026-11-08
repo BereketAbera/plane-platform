@@ -1,0 +1,57 @@
+
+[1mContext and node[0m
+PASS        this is plane-prod                                         kube-system UID and node name match target.yaml, one context, through the tunnel
+
+[1mRendered Secrets, and who can read them[0m
+PASS        Grafana's token reads ConfigMaps and no Secret             Secrets: no get, list or watch, in monitoring or in every namespace
+PASS        Infisical's pod holds no Kubernetes token                  no token volume in 1 pod(s)
+[1;34m==>[0m prod
+PASS     plane-prod/plane-app-env holds exactly the contract's keys         AMQP_URL,DATABASE_URL,REDIS_URL
+PASS     plane-prod/plane-app-env has no empty or '<no value>' value        
+PASS     plane-prod/plane-app-env is owned by its InfisicalStaticSecret     
+PASS     plane-prod/plane-app-env carries no Argo CD tracking data          
+PASS     plane-prod InfisicalStaticSecret/plane-app-env reconciled at this generation 
+PASS     plane-prod/plane-app-keys holds exactly the contract's keys        LIVE_SERVER_SECRET_KEY,SECRET_KEY
+PASS     plane-prod/plane-app-keys has no empty or '<no value>' value       
+PASS     plane-prod/plane-app-keys is owned by its InfisicalStaticSecret    
+PASS     plane-prod/plane-app-keys carries no Argo CD tracking data         
+PASS     plane-prod InfisicalStaticSecret/plane-app-keys reconciled at this generation 
+PASS     plane-prod/plane-live-env holds exactly the contract's keys        REDIS_URL
+PASS     plane-prod/plane-live-env has no empty or '<no value>' value       
+PASS     plane-prod/plane-live-env is owned by its InfisicalStaticSecret    
+PASS     plane-prod/plane-live-env carries no Argo CD tracking data         
+PASS     plane-prod InfisicalStaticSecret/plane-live-env reconciled at this generation 
+PASS     plane-prod/plane-doc-store holds exactly the contract's keys       AWS_ACCESS_KEY_ID,AWS_S3_BUCKET_NAME,AWS_S3_ENDPOINT_URL,AWS_SECRET_ACCESS_KEY,FILE_SIZE_LIMIT,MINIO_ROOT_PASSWORD,MINIO_ROOT_USER,USE_MINIO
+PASS     plane-prod/plane-doc-store has no empty or '<no value>' value      
+PASS     plane-prod/plane-doc-store is owned by its InfisicalStaticSecret   
+PASS     plane-prod/plane-doc-store carries no Argo CD tracking data        
+PASS     plane-prod InfisicalStaticSecret/plane-doc-store reconciled at this generation 
+PASS     plane-prod/plane-pgdb holds exactly the contract's keys            POSTGRES_DB,POSTGRES_PASSWORD,POSTGRES_USER
+PASS     plane-prod/plane-pgdb has no empty or '<no value>' value           
+PASS     plane-prod/plane-pgdb is owned by its InfisicalStaticSecret        
+PASS     plane-prod/plane-pgdb carries no Argo CD tracking data             
+PASS     plane-prod InfisicalStaticSecret/plane-pgdb reconciled at this generation 
+PASS     plane-prod/plane-rabbitmq holds exactly the contract's keys        RABBITMQ_DEFAULT_PASS,RABBITMQ_DEFAULT_USER
+PASS     plane-prod/plane-rabbitmq has no empty or '<no value>' value       
+PASS     plane-prod/plane-rabbitmq is owned by its InfisicalStaticSecret    
+PASS     plane-prod/plane-rabbitmq carries no Argo CD tracking data         
+PASS     plane-prod InfisicalStaticSecret/plane-rabbitmq reconciled at this generation 
+PASS     plane-prod plane-doc-store USE_MINIO=1                             
+PASS     plane-prod plane-doc-store AWS_S3_BUCKET_NAME=uploads              
+PASS     plane-prod plane-doc-store AWS_S3_ENDPOINT_URL=http://plane-minio:9000 
+PASS     plane-prod plane-doc-store FILE_SIZE_LIMIT=5242880, in bytes       
+PASS     plane-prod generated values are all hex                            
+PASS     plane-prod DATABASE_URL matches plane-pgdb and names its own namespace 
+PASS     plane-prod AMQP_URL matches plane-rabbitmq and names its own namespace 
+PASS     plane-prod Silo user is also the S3 access key                     
+PASS     plane-prod Silo password is also the S3 secret key                 
+PASS     plane-prod REDIS_URL names its own namespace                       
+PASS     plane-prod REDIS_URL agrees in plane-app-env and plane-live-env    
+[1;32m ok[0m rendered secrets: every row passed
+PASS        rendered Secrets match the contract                        
+PASS        Secret ghcr-pull holds a credential for ghcr.io            
+PASS        only namespace plane-prod logs in as its identity          plane-prod 200, monitoring 401
+
+[1mSummary[0m
+[1;34m==>[0m Evidence: .local/evidence-raw/test-hosted-20261107T184239Z.txt
+[1;32m ok[0m every row passed

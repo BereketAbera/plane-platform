@@ -1,0 +1,45 @@
+started: 20261107T193738Z
+command: the AGPL source offer and licence texts on hosted production, from this Mac, logged out: no cookie, no credential, redirects not followed. By the docs pass.
+## 2026-11-07T19:37:38Z curl -sS -o /dev/null -D - https://wayline.bereket.dev/source
+HTTP/2 302 
+cache-control: no-cache
+content-type: text/html
+date: Sat, 07 Nov 2026 19:37:39 GMT
+location: https://github.com/BereketAbera/plane-platform/tree/5161bf93e424943e35809e3958983a1f9b11f087
+server: nginx/1.31.8
+strict-transport-security: max-age=31536000; includeSubDomains
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+content-length: 145
+
+curl exit: 0
+## 2026-11-07T19:37:40Z the status of that Location, with no credential: curl -sS -o /dev/null -w '%{http_code}' https://github.com/BereketAbera/plane-platform/tree/5161bf93e424943e35809e3958983a1f9b11f087
+404
+## 2026-11-07T19:37:42Z the repository itself, the same way: https://github.com/BereketAbera/plane-platform
+404
+## 2026-11-07T19:37:44Z curl -sS -D - https://wayline.bereket.dev/licenses/
+HTTP/2 200 
+cache-control: no-cache
+content-type: text/html
+date: Sat, 07 Nov 2026 19:37:45 GMT
+server: nginx/1.31.8
+strict-transport-security: max-age=31536000; includeSubDomains
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+content-length: 877
+
+<html>
+<head><title>Index of /licenses/</title></head>
+<body>
+<h1>Index of /licenses/</h1><hr><pre><a href="../">../</a>
+<a href="COPYRIGHT.txt">COPYRIGHT.txt</a>                                      07-Nov-2026 00:31                 137
+<a href="LICENSE.txt">LICENSE.txt</a>                                        07-Nov-2026 00:31               34516
+<a href="MODIFICATIONS.txt">MODIFICATIONS.txt</a>                                  07-Nov-2026 00:31               23656
+<a href="NOTICE.txt">NOTICE.txt</a>                                         07-Nov-2026 00:31                5265
+<a href="OFL-InstrumentSans.txt">OFL-InstrumentSans.txt</a>                             07-Nov-2026 00:31                4538
+<a href="OFL-JetBrainsMono.txt">OFL-JetBrainsMono.txt</a>                              07-Nov-2026 00:31                4524
+</pre><hr></body>
+</html>
+curl exit: 0

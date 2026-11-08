@@ -1,0 +1,300 @@
+[1;34m==>[0m render is up to date
+[1;32m ok[0m dev is up to date
+[1;32m ok[0m prod-sim is up to date
+[1;32m ok[0m render is up to date
+[1;34m==>[0m render is up to date: hosted
+[1;32m ok[0m prod is up to date
+[1;32m ok[0m render is up to date: hosted
+[1;34m==>[0m helm lint: bootstrap chart
+[1;32m ok[0m helm lint: bootstrap chart
+[1;34m==>[0m kubeconform: rendered Plane
+Summary: 74 resources found in 2 files - Valid: 74, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: rendered Plane
+[1;34m==>[0m kubeconform: platform manifests
+Summary: 135 resources found in 7 files - Valid: 135, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: platform manifests
+[1;34m==>[0m kubeconform: hosted render
+Summary: 39 resources found in 1 file - Valid: 39, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: hosted render
+[1;34m==>[0m conftest: rendered Plane
+
+1924 tests, 1924 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: rendered Plane
+[1;34m==>[0m conftest: platform manifests
+
+2835 tests, 2835 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: platform manifests
+[1;34m==>[0m conftest: hosted render
+
+2847 tests, 2847 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: hosted render
+[1;34m==>[0m promotion invariant
+[1;32m ok[0m 9 image(s) were recorded for dev under the same name
+[1;32m ok[0m promotion invariant
+[1;34m==>[0m helm lint: hosted bootstrap chart
+[1;32m ok[0m helm lint: hosted bootstrap chart
+[1;34m==>[0m kubeconform: hosted tree
+Summary: 117 resources found in 8 files - Valid: 117, Invalid: 0, Errors: 0, Skipped: 0
+[1;32m ok[0m kubeconform: hosted tree
+[1;34m==>[0m conftest: hosted tree
+
+7956 tests, 7956 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: hosted tree
+[1;34m==>[0m hosted tree stands alone
+[1;32m ok[0m hosted tree stands alone
+[1;34m==>[0m hosted tree: every image is listed
+[1;32m ok[0m hosted tree: every image is listed
+[1;34m==>[0m hosted Alloy scrubs a Telegram bot token
+[1;32m ok[0m hosted Alloy scrubs a Telegram bot token
+[1;34m==>[0m grafana-admin.sh with a stub cluster
+[1;34m==>[0m apply on a cluster with no Secret yet
+[1;32m ok[0m it exits 0
+[1;32m ok[0m the Secret holds the password made here
+[1;32m ok[0m the pod was replaced, and holds it too
+[1;32m ok[0m nothing is left pending
+[1;34m==>[0m apply again
+[1;32m ok[0m it exits 0, and replaces no pod
+[1;34m==>[0m rotate without CONFIRM=plane-prod
+[1;32m ok[0m it is refused
+[1;32m ok[0m the password is as it was
+[1;34m==>[0m rotate, with namespace monitoring gone after the identity check
+[1;32m ok[0m it is refused
+[1;32m ok[0m the password is as it was, because every check comes before it
+[1;34m==>[0m rotate, with the pod delete failing
+[1;32m ok[0m it fails
+[1;32m ok[0m the Secret holds the new password
+[1;32m ok[0m the running pod still holds the old one
+[1;32m ok[0m a pod is left pending
+[1;32m ok[0m it says how to finish
+[1;32m ok[0m login warns that the pod may still take the old password
+[1;34m==>[0m apply, to finish it
+[1;32m ok[0m it exits 0
+[1;32m ok[0m it replaced the pod, though the Secret already held the login
+[1;32m ok[0m the pod holds the new password
+[1;32m ok[0m nothing is left pending
+[1;32m ok[0m login no longer warns
+[1;34m==>[0m rotate, with the Secret's write failing
+[1;32m ok[0m it fails
+[1;32m ok[0m the Secret and the pod still hold the old password
+[1;32m ok[0m the file holds the new one
+[1;32m ok[0m apply finishes it
+[1;32m ok[0m and the Secret agrees
+[1;32m ok[0m nothing is left pending
+[1;34m==>[0m rotate, with the Deployment unreadable after the Secret's write
+[1;32m ok[0m it fails
+[1;32m ok[0m a pod is left pending
+[1;32m ok[0m apply then replaces the pod
+[1;32m ok[0m nothing is left pending
+[1;34m==>[0m apply with no Deployment yet, as bootstrap.sh runs it
+[1;32m ok[0m it exits 0
+[1;32m ok[0m the Secret holds a new password made here
+[1;32m ok[0m no pod was replaced, and nothing is left pending
+[1;34m==>[0m what the evidence scrub knows
+[1;32m ok[0m every password a rotate replaced, 5 of them, is in evidence-scrub-values
+[1;32m ok[0m grafana-admin.sh: 34 checks passed against a stub cluster
+[1;32m ok[0m grafana-admin.sh with a stub cluster
+[1;34m==>[0m promtool: platform rules
+[1;32m ok[0m 2 rule file(s) valid
+[1;32m ok[0m promtool: platform rules
+[1;34m==>[0m promtool: rule unit tests
+  SUCCESS
+
+  SUCCESS
+
+  SUCCESS
+
+[1;32m ok[0m promtool: rule unit tests
+[1;34m==>[0m promtool: hosted rules
+[1;32m ok[0m 3 rule file(s) valid
+[1;32m ok[0m promtool: hosted rules
+[1;34m==>[0m promtool: hosted rule unit tests
+  SUCCESS
+
+[1;32m ok[0m promtool: hosted rule unit tests
+[1;34m==>[0m helm template: platform charts
+[1;32m ok[0m 9 platform chart(s) rendered
+[1;32m ok[0m helm template: platform charts
+[1;34m==>[0m kubeconform: platform charts
+Summary: 194 resources found in 9 files - Valid: 184, Invalid: 0, Errors: 0, Skipped: 10
+[1;32m ok[0m kubeconform: platform charts
+[1;34m==>[0m conftest: platform charts
+
+3492 tests, 3492 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: platform charts
+[1;34m==>[0m promtool: chart rules
+[1;32m ok[0m 26 rule file(s) valid
+[1;32m ok[0m promtool: chart rules
+[1;34m==>[0m helm template: hosted charts
+[1;32m ok[0m 9 hosted chart(s) rendered
+[1;32m ok[0m helm template: hosted charts
+[1;34m==>[0m kubeconform: hosted charts
+Summary: 233 resources found in 9 files - Valid: 217, Invalid: 0, Errors: 0, Skipped: 16
+[1;32m ok[0m kubeconform: hosted charts
+[1;34m==>[0m conftest: hosted charts
+
+15145 tests, 15145 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: hosted charts
+[1;34m==>[0m conftest: hosted tree and charts together
+
+1 test, 1 passed, 0 warnings, 0 failures, 0 exceptions
+[1;32m ok[0m conftest: hosted tree and charts together
+[1;34m==>[0m hosted tree and charts: the images are what the list says
+[1;32m ok[0m hosted tree and charts: the images are what the list says
+[1;34m==>[0m promtool: hosted chart rules
+[1;32m ok[0m 26 rule file(s) valid
+[1;32m ok[0m promtool: hosted chart rules
+[1;34m==>[0m promotion flows with a stub cluster
+[1;32m ok[0m promote-digest-under-another-image
+[1;32m ok[0m promote-digest-never-recorded
+[1;32m ok[0m promote-dev-healthy-and-running
+[1;32m ok[0m promote-dev-out-of-sync
+[1;32m ok[0m promote-dev-degraded
+[1;32m ok[0m promote-dev-application-missing
+[1;32m ok[0m promote-dev-running-another-digest
+[1;32m ok[0m promote-dev-container-not-ready
+[1;32m ok[0m promote-no-cluster-says-skipped
+[1;32m ok[0m promote-override-is-logged
+[1;32m ok[0m promote-override-unused-when-dev-is-fine
+[1;32m ok[0m rollback-rerun-after-failed-publish
+[1;32m ok[0m rollback-prod-sim-with-broken-backup
+[1;32m ok[0m rollback-prod-sim-with-hung-backup
+[1;32m ok[0m rollback-prod-sim-names-the-older-dump
+[1;32m ok[0m rollback-prod-sim-skip-backup
+[1;32m ok[0m rollback-prod-sim-past-a-later-change-beside-the-image
+[1;32m ok[0m rollback-dev-past-a-later-change-beside-the-image
+[1;32m ok[0m rollback-stops-on-a-conflict-in-the-overlay
+[1;32m ok[0m rollback-dev-takes-no-dump
+[1;32m ok[0m rollback-leaves-other-staged-files-alone
+[1;32m ok[0m publish-warns-when-ahead-of-origin
+[1;32m ok[0m publish-quiet-when-level-with-origin
+[1;32m ok[0m publish-says-when-origin-is-unknown
+[1;32m ok[0m publish-still-backs-up-prod-sim-change
+[1;32m ok[0m publish-warns-when-a-shared-change-reaches-prod-sim
+[1;32m ok[0m publish-warns-when-the-chart-reaches-prod-sim
+[1;32m ok[0m publish-warns-when-only-prod-sim-changes
+[1;32m ok[0m publish-warns-and-checks-a-mixed-push
+[1;32m ok[0m publish-quiet-when-a-shared-change-renders-to-nothing
+[1;32m ok[0m publish-quiet-when-only-dev-changes
+[1;32m ok[0m publish-merged-promotion-dev-proven
+[1;32m ok[0m publish-merged-promotion-dev-out-of-sync
+[1;32m ok[0m publish-merged-promotion-dev-degraded
+[1;32m ok[0m publish-merged-promotion-dev-application-missing
+[1;32m ok[0m publish-merged-promotion-dev-running-another-digest
+[1;32m ok[0m publish-merged-promotion-dev-container-not-ready
+[1;32m ok[0m publish-merged-promotion-override-is-logged
+[1;32m ok[0m publish-merged-promotion-refused-then-retried
+[1;32m ok[0m publish-merged-promotion-no-cluster-says-skipped
+[1;32m ok[0m publish-skip-backup-is-no-way-past-the-dev-check
+[1;32m ok[0m publish-skip-dev-check-is-recorded
+[1;32m ok[0m publish-prod-sim-not-deployed-needs-no-dev-check
+[1;32m ok[0m publish-dev-change-needs-no-dev-check
+[1;32m ok[0m promote-override-reaches-the-publish
+[1;32m ok[0m rollback-prod-sim-with-unhealthy-dev
+[1;32m ok[0m rollback-prod-sim-rerun-with-unhealthy-dev
+[1;32m ok[0m make-passes-the-documented-options
+[1;32m ok[0m promote-level-has-nothing-to-do
+[1;32m ok[0m promote-four-images-through-make
+[1;32m ok[0m promote-four-images-one-at-a-time
+[1;32m ok[0m promote-four-images-each-must-run-in-dev
+[1;32m ok[0m promote-four-images-each-must-be-recorded
+[1;32m ok[0m promote-four-images-each-must-be-in-the-registry
+[1;32m ok[0m promote-four-images-override-names-them-all
+[1;32m ok[0m publish-merged-four-images-checks-each
+[1;32m ok[0m rollback-four-images-together
+[1;32m ok[0m drill-runs-to-a-pass
+[1;32m ok[0m drill-failed-promotion-reverts-nothing-else
+[1;32m ok[0m promote-refuses-a-terminating-pod
+[1;32m ok[0m promote-refuses-a-pod-not-running
+[1;32m ok[0m promote-refuses-a-ready-sibling
+[1;32m ok[0m promote-refuses-the-failure-drill-digest
+[1;32m ok[0m promote-stops-when-the-dump-fails
+[1;32m ok[0m publish-stops-when-the-dump-fails
+[1;32m ok[0m promote-prod-sim-needs-confirmation
+[1;32m ok[0m rollback-prod-sim-needs-confirmation
+[1;32m ok[0m promote-refuses-a-dirty-overlay
+[1;32m ok[0m rollback-refuses-a-dirty-overlay
+[1;32m ok[0m promote-refuses-off-main
+[1;32m ok[0m rollback-refuses-off-main
+[1;32m ok[0m promote-refuses-while-a-revert-is-under-way
+[1;32m ok[0m promote-takes-a-whole-digests-file
+[1;32m ok[0m promote-refuses-a-partial-digests-file
+[1;32m ok[0m promote-refuses-a-malformed-digests-file
+[1;32m ok[0m promote-checks-its-arguments
+[1;32m ok[0m promote-refuses-an-ambiguous-image
+[1;32m ok[0m promote-render-failure-puts-the-overlay-back
+[1;32m ok[0m promote-ended-halfway-puts-the-overlay-back
+[1;32m ok[0m promote-commit-failure-puts-the-overlay-back
+[1;32m ok[0m promote-waits-out-a-git-add
+[1;32m ok[0m promote-says-what-to-do-when-the-index-stays-held
+[1;32m ok[0m promote-rechecks-the-overlay-after-the-dump
+[1;32m ok[0m promote-holds-the-commit-lock-for-its-commit
+[1;32m ok[0m rollback-holds-the-commit-lock-for-its-commit
+[1;32m ok[0m promote-waits-for-the-commit-lock
+[1;32m ok[0m rollback-waits-for-the-commit-lock
+[1;32m ok[0m promote-gives-up-on-a-commit-lock-left-behind
+[1;32m ok[0m rollback-gives-up-on-a-commit-lock-left-behind
+[1;32m ok[0m promote-again-publishes-after-a-refused-push
+[1;32m ok[0m promote-again-publishes-after-a-refused-check
+[1;32m ok[0m promote-dev-again-publishes-after-a-refused-push
+[1;32m ok[0m promote-commit-no-publishes-nothing
+[1;32m ok[0m promote-dev-takes-the-dump-a-carried-prod-sim-change-needs
+[1;32m ok[0m promote-dev-stops-when-a-carried-dump-fails
+[1;32m ok[0m publish-names-the-prod-sim-commit-a-dev-change-waits-behind
+[1;32m ok[0m publish-refusal-of-prod-sim-alone-says-nothing-of-dev
+[1;32m ok[0m rollback-dev-stops-before-moving-prod-sim
+[1;32m ok[0m rollback-chain-after-a-refused-promotion
+[1;32m ok[0m rollback-dev-override-keeps-the-checks
+[1;32m ok[0m rollback-dev-rerun-stops-too
+[1;32m ok[0m rollback-dev-goes-on-past-what-does-not-move-prod-sim
+[1;32m ok[0m rollback-dev-goes-on-when-a-promotion-was-withdrawn
+[1;32m ok[0m rollback-conflict-keeps-someones-staged-work
+[1;32m ok[0m rollback-conflict-with-a-partly-staged-file
+[1;32m ok[0m rollback-render-failure-keeps-someones-staged-work
+[1;32m ok[0m rollback-commit-failure-can-run-again
+[1;32m ok[0m rollback-ended-halfway-puts-the-revert-back
+[1;32m ok[0m rollback-waits-out-a-git-add
+[1;32m ok[0m rollback-says-what-to-do-when-the-index-stays-held
+[1;32m ok[0m rollback-says-when-the-revert-cannot-start
+Automatic merge went well; stopped before committing as requested
+[1;32m ok[0m rollback-leaves-someones-merge-alone
+[1;32m ok[0m rollback-says-a-promotion-put-back-by-hand-is-undone
+[1;32m ok[0m rollback-promotion-that-added-a-file
+[1;32m ok[0m rollback-promotion-whose-added-file-is-gone
+[1;32m ok[0m rollback-refuses-an-edit-in-a-file-the-promotion-touched
+[1;32m ok[0m rollback-rechecks-after-the-dump
+[1;32m ok[0m rollback-leaves-the-other-render-as-git-has-it
+[1;32m ok[0m rollback-finds-a-subject-only-promotion
+[1;32m ok[0m rollback-finds-a-trailer-only-promotion
+[1;32m ok[0m rollback-second-attempt-names-the-dump-from-before-the-promotion
+[1;32m ok[0m rollback-says-when-no-dump-is-older
+[1;32m ok[0m rollback-skips-an-unfinished-dump
+[1;32m ok[0m publish-says-when-another-publish-sent-it
+[1;32m ok[0m promote-says-nothing-of-a-stay-when-another-publish-sent-it
+[1;32m ok[0m promote-names-its-own-commit-when-the-publish-fails
+[1;32m ok[0m rollback-names-its-own-commit-when-the-publish-fails
+[1;32m ok[0m publish-advice-fits-a-change-by-hand
+[1;32m ok[0m rollback-advice-on-a-conflict-works-with-dev-broken
+[1;32m ok[0m promote-empty-plan-reads-the-render
+[1;32m ok[0m rollback-stops-on-a-commit-touching-both-environments
+[1;32m ok[0m rollback-stops-cleanly-when-a-later-commit-removed-a-file
+[1;32m ok[0m rollback-how-to-clear-works-on-a-path-head-lacks
+[1;32m ok[0m rollback-of-a-refused-promotion-says-nothing-to-restore
+[1;32m ok[0m rollback-of-a-retried-promotion-names-the-dump-of-the-run-that-sent-it
+[1;32m ok[0m rollback-rerun-names-the-dump
+[1;32m ok[0m rollback-rerun-of-a-withdrawal-says-nothing-to-restore
+[1;32m ok[0m rollback-goes-by-the-commit-with-no-record-of-the-publish
+[1;32m ok[0m rollback-reverts-a-refused-promotion-above-an-unpublished-revert
+[1;32m ok[0m rollback-stops-before-sending-what-waits-under-a-withdrawal
+[1;32m ok[0m publish-creates-the-bare-repository
+[1;32m ok[0m publish-sends-what-it-checked
+[1;32m ok[0m publish-warning-leaves-dev-out-when-it-only-moves-an-image
+[1;32m ok[0m publish-warning-says-when-its-list-is-cut
+[1;32m ok[0m publish-warning-says-nothing-of-more-when-all-are-named
+[1;32m ok[0m publish-warning-says-when-no-source-changed
+[1;32m ok[0m publish-warns-when-a-digest-by-hand-breaks-the-invariant
+[1;32m ok[0m publish-quiet-about-the-invariant-for-a-promotion
+[1;32m ok[0m promote-no-cluster-writes-the-job-summary
+[1;32m ok[0m 149 of 149 promotion flow scenarios passed, with a stub cluster
+[1;32m ok[0m promotion flows with a stub cluster
+[1;32m ok[0m manifests valid
+rc=0

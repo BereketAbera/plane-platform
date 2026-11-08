@@ -1,0 +1,74 @@
+== plane-prod plane-backup-manual-20261108001433: ok
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] using parent snapshot 28d20d15
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] 
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] Files:           1 new,    17 changed,     0 unmodified
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] Dirs:            0 new,     6 changed,     0 unmodified
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] Added to the repository: 890.503 KiB (136.806 KiB stored)
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] 
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] processed 18 files, 1.009 MiB in 0:01
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] snapshot d62b7760 saved
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] Applying Policy: keep all snapshots with tags [[wayline]] and all snapshots within 90d of the newest
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] keep 3 snapshots:
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] ID        Time                 Host        Tags        Reasons             Paths                                                 Size
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] ------------------------------------------------------------------------------------------------------------------------------------------
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] f58a4bd6  2026-11-07 06:48:22  plane-prod  predeploy   within 90d          /backups/predeploy/20261107T060516Z-9df47b8afbd64228  1.465 KiB
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] 28d20d15  2026-11-07 07:12:38  plane-prod  wayline     has tags [wayline]  /work/backup                                          1.006 MiB
+[pod/plane-backup-manual-20261108001433-4bzlw/seal]                                                        within 90d
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] d62b7760  2026-11-08 00:15:59  plane-prod  wayline     has tags [wayline]  /work/backup                                          1.009 MiB
+[pod/plane-backup-manual-20261108001433-4bzlw/seal]                                                        within 90d
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] ------------------------------------------------------------------------------------------------------------------------------------------
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] Timestamps shown in UTC
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] 3 snapshots
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] 
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] Applying Policy: keep 7 daily, 4 weekly, 3 monthly snapshots
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] keep 2 snapshots:
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] ID        Time                 Host        Tags        Reasons                  Paths         Size
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] -------------------------------------------------------------------------------------------------------
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] 28d20d15  2026-11-07 07:12:38  plane-prod  wayline     daily snapshot           /work/backup  1.006 MiB
+[pod/plane-backup-manual-20261108001433-4bzlw/seal]                                                        oldest weekly snapshot
+[pod/plane-backup-manual-20261108001433-4bzlw/seal]                                                        oldest monthly snapshot
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] d62b7760  2026-11-08 00:15:59  plane-prod  wayline     daily snapshot           /work/backup  1.009 MiB
+[pod/plane-backup-manual-20261108001433-4bzlw/seal]                                                        weekly snapshot
+[pod/plane-backup-manual-20261108001433-4bzlw/seal]                                                        monthly snapshot
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] -------------------------------------------------------------------------------------------------------
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] Timestamps shown in UTC
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] 2 snapshots
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] 
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] using temporary cache in /work/cache/restic-check-cache-19059342
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] create exclusive lock for repository
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] load indexes
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] check all packs
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] check snapshots, trees and blobs
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] [0:00] 100.00%  3 / 3 snapshots
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] read 5.0% of packfiles
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] [0:00] 100.00%  1 / 1 packs
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] no errors were found
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] using temporary cache in /work/cache/restic-check-cache-1297725952
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] create exclusive lock for repository
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] load indexes
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] check all packs
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] check snapshots, trees and blobs
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] [0:00] 100.00%  3 / 3 snapshots
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] read group #2 of 1 data packs (out of total 6 packs in 4 groups
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] [0:00] 100.00%  1 / 1 packs
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] no errors were found
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] ID        Time                 Host        Tags     Size
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] -------------------------------------------------------------
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] d62b7760  2026-11-08 00:15:59  plane-prod  wayline  1.009 MiB
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] -------------------------------------------------------------
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] Timestamps shown in UTC
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] 1 snapshots
+[pod/plane-backup-manual-20261108001433-4bzlw/seal] seal: complete
+[pod/plane-backup-manual-20261108001433-4bzlw/postgres] postgres: 110 tables counted from a scratch restore
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] 2026/11/08 00:15:42 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] 2026/11/08 00:15:43 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] 2026/11/08 00:15:44 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] 2026/11/08 00:15:45 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] 2026/11/08 00:15:47 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] 2026/11/08 00:15:47 NOTICE: Local file system at /work/backup/objects: 0 differences found
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] 2026/11/08 00:15:47 NOTICE: Local file system at /work/backup/objects: 2 matching files
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] 2026/11/08 00:15:49 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] objects: 2 checked, of 2 listed, and 0 gone from the bucket before their check
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] 2026/11/08 00:15:51 NOTICE: Config file "/tmp/rclone.conf" not found - using defaults
+[pod/plane-backup-manual-20261108001433-4bzlw/objects] GATE2: 1 rows marked uploaded, 0 with no object in this backup
+[pod/plane-backup-manual-20261108001433-4bzlw/manifest] manifest: 20261108T001444Z complete

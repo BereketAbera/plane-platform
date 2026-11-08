@@ -1,0 +1,231 @@
+[1;34m==>[0m Sentinel: is NetworkPolicy really enforced?
+[1;32m ok[0m kube-router: its chains exist, and FORWARD jumps to them
+[1;32m ok[0m kube-router: ipset is there, and the journal has no skip
+[1;32m ok[0m sentinel: no policy, open port -> CONNECTED
+[1;32m ok[0m sentinel: no policy, closed port -> REFUSED
+[1;32m ok[0m sentinel: name that does not exist -> DNS
+[1;32m ok[0m sentinel: default-deny blocks a new connection -> REFUSED
+[1;32m ok[0m sentinel: allow rule admits only the labelled client -> CONNECTED
+[1;32m ok[0m sentinel: the node's witness -> a blocked server connects on its open port and refuses on its closed one, and 192.0.2.1 does not answer
+[1;32m ok[0m enforcement is on, and a policy's refusal, a closed port's refusal and DNS failures are told apart, the first two by the node's witness
+[1;34m==>[0m Running 214 rows from 42 source identities
+[1;33mwarn[0m the node's witness could not run for group 26, before the probes, so its rows have no reading: ssh_dispatch_run_fatal: Connection to 5.253.234.127 port 22: Can't assign requested address
+[1;33mwarn[0m the node's witness could not run for group 25, before the probes, so its rows have no reading: ssh_dispatch_run_fatal: Connection to 5.253.234.127 port 22: Can't assign requested address
+PASS          allow  CONNECTED  plane-prod {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  traefik {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  monitoring {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  infisical {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  argocd {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  cert-manager {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  monitoring-agents {"probe":"unlabelled"} -> kube-dns.kube-system.svc.cluster.local:53
+PASS          allow  CONNECTED  traefik {"app.kubernetes.io/name":"traefik"} -> plane-web.plane-prod.svc.cluster.local:3000
+PASS          allow  CONNECTED  traefik {"app.kubernetes.io/name":"traefik"} -> plane-admin.plane-prod.svc.cluster.local:3000
+PASS          allow  CONNECTED  traefik {"app.kubernetes.io/name":"traefik"} -> plane-space.plane-prod.svc.cluster.local:3000
+PASS          allow  CONNECTED  traefik {"app.kubernetes.io/name":"traefik"} -> plane-live.plane-prod.svc.cluster.local:3000
+PASS          allow  CONNECTED  traefik {"app.kubernetes.io/name":"traefik"} -> plane-api.plane-prod.svc.cluster.local:8000
+PASS          allow  CONNECTED  traefik {"app.kubernetes.io/name":"traefik"} -> plane-minio.plane-prod.svc.cluster.local:9000
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> plane-minio.plane-prod.svc.cluster.local:9090  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"api"} -> plane-pgdb.plane-prod.svc.cluster.local:5432
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"api"} -> plane-redis.plane-prod.svc.cluster.local:6379
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"api"} -> plane-rabbitmq.plane-prod.svc.cluster.local:5672
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"api"} -> plane-minio.plane-prod.svc.cluster.local:9000
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"worker"} -> plane-pgdb.plane-prod.svc.cluster.local:5432
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"worker"} -> plane-redis.plane-prod.svc.cluster.local:6379
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"worker"} -> plane-rabbitmq.plane-prod.svc.cluster.local:5672
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"worker"} -> plane-minio.plane-prod.svc.cluster.local:9000
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"beat"} -> plane-pgdb.plane-prod.svc.cluster.local:5432
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"beat"} -> plane-redis.plane-prod.svc.cluster.local:6379
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"beat"} -> plane-rabbitmq.plane-prod.svc.cluster.local:5672
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"beat"} -> plane-minio.plane-prod.svc.cluster.local:9000
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"migrator"} -> plane-pgdb.plane-prod.svc.cluster.local:5432
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"migrator"} -> plane-redis.plane-prod.svc.cluster.local:6379
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"migrator"} -> plane-rabbitmq.plane-prod.svc.cluster.local:5672
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"migrator"} -> plane-minio.plane-prod.svc.cluster.local:9000
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> plane-rabbitmq.plane-prod.svc.cluster.local:15672  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> plane-minio.plane-prod.svc.cluster.local:9090  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"live"} -> plane-redis.plane-prod.svc.cluster.local:6379
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"live"} -> plane-api.plane-prod.svc.cluster.local:8000
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"live"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"live"} -> plane-minio.plane-prod.svc.cluster.local:9000  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"api"} -> traefik.traefik.svc.cluster.local:443
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> traefik.traefik.svc.cluster.local:80  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"worker"} -> traefik.traefik.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> traefik.traefik.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"space"} -> traefik.traefik.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"live"} -> traefik.traefik.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"beat"} -> traefik.traefik.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"migrator"} -> traefik.traefik.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+INCONCLUSIVE  deny   REFUSED    plane-prod {"app.kubernetes.io/component":"admin"} -> traefik.traefik.svc.cluster.local:443  # the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"backup"} -> traefik.traefik.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> plane-redis.plane-prod.svc.cluster.local:6379  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> plane-api.plane-prod.svc.cluster.local:8000  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> plane-minio.plane-prod.svc.cluster.local:9000  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+INCONCLUSIVE  deny   REFUSED    plane-prod {"app.kubernetes.io/component":"admin"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+INCONCLUSIVE  deny   REFUSED    plane-prod {"app.kubernetes.io/component":"admin"} -> plane-redis.plane-prod.svc.cluster.local:6379  # the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+INCONCLUSIVE  deny   REFUSED    plane-prod {"app.kubernetes.io/component":"admin"} -> plane-api.plane-prod.svc.cluster.local:8000  # the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+INCONCLUSIVE  deny   REFUSED    plane-prod {"app.kubernetes.io/component":"admin"} -> plane-minio.plane-prod.svc.cluster.local:9000  # the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"space"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"space"} -> plane-redis.plane-prod.svc.cluster.local:6379  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"space"} -> plane-api.plane-prod.svc.cluster.local:8000  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"space"} -> plane-minio.plane-prod.svc.cluster.local:9000  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/name":"secrets-operator"} -> infisical.infisical.svc.cluster.local:8080
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/name":"secrets-operator"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/name":"secrets-operator"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/name":"postgres-exporter"} -> plane-pgdb.plane-prod.svc.cluster.local:5432
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/name":"redis-exporter"} -> plane-redis.plane-prod.svc.cluster.local:6379
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/name":"postgres-exporter"} -> plane-redis.plane-prod.svc.cluster.local:6379  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"backup"} -> plane-pgdb.plane-prod.svc.cluster.local:5432
+PASS          allow  CONNECTED  plane-prod {"app.kubernetes.io/component":"backup"} -> plane-minio.plane-prod.svc.cluster.local:9000
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"backup"} -> plane-redis.plane-prod.svc.cluster.local:6379  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-rabbitmq-metrics.plane-prod.svc.cluster.local:15692
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-minio.plane-prod.svc.cluster.local:9000
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> postgres-exporter.plane-prod.svc.cluster.local:9187
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> redis-exporter.plane-prod.svc.cluster.local:9121
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> iso-prod-controller-manager-metrics-service.plane-prod.svc.cluster.local:8443
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-redis.plane-prod.svc.cluster.local:6379  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"prometheus"} -> plane-rabbitmq.plane-prod.svc.cluster.local:5672  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"worker"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"beat"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"migrator"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"live"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"space"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> telemetry.plane.so:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"worker"} -> telemetry.plane.so:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> api.github.com:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> kubernetes.default.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> infisical.infisical.svc.cluster.local:8080  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"worker"} -> kubernetes.default.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"worker"} -> infisical.infisical.svc.cluster.local:8080  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> kubernetes.default.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> infisical.infisical.svc.cluster.local:8080  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"backup"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"postgres"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"minio"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> 5.253.234.127:6443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> 5.253.234.127:10250  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> 5.253.234.127:9100  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"worker"} -> 5.253.234.127:6443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"worker"} -> 5.253.234.127:10250  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"worker"} -> 5.253.234.127:9100  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> 5.253.234.127:6443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> 5.253.234.127:10250  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"web"} -> 5.253.234.127:9100  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"backup"} -> 5.253.234.127:6443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"backup"} -> 5.253.234.127:10250  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"backup"} -> 5.253.234.127:9100  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"probe":"unlabelled"} -> 5.253.234.127:10250  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+INCONCLUSIVE  deny   REFUSED    plane-prod {"acme.cert-manager.io/http01-solver":"true"} -> 1.1.1.1:443  # the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+INCONCLUSIVE  deny   REFUSED    plane-prod {"acme.cert-manager.io/http01-solver":"true"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # the node's witness gave no reading for this target, so nothing shows it was up. That is this test failing, not the target
+PASS          deny   REFUSED    monitoring {"acme.cert-manager.io/http01-solver":"true"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring {"acme.cert-manager.io/http01-solver":"true"} -> kps-prometheus.monitoring.svc.cluster.local:9090  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring {"acme.cert-manager.io/http01-solver":"true"} -> kps-grafana.monitoring.svc.cluster.local:80  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> argocd-server.argocd.svc.cluster.local:80  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> argocd-repo-server.argocd.svc.cluster.local:8081  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> kps-prometheus.monitoring.svc.cluster.local:9090  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> kps-grafana.monitoring.svc.cluster.local:80  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> loki.monitoring.svc.cluster.local:3100  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    plane-prod {"app.kubernetes.io/component":"api"} -> kps-alertmanager.monitoring.svc.cluster.local:9093  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  infisical {"app":"infisical-standalone","component":"infisical"} -> infisical-postgres.infisical.svc.cluster.local:5432
+PASS          allow  CONNECTED  infisical {"app":"infisical-standalone","component":"infisical"} -> infisical-redis.infisical.svc.cluster.local:6379
+PASS          allow  CONNECTED  infisical {"app":"infisical-standalone","component":"infisical"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    infisical {"app":"infisical-standalone","component":"infisical"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    infisical {"app":"infisical-standalone","component":"infisical"} -> plane-api.plane-prod.svc.cluster.local:8000  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    infisical {"app":"infisical-standalone","component":"infisical"} -> plane-redis.plane-prod.svc.cluster.local:6379  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    infisical {"app":"infisical-standalone","component":"infisical"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> infisical-postgres.infisical.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"prometheus"} -> infisical-postgres.infisical.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  infisical {"app.kubernetes.io/component":"backup"} -> infisical-postgres.infisical.svc.cluster.local:5432
+PASS          deny   REFUSED    infisical {"app.kubernetes.io/component":"backup"} -> infisical-redis.infisical.svc.cluster.local:6379  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    infisical {"probe":"unlabelled"} -> infisical-postgres.infisical.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  traefik {"app.kubernetes.io/name":"traefik"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> argocd-server.argocd.svc.cluster.local:80  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  traefik {"app.kubernetes.io/name":"traefik"} -> kps-grafana.monitoring.svc.cluster.local:80
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> kps-prometheus.monitoring.svc.cluster.local:9090  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> kps-alertmanager.monitoring.svc.cluster.local:9093  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> blackbox.monitoring.svc.cluster.local:9115  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> infisical.infisical.svc.cluster.local:8080  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> loki.monitoring.svc.cluster.local:3100  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> argocd-repo-server.argocd.svc.cluster.local:8081  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    traefik {"app.kubernetes.io/name":"traefik"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    traefik {"probe":"unlabelled"} -> kubernetes.default.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> ssh.github.com:443
+PASS          deny   REFUSED    argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> github.com:22  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> traefik.github.io:443
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> 1.1.1.1:443
+PASS          deny   REFUSED    argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> 1.1.1.1:80  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> 5.253.234.127:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> argocd-redis.argocd.svc.cluster.local:6379
+PASS          deny   REFUSED    argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> kubernetes.default.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    argocd {"app.kubernetes.io/name":"argocd-repo-server"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-server"} -> argocd-repo-server.argocd.svc.cluster.local:8081
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-server"} -> argocd-redis.argocd.svc.cluster.local:6379
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-server"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    argocd {"app.kubernetes.io/name":"argocd-server"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-application-controller"} -> argocd-repo-server.argocd.svc.cluster.local:8081
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-application-controller"} -> argocd-redis.argocd.svc.cluster.local:6379
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-application-controller"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    argocd {"app.kubernetes.io/name":"argocd-application-controller"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    argocd {"app.kubernetes.io/name":"argocd-server"} -> ssh.github.com:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  argocd {"app.kubernetes.io/name":"argocd-redis-secret-init"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    argocd {"probe":"unlabelled"} -> argocd-redis.argocd.svc.cluster.local:6379  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> argocd-server-metrics.argocd.svc.cluster.local:8083
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> argocd-application-controller-metrics.argocd.svc.cluster.local:8082
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> argocd-repo-server-metrics.argocd.svc.cluster.local:8084
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> kubernetes.default.svc.cluster.local:443
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> 5.253.234.127:10250
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> 5.253.234.127:9100
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> kps-alertmanager.monitoring.svc.cluster.local:9093
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> kps-kube-state-metrics.monitoring.svc.cluster.local:8080
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> kps-operator.monitoring.svc.cluster.local:8080
+INCONCLUSIVE  allow  REFUSED    monitoring {"app.kubernetes.io/name":"prometheus"} -> kps-grafana.monitoring.svc.cluster.local:80  # the node was refused too, so this cannot tell a policy from a closed port
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> loki.monitoring.svc.cluster.local:3100
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> alloy.monitoring.svc.cluster.local:12345
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> blackbox.monitoring.svc.cluster.local:9115
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> traefik-metrics.traefik.svc.cluster.local:9100
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"prometheus"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"grafana"} -> kps-prometheus.monitoring.svc.cluster.local:9090
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"grafana"} -> loki.monitoring.svc.cluster.local:3100
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"grafana"} -> kps-alertmanager.monitoring.svc.cluster.local:9093
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"grafana"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"grafana"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"grafana"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"alloy"} -> loki.monitoring.svc.cluster.local:3100
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"alloy"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"alloy"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"alertmanager"} -> alert-sink.monitoring.svc.cluster.local:8080
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"alertmanager"} -> 1.1.1.1:443
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"blackbox-exporter"} -> traefik.traefik.svc.cluster.local:443
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"blackbox-exporter"} -> plane-api.plane-prod.svc.cluster.local:8000  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"kube-state-metrics"} -> kubernetes.default.svc.cluster.local:443
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"kube-prometheus-stack-prometheus-operator"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"loki"} -> kubernetes.default.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring {"probe":"unlabelled"} -> loki.monitoring.svc.cluster.local:3100  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"alertmanager"} -> 1.1.1.1:80  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"alertmanager"} -> 5.253.234.127:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring {"app.kubernetes.io/name":"blackbox-exporter"} -> kps-prometheus.monitoring.svc.cluster.local:9090  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  monitoring {"app.kubernetes.io/name":"prometheus"} -> cert-manager.cert-manager.svc.cluster.local:9402
+PASS          allow  CONNECTED  cert-manager {"app.kubernetes.io/name":"cert-manager","app.kubernetes.io/component":"controller"} -> kubernetes.default.svc.cluster.local:443
+PASS          allow  CONNECTED  cert-manager {"app.kubernetes.io/name":"cert-manager","app.kubernetes.io/component":"controller"} -> 1.1.1.1:443
+PASS          deny   REFUSED    cert-manager {"app.kubernetes.io/name":"cert-manager","app.kubernetes.io/component":"controller"} -> 1.1.1.1:80  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  cert-manager {"app.kubernetes.io/name":"cert-manager","app.kubernetes.io/component":"controller"} -> traefik.traefik.svc.cluster.local:80
+PASS          deny   REFUSED    cert-manager {"app.kubernetes.io/name":"cert-manager","app.kubernetes.io/component":"controller"} -> traefik.traefik.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    cert-manager {"app.kubernetes.io/name":"cert-manager","app.kubernetes.io/component":"controller"} -> plane-pgdb.plane-prod.svc.cluster.local:5432  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  cert-manager {"app.kubernetes.io/name":"webhook","app.kubernetes.io/component":"webhook"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    cert-manager {"app.kubernetes.io/name":"webhook","app.kubernetes.io/component":"webhook"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  cert-manager {"app.kubernetes.io/name":"cainjector","app.kubernetes.io/component":"cainjector"} -> kubernetes.default.svc.cluster.local:443
+PASS          deny   REFUSED    cert-manager {"app.kubernetes.io/name":"cainjector","app.kubernetes.io/component":"cainjector"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    cert-manager {"probe":"unlabelled"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring-agents {"probe":"unlabelled"} -> kubernetes.default.svc.cluster.local:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          deny   REFUSED    monitoring-agents {"probe":"unlabelled"} -> 1.1.1.1:443  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+PASS          allow  CONNECTED  kube-system {"app.kubernetes.io/name":"metrics-server"} -> kubernetes.default.svc.cluster.local:443
+PASS          allow  CONNECTED  kube-system {"app.kubernetes.io/name":"metrics-server"} -> 5.253.234.127:10250
+PASS          deny   REFUSED    kube-system {"app.kubernetes.io/name":"metrics-server"} -> plane-api.plane-prod.svc.cluster.local:8000  # reference: the node connected to this port and this pod's DNS answered, at the same moment, so the refusal is the policy's
+[1;34m==>[0m PASS 206, FAIL 0, INCONCLUSIVE 8, of which 0 need something outside the cluster and do not count against the run. Deny rows that pass with no reference for the target: 0. Evidence: /Users/bek/dev/pr/plane-platform/.local/evidence-raw/netpol-plane-prod-20261107T072728Z.tsv
+[1;34m==>[0m A deny PASS is a refusal while the node connected to that port and the pod's DNS answered. It cannot rule out a refusal from something else on that pod's path to that target.
+[1;33mwarn[0m nothing failed, but a row could not prove anything. That is not a pass.
+make: *** [remote-netpol] Error 2

@@ -1,0 +1,20 @@
+[1;34m==>[0m Pulling infisical
+
+snapshot c039c5c4 of [/work/backup] at 2026-11-07 07:11:48.813389705 +0000 UTC by @infisical
+  copy started, this may take a while...
+[0:02] 100.00%  2 / 2 packs copied
+snapshot ddcc678e saved, copied from source snapshot c039c5c4
+[1;32m ok[0m infisical is at snapshot ddcc678e, taken 2026-11-07T07:11:48.813389705Z
+[1;34m==>[0m Pulling plane-prod
+
+snapshot 28d20d15 of [/work/backup] at 2026-11-07 07:12:38.143353146 +0000 UTC by @plane-prod
+  copy started, this may take a while...
+[0:02] 100.00%  2 / 2 packs copied
+snapshot 52b0222c saved, copied from source snapshot 28d20d15
+[1;32m ok[0m plane-prod is at snapshot 52b0222c, taken 2026-11-07T07:12:38.143353146Z
+[1;34m==>[0m Now prove the copy restores: make remote-backup-dest VERB=verify TARGET=plane-prod
+rc=0
+[1;32m ok[0m laptop: infisical snapshot ddcc678e, taken 2026-11-07T07:11:43Z, restored, and all 5 files match their hashes
+[1;32m ok[0m laptop: plane-prod snapshot 52b0222c, taken 2026-11-07T07:12:36Z, restored, and all 16 files match their hashes
+off-VPS backups complete: each namespace was restored from this machine's copy in the last 35 days. No S3 destination, so this machine is the only copy off the VPS
+rc2=0

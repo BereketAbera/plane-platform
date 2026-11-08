@@ -1,0 +1,25 @@
+[1;34m==>[0m Reading what Postgres holds
+  instances 1
+  users 2
+  workspaces 2
+  projects 3
+  issues 9
+  pages 3
+  file_assets 2
+[1;34m==>[0m Restarting the data services, one at a time
+[1;32m ok[0m plane-redis-wl-0 is back
+[1;32m ok[0m plane-rabbitmq-wl-0 is back
+[1;32m ok[0m plane-pgdb-wl-0 is back
+[1;32m ok[0m plane-minio-wl-0 is back
+[1;34m==>[0m Restarting the app
+I1107 10:56:18.777971   76792 reflector.go:664] "Warning: watch ended with error" reflector="k8s.io/client-go/tools/watch/informerwatcher.go:162" type="*unstructured.Unstructured" err="an error on the server (\"unable to decode an event from the watch stream: http2: client connection lost\") has prevented the request from succeeding"
+[1;32m ok[0m plane-admin-wl is back
+[1;32m ok[0m plane-api-wl is back
+[1;32m ok[0m plane-beat-worker-wl is back
+[1;32m ok[0m plane-live-wl is back
+[1;32m ok[0m plane-space-wl is back
+[1;32m ok[0m plane-web-wl is back
+[1;32m ok[0m plane-worker-wl is back
+[1;34m==>[0m Waiting for the public API to answer again
+[1;31mfail[0m timed out after 180s waiting for: https://wayline.bereket.dev/api/instances/ to answer 200
+make: *** [remote-restart-check] Error 1

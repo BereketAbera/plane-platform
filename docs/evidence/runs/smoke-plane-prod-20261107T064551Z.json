@@ -1,0 +1,236 @@
+{
+  "counts": {
+    "BLOCKED": 0,
+    "FAIL": 0,
+    "PASS": 21,
+    "SKIP": 0
+  },
+  "environment": "hosted",
+  "finished_at": "2026-11-07T06:46:38Z",
+  "host": "wayline.bereket.dev",
+  "mode": "verify",
+  "result": "PASS",
+  "run_id": "04824a30",
+  "started_at": "2026-11-07T06:45:51Z",
+  "steps": [
+    {
+      "data": {
+        "days_left": 89,
+        "issuer": "Let's Encrypt",
+        "issuer_common_name": "YE2",
+        "tls_version": "TLSv1.3"
+      },
+      "detail": "TLSv1.3, issued by Let's Encrypt, 89 days left, and valid for wayline.bereket.dev",
+      "duration_ms": 221,
+      "name": "tls-certificate",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "scheme": "https",
+        "status": 301
+      },
+      "detail": "http answers 301 to https",
+      "duration_ms": 210,
+      "name": "http-redirect",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "instances_status": 200,
+        "web_status": 200
+      },
+      "detail": "web 200, /api/instances/ 200 via wayline.bereket.dev",
+      "duration_ms": 754,
+      "name": "reachable",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "admin": 15,
+        "space": 16,
+        "web": 35
+      },
+      "detail": "web, admin and space pages and the assets they name are served",
+      "duration_ms": 26780,
+      "name": "frontends",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "live_health": {
+          "status": "OK",
+          "timestamp": "2026-11-07T06:46:21.625Z",
+          "version": "1.0.0"
+        }
+      },
+      "detail": "bare paths redirect, deep links reach admin, /live/health answers",
+      "duration_ms": 1759,
+      "name": "routes",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "enable_signup": false,
+        "is_setup_done": true
+      },
+      "detail": "set up, and sign-up is off",
+      "duration_ms": 705,
+      "name": "instance",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "status": 200
+      },
+      "detail": "sign-in without a CSRF token is refused (HTTP 200, Plane's CSRF page)",
+      "duration_ms": 360,
+      "name": "csrf-enforced",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "anonymous_me_status": 401
+      },
+      "detail": "session established, anonymous request refused",
+      "duration_ms": 2383,
+      "name": "sign-in",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "flags": {
+          "csrftoken": {
+            "httponly": true,
+            "secure": true
+          },
+          "session-id": {
+            "httponly": true,
+            "secure": true
+          }
+        }
+      },
+      "detail": "session-id and csrftoken are Secure, and session-id is HttpOnly",
+      "duration_ms": 0,
+      "name": "secure-cookies",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "slug": "awushi-workspace"
+      },
+      "detail": "using workspace awushi-workspace, and leaving it as it was",
+      "duration_ms": 694,
+      "name": "workspace",
+      "status": "PASS"
+    },
+    {
+      "data": {},
+      "detail": "a token good for 2 hours, removed below",
+      "duration_ms": 492,
+      "name": "api-token",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "project_id": "bfdfba2a-7c18-4fcb-b269-e1a2311da9ff"
+      },
+      "detail": "project P23D7B7",
+      "duration_ms": 563,
+      "name": "project",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "work_item_id": "20e5501f-e8c5-421e-801d-9332952a661b"
+      },
+      "detail": "20e5501f-e8c5-421e-801d-9332952a661b",
+      "duration_ms": 1208,
+      "name": "work-item",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "seconds_until_activity": 0.6
+      },
+      "detail": "issue_activity task ran in 0.6s",
+      "duration_ms": 576,
+      "name": "background-job",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "asset_id": "a6915bb4-b78c-4b74-be92-33122f9dd17b",
+        "sha256": "d1a2a77ee63c6cb944a89587c425319b2f6ad23075764f2a06dd87e0fa87356f",
+        "size": 1047
+      },
+      "detail": "1047 bytes stored",
+      "duration_ms": 2119,
+      "name": "attachment-upload",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "actual_sha256": "d1a2a77ee63c6cb944a89587c425319b2f6ad23075764f2a06dd87e0fa87356f",
+        "expected_sha256": "d1a2a77ee63c6cb944a89587c425319b2f6ad23075764f2a06dd87e0fa87356f"
+      },
+      "detail": "sha256 d1a2a77ee63c6cb9... matches",
+      "duration_ms": 843,
+      "name": "attachment-download",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "page_id": "3ea1cee8-eca9-4f0d-b31e-be12507b4c2e"
+      },
+      "detail": "3ea1cee8-eca9-4f0d-b31e-be12507b4c2e",
+      "duration_ms": 537,
+      "name": "realtime-page",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "reason": "read-write",
+        "verdict": "Authenticated"
+      },
+      "detail": "Authenticated (read-write): traefik upgrade, live -> api session check",
+      "duration_ms": 713,
+      "name": "realtime-auth",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "verdict": "PermissionDenied"
+      },
+      "detail": "mismatched user refused: PermissionDenied",
+      "duration_ms": 681,
+      "name": "realtime-denied",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "delivery_ms": 120,
+        "first_sync_bytes": 108
+      },
+      "detail": "both clients synced, and an update reached the other client in 120 ms",
+      "duration_ms": 2055,
+      "name": "realtime-sync",
+      "status": "PASS"
+    },
+    {
+      "data": {
+        "API token smoke-04824a30": 204,
+        "API token smoke-04824a30, tried again": 403,
+        "attachment": 204,
+        "project P23D7B7": 204,
+        "project P23D7B7, read again": 404,
+        "sign-out": 302
+      },
+      "detail": "attachment, project and token removed, and signed out. Plane soft-deletes, so the rows and the object go at its next hard-delete task",
+      "duration_ms": 3439,
+      "name": "cleanup",
+      "status": "PASS"
+    }
+  ],
+  "tool": "tests/e2e/smoke.py"
+}
