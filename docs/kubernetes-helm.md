@@ -170,7 +170,7 @@ is deliberate overcommit. Bring the two environments up serially, because simult
 Real use has stayed inside that so far, with 0 OOM kills in any Plane container. Read after both smokes ran at once on 2026-11-04, no Plane
 container was above 66% of its memory limit, and the worker was highest at 426 of 768 MiB. The closest any reading came was `live` at 309 of 384 MiB, 80% of its
 limit, in dev earlier that day ([plane-dev-memory-1.txt](evidence/runs/plane-dev-memory-1.txt)). Those are cgroup peaks, which include page cache.
-From 23:17 UTC that night to 00:04 UTC the VM peaked at 10.49 GiB of 13.63, just after another agent's change replaced the Argo CD pods, and VM use includes about 1 GiB of the
+From 23:17 UTC that night to 00:04 UTC the VM peaked at 10.49 GiB of 13.63, just after a concurrent change replaced the Argo CD pods, and VM use includes about 1 GiB of the
 owner's unrelated containers ([plane-prod-sim-memory-1.txt](evidence/runs/plane-prod-sim-memory-1.txt)). Later readings went higher: 10.93 GiB at 01:50 UTC on 2026-11-05, in
 60-second readings ([LOAD-3-20261105T074543Z-timeline.json](evidence/runs/LOAD-3-20261105T074543Z-timeline.json)).
 

@@ -19,8 +19,8 @@ LOCK_DIR="$BUILD_DIR/build.lockdir"
 BASE_TAG="wayline-base"
 OVERLAY_LOCK="$WAYLINE/overlay.lock"
 # What an image's Corresponding Source is, beyond the pinned upstream commit: the build that made it.
-# A change here means an image's /source link no longer names what built it. Other agents' and other
-# directories' work does not, so a dirty monitoring/ does not stop an image build.
+# A change here means an image's /source link no longer names what built it. Work in other
+# directories does not, so a dirty monitoring/ does not stop an image build.
 SOURCE_PATHS=(apps/wayline LICENSE COPYRIGHT.txt NOTICE.md scripts/ci/build-images.sh scripts/lib/common.sh)
 
 # shellcheck disable=SC1091

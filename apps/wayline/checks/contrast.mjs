@@ -204,7 +204,7 @@ for (const theme of THEMES) {
   const disabled = ratio(resolve(vars, "--txt-disabled").rgb, resolve(vars, "--bg-surface-1").rgb);
   console.log(`${theme}: disabled text on surface-1 = ${disabled.toFixed(2)} (exempt, informational)`);
 }
-// ---------- Shell scope (owner: shell agent, brand/shell.css) ----------
+// ---------- Shell scope (owner: Shell, brand/shell.css) ----------
 // Effective tokens inside data-shell="nav" and data-shell="top": tokens.css, then shell.css in order of
 // specificity. Requires 4.5:1 for text and 3:1 for the route line, waypoint and unread dot. In both
 // high-contrast themes shell text must reach 7:1 and hairlines 3:1, which is why those themes can keep

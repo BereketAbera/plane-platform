@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
  * Instance admin (god-mode) surfaces.
- * Owner: the admin agent. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
+ * Owner: Admin. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
  * Tailwind layer without !important. See apps/wayline/AUTHORING.md.
  *
  * Hooks, all added by patches/40-admin.patch. The admin shell reuses the main app's: data-shell="nav" and

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
  * Sign-in, sign-up and onboarding: split screen with the route-over-contour side.
- * Owner: the auth agent. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
+ * Owner: Auth. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
  * Tailwind layer without !important. See apps/wayline/AUTHORING.md.
  */
 

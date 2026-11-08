@@ -152,7 +152,7 @@ What the gate costs and misses:
   [Retry behaviour](#retry-behaviour).
 
 Peak VM memory on those first syncs, one environment after the other, on 2026-11-04: 8.62 GiB for `plane-dev` and 9.23 GiB
-for `plane-prod-sim`, of 13.63 GiB, with the owner's unrelated containers and other agents' work included
+for `plane-prod-sim`, of 13.63 GiB, with the owner's unrelated containers and other concurrent work included
 ([plane-prod-sim-memory-history-1.txt](evidence/runs/plane-prod-sim-memory-history-1.txt)). Prod-sim's images were already on the
 node. Neither was a clean `make up`.
 

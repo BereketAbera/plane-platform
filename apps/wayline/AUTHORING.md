@@ -62,10 +62,10 @@ Functional identifiers stay: `@plane/*`, the `plane` module, `X-Plane-*`.
 | File | Scope | Owner |
 |---|---|---|
 | `brand/tokens.css` | Palette in four themes, fonts, radii, shadows, type scale, focus, `[data-shell]` tokens | Foundation |
-| `brand/shell.css` | Sidebar, top band, active nav route line, full-bleed content | Shell agent |
-| `brand/auth.css` | Split-screen sign-in, route-over-contour side | Auth agent |
-| `brand/admin.css` | God-mode | Admin agent |
-| `brand/space.css` | Public pages | Space agent |
+| `brand/shell.css` | Sidebar, top band, active nav route line, full-bleed content | Shell |
+| `brand/auth.css` | Split-screen sign-in, route-over-contour side | Auth |
+| `brand/admin.css` | God-mode | Admin |
+| `brand/space.css` | Public pages | Space |
 
 Edit overlay files in `apps/wayline/overlay`, then run `sync-overlay.sh`. Overlay paths are never patched.
 Our own tokens use the `--wl-` prefix. Every other token name must exist upstream, or `checks/token-diff.mjs` fails.

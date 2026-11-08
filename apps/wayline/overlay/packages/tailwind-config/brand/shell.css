@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
  * Application shell: sidebar, top band, active nav route line, full-bleed content.
- * Owner: the shell agent. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
+ * Owner: Shell. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
  * Tailwind layer without !important. See apps/wayline/AUTHORING.md.
  *
  * Hooks, all added by patches/10-shell.patch:

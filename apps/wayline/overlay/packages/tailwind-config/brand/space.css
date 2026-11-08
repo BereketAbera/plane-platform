@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  *
  * Public pages (spaces) surfaces.
- * Owner: the space agent. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
+ * Owner: Space. Prefer scoped semantic tokens over structural edits. Unlayered rules beat every
  * Tailwind layer without !important. See apps/wayline/AUTHORING.md.
  *
  * Hooks come from patches/50-space.patch: data-shell="space-top|space-badge|space-art", which pick up

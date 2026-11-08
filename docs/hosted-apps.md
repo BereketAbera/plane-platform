@@ -427,7 +427,7 @@ cluster's `kc` in place of the local one.
 
 Both sites are also still on Vercel, deployed from the owner's machine with the Vercel CLI: <https://rillmark.vercel.app> (project
 `rillmark`) and <https://awushi-devops-world.vercel.app> (project `awushi-devops-world`), in scope `bereketaberas-projects`. They stay
-until the owner asks for them to go, after the VPS versions are verified. Before that:
+until the owner chooses to take them down, after the VPS versions are verified. Before that:
 
 - Rillmark's published npm package, 0.2.0, links to rillmark.vercel.app from its homepage field, README and agent skill, so taking that
   deployment down breaks those links unless a redirect takes its place.

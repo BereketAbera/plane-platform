@@ -1388,7 +1388,7 @@ promote_rechecks_the_overlay_after_the_dump() {
   expect "the commit lock is free" nothing_in_progress
 }
 
-# ---- the commit lock, which agents hold when they commit in this checkout
+# ---- the commit lock, held by whatever else commits in this checkout
 lock_probes() { # Hooks that note whether the lock is held at the commit and at the push.
   printf '#!/bin/sh\nif [ -d "$CLONE/.git/agent-commit.lockdir" ]; then echo held >"$STUB/lock-at-commit"; fi\n' >"$CLONE/.git/hooks/pre-commit"
   printf '#!/bin/sh\nif [ -d "$CLONE/.git/agent-commit.lockdir" ]; then echo held >"$STUB/lock-at-push"; fi\n' >"$BARE/hooks/pre-receive"
