@@ -31,7 +31,7 @@ spec:
       securityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: web
-          image: docker.io/library/snake-production-web@sha256:f785eca2f7de5587049e70b8cca8795025862815f6d668559cd290c81f5c4c6c
+          image: docker.io/library/snake-production-web@sha256:db4178a76d03c7bdd5125074d5184830162c51388208617f82b4ce342a267c8d
           imagePullPolicy: Never
           securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
           ports:
@@ -41,6 +41,7 @@ spec:
             limits: { cpu: '1', memory: 512Mi }
           env:
             - { name: NODE_OPTIONS, value: '--max-old-space-size=288' }
+            - { name: SENTRY_RELEASE, value: '1.0.2' }
           envFrom:
             - secretRef: { name: snakebrawl-web-telemetry, optional: true }
           readinessProbe: { tcpSocket: { port: http }, periodSeconds: 5 }
@@ -96,6 +97,7 @@ spec:
             - { name: NEXT_PUBLIC_GAME_VERSION, value: '1.0.1' }
             - { name: MAX_SNAKES, value: '100' }
             - { name: MAX_PUBLIC_ROOMS, value: '1' }
+            - { name: BOT_TARGET, value: '2' }
             - { name: MAX_PARTIES, value: '4' }
             - { name: PARTY_CAPACITY, value: '8' }
             - { name: METRICS_ENABLED, value: 'true' }
