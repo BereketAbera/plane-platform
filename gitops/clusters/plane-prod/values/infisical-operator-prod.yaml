@@ -2,7 +2,7 @@
 # tgz sha256 104972678e2cd426fe978ba4249bdeff83258bfbbfe797103e0f37daeca595ee
 # Deploy into namespace plane-prod under the platform AppProject: it renders cluster-scoped objects.
 #
-# The one operator on this cluster, so it installs the CRDs.
+# The first of this cluster's two operators, and the one that installs the CRDs, which iso-frameflow shares.
 installCRDs: true
 
 # The chart truncates fullname to 15 characters, so a name starting "infisical-operator" would be cut to "infisical-opera".
