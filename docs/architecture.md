@@ -826,7 +826,7 @@ Each resource has one owner here too, and `scripts/ci/ownership.sh` reads the ho
 
 | Owner | Owns | Never touches |
 |---|---|---|
-| `scripts/hosted/provision-node.sh`, from `infrastructure/hosted/plane-prod/` | K3s and its config, the kubelet drop-in, sysctls, the sshd drop-in, the `wayline-edge` unit, the registry mirror | Anything inside a namespace |
+| `scripts/hosted/provision-node.sh`, from `infrastructure/hosted/plane-prod/` | K3s and its config, the kubelet drop-in, sysctls, the sshd drop-in, the `wayline-edge` unit, the registry mirror, the removal of two hourly cron scripts | Anything inside a namespace |
 | `scripts/hosted/edge.sh` | Which stage the firewall table is at | The rest of the host |
 | Terraform, `infrastructure/terraform/environments/prod-host` | DNS records `wayline`, `grafana`, `infisical`, `rillmark`, `devops` and `frameflow`. The VPS is a data source only, because a resource could reinstall its disk or cancel it | The VPS, and the rest of the zone |
 | Terraform, `infrastructure/terraform/environments/prod` | Namespaces and labels, ResourceQuota `budget` and LimitRange `defaults` in each, storage class `local-path-retain`, ConfigMap `coredns-custom`, the Argo CD Helm release, and the bootstrap chart: AppProjects and root | Anything Argo CD deploys |
