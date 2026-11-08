@@ -144,6 +144,8 @@ URLs and a timestamp, listed by name in the check file.
 **Replacing.** Each value becomes `<redacted>`, longest first, as bytes. The script prints only how many files changed and
 how many replacements it made, never a value. `runs/MANIFEST.tsv` has the count per file.
 
+**One edit by hand.** On 2026-11-08 the name of an unrelated local stack, in container names in six `docker stats` and snapshot files, became `<redacted>`. A plain word is outside the rules above, so the script could not do it, and it is the one such edit in `runs/`. Everything else in those files is as captured, `MANIFEST.tsv` counts the 161 replacements, and their raw files are no longer under `.local/evidence-raw/`, so a later publish leaves these copies alone.
+
 **Identifiers.** Infisical's record ids and Kubernetes uids are not credentials, but gitleaks reads them as credentials in lines
 such as `SECRET_KEY id=<uuid>` and `plane-app-keys uid=<uuid>`. So a UUID in the shape of gitleaks' `generic-api-key` rule, a
 keyword, up to 20 characters and then `=`, is redacted too, keeping the rest of the line. Allowlisting that shape would also let a

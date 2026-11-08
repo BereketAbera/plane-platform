@@ -99,9 +99,9 @@ supabase_auth_scraping-local-supabase        15.55MiB / 13.63GiB   0.00%
 supabase_kong_scraping-local-supabase        80.02MiB / 13.63GiB   0.00%
 supabase_db_scraping-local-supabase          84.13MiB / 13.63GiB   0.02%
 local-r2-minio-1                             249.5MiB / 13.63GiB   0.03%
-acelab-hatchet-workers-hatchet-dashboard-1   9.062MiB / 13.63GiB   0.00%
-acelab-hatchet-workers-hatchet-engine-1      0B / 0B               0.00%
-acelab-hatchet-workers-postgres-1            74.98MiB / 13.63GiB   0.00%
+<redacted>-hatchet-workers-hatchet-dashboard-1   9.062MiB / 13.63GiB   0.00%
+<redacted>-hatchet-workers-hatchet-engine-1      0B / 0B               0.00%
+<redacted>-hatchet-workers-postgres-1            74.98MiB / 13.63GiB   0.00%
 
 $ VM /proc/meminfo
 MemTotal:       14294756 kB

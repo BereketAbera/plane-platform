@@ -688,7 +688,7 @@ monitoring-logql-timing-1.txt	2026-11-04T22:21:00Z	169	0
 monitoring-loki-limit-1.txt	2026-11-04T21:50:10Z	8894	0
 monitoring-loki-limit-2.txt	2026-11-04T21:58:05Z	5320	0
 monitoring-loki-replay-1.txt	2026-11-04T21:59:54Z	7008	0
-monitoring-memory-1.txt	2026-11-04T22:19:31Z	12896	0
+monitoring-memory-1.txt	2026-11-04T22:19:31Z	12908	3
 monitoring-netpol-1.txt	2026-11-04T22:13:04Z	7340	0
 monitoring-probes-1.txt	2026-11-04T22:19:31Z	2059	0
 monitoring-rules-1.txt	2026-11-04T22:19:26Z	537	0
@@ -789,8 +789,8 @@ plane-prod-sim-concurrent-smoke-dev-1.txt	2026-11-04T23:27:34Z	3212	0
 plane-prod-sim-concurrent-smoke-prod-sim-1.json	2026-11-04T23:33:04Z	11567	0
 plane-prod-sim-concurrent-smoke-prod-sim-1.txt	2026-11-04T23:33:04Z	3343	0
 plane-prod-sim-dev-worker-latent-1.txt	2026-11-04T23:55:43Z	1182	0
-plane-prod-sim-docker-stats-samples-1.txt	2026-11-04T23:15:49Z	3352	0
-plane-prod-sim-docker-stats-samples-2.txt	2026-11-05T00:03:32Z	54579	0
+plane-prod-sim-docker-stats-samples-1.txt	2026-11-04T23:15:49Z	3388	9
+plane-prod-sim-docker-stats-samples-2.txt	2026-11-05T00:03:32Z	55139	140
 plane-prod-sim-drill-pod-restart-1.txt	2026-11-04T23:45:44Z	4176	0
 plane-prod-sim-drill-pod-restart-2.txt	2026-11-04T23:54:53Z	4196	0
 plane-prod-sim-final-verify-1.txt	2026-11-05T00:04:13Z	911	0
@@ -819,9 +819,9 @@ plane-prod-sim-smoke-1.txt	2026-11-04T23:14:20Z	3526	0
 plane-prod-sim-smoke-2.txt	2026-11-04T23:59:43Z	3542	0
 plane-prod-sim-smoke-worker-control-test-1.txt	2026-11-04T23:58:31Z	1040	0
 plane-prod-sim-smoke-worker-control.patch	2026-11-04T23:56:05Z	2120	0
-plane-prod-sim-snapshot-after-concurrent-1.txt	2026-11-04T23:34:52Z	27901	0
-plane-prod-sim-snapshot-concurrent-1.txt	2026-11-04T23:26:53Z	28124	0
-plane-prod-sim-snapshot-final-1.txt	2026-11-05T00:03:48Z	27295	0
+plane-prod-sim-snapshot-after-concurrent-1.txt	2026-11-04T23:34:52Z	27913	3
+plane-prod-sim-snapshot-concurrent-1.txt	2026-11-04T23:26:53Z	28136	3
+plane-prod-sim-snapshot-final-1.txt	2026-11-05T00:03:48Z	27307	3
 plane-prod-sim-status-1.txt	2026-11-04T23:29:02Z	2032	0
 plane-prod-sim-sync-check-1.txt	2026-11-04T23:59:12Z	429	0
 plane-prod-sim-valkey-security-line-1.txt	2026-11-04T23:59:14Z	783	0

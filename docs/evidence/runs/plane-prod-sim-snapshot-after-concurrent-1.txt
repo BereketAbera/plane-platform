@@ -100,9 +100,9 @@ supabase_auth_scraping-local-supabase	14.98MiB / 13.63GiB	0.00%
 supabase_kong_scraping-local-supabase	9.863MiB / 13.63GiB	3.78%
 supabase_db_scraping-local-supabase	27.11MiB / 13.63GiB	0.10%
 local-r2-minio-1	247.2MiB / 13.63GiB	0.00%
-acelab-hatchet-workers-hatchet-dashboard-1	4.039MiB / 13.63GiB	0.00%
-acelab-hatchet-workers-hatchet-engine-1	0B / 0B	0.00%
-acelab-hatchet-workers-postgres-1	19.57MiB / 13.63GiB	0.00%
+<redacted>-hatchet-workers-hatchet-dashboard-1	4.039MiB / 13.63GiB	0.00%
+<redacted>-hatchet-workers-hatchet-engine-1	0B / 0B	0.00%
+<redacted>-hatchet-workers-postgres-1	19.57MiB / 13.63GiB	0.00%
 
 ## Peak since each container started, from its cgroup. All namespaces
 NAMESPACE          POD                                                  CONTAINER                     CUR_Mi   PEAK_Mi  LIMIT_Mi  OOM RESTARTS
