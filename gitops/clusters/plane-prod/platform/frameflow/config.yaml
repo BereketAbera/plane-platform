@@ -36,11 +36,12 @@ data:
   S3_REGION: us-east-1
   S3_BUCKET: frameflow-media
   S3_FORCE_PATH_STYLE: "true"
-  S3_PRESIGNED_UPLOAD_TTL_SECONDS: "900"
+  # A minute longer than Traefik's readTimeout of 900 s (values/traefik.yaml), because the API takes no completion after this, and a PUT
+  # that uses the whole of that needs a moment after it.
+  S3_PRESIGNED_UPLOAD_TTL_SECONDS: "960"
   # 500 MiB, which is what the studio's page says and checks in the browser. An upload is one PUT, and Traefik's websecure entry point cuts
-  # a request that takes more than 180 s, its body included (values/traefik.yaml), so a whole 500 MiB needs about 23 Mbit/s of upload, and
-  # 10 Mbit/s gets about 215 MiB through. The API checks the size an upload declares before it signs the URL, and the size Silo holds
-  # after. It reads this when it starts, so a change here goes with a new config-revision on its pod template in api.yaml.
+  # a request that takes more than 900 s, its body included (values/traefik.yaml), so a whole 500 MiB needs about 4.7 Mbit/s of upload.
+  # The API checks the size an upload declares before it signs the URL, and the size Silo holds after. It reads this when it starts, so a change here goes with a new config-revision on its pod template in api.yaml.
   MAX_UPLOAD_BYTES: "524288000"
 
   # Unset, the worker skips its status callbacks silently, and no video's status ever moves.
