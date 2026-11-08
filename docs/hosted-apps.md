@@ -3,9 +3,16 @@
 Three apps run on hosted production beside Wayline, on the same K3s node and the same platform services, each in a namespace,
 AppProject and Argo CD Application of its own. This is how each is deployed, promoted, rolled back, checked and fixed.
 
-**Status.** This was written with the changes that add the two static sites and Frameflow, before either was applied, so nothing below has
-run on the VPS yet. What Frameflow's Hatchet, Silo and Silo's setup Job do was run in Docker on this machine with the pinned images, and is
-marked so where it is used.
+**Status.** Live on hosted production since 2026-11-08. #4 (what Terraform and the bootstrap read), #5 (release A) and #6 (release B)
+merged that night, after the DNS and cluster applies and the bootstrap, and #7 added Frameflow to the off-VPS pull. The same night's checks
+all passed:
+- every host over trusted HTTPS, with its routes, Pod Security and the 350-row NetworkPolicy matrix;
+- Frameflow end to end: upload, Hatchet, FFmpeg, HLS at 360p and 720p, and playback;
+- a failed job, a mid-encode cancel and a queued second video;
+- Wayline's latency during the encodes, with no K3s restart;
+- each app's backup, its restore test, and the off-VPS pull and verify.
+
+Silo's setup Job needed 512Mi (#6). The parts below that say they ran only in Docker on this machine were later run on the VPS as well.
 
 Commands below run from the root of the checkout that holds `.local/hosted/plane-prod/`, which is the main one, because Terraform's state
 and the kubeconfig live there and nowhere else. The raw `kubectl` lines use this helper, as [scripts/hosted/README.md](../scripts/hosted/README.md)
