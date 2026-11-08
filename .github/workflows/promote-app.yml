@@ -27,7 +27,7 @@ on:
           - frameflow
           - snakebrawl
       component:
-        description: The image to move, as in ghcr.io/bereketabera/<app>/<component>, such as web or backend.
+        description: The component to promote, such as web, backend or SnakeBrawl's arena.
         required: true
         default: web
         type: string
@@ -36,7 +36,7 @@ on:
         required: true
         type: string
       tag:
-        description: The first 12 characters of the commit that run built, as it tags the image. Leave empty to keep the tag there now.
+        description: Optional 12-character commit tag. Leave empty for SnakeBrawl node imports.
         required: false
         type: string
 
@@ -132,6 +132,8 @@ jobs:
 
             in `gitops/clusters/plane-prod/platform/${{ steps.check.outputs.app }}/` and on the same line of `policy/hosted-images.txt`.
             `scripts/ci/validate-manifests.sh` passed on this change before this pull request opened. Nothing was built.
+
+            For SnakeBrawl, verify the archive on the node and the committed digest-specific CycloneDX inventory. See `docs/snakebrawl.md`.
 
             **Nothing looked this digest up.** This job's token cannot read the app's private package, and `publish-release.sh` confirms
             Wayline's digests on GHCR and no others. Before merging, check that it is the digest the app repository's `images.yml` recorded
