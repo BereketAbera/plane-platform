@@ -66,14 +66,15 @@ spec:
           envFrom:
             - secretRef:
                 name: frameflow-silo-setup
-          # Peaked at 79Mi under these limits, measured locally.
+          # mc admin user add encrypts its request with a key derived by argon2id, which takes 64 MiB at a time. At a 128Mi limit, two of the
+          # first three runs on the live Silo were OOMKilled there (2026-11-08), so the limit leaves room. It peaked at 79Mi measured locally.
           resources:
             requests:
               cpu: 10m
               memory: 32Mi
             limits:
               cpu: 250m
-              memory: 128Mi
+              memory: 512Mi
           volumeMounts:
             - name: tmp
               mountPath: /tmp
