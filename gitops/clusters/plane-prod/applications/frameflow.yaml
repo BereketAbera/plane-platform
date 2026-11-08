@@ -1,7 +1,9 @@
 # Frameflow, https://frameflow.bereket.dev, from platform/frameflow, whose kustomization.yaml lists what deploys and puts every object in
 # namespace frameflow. Under its own project, which deploys only to that namespace, so nothing here can reach past it, and which refuses
-# NetworkPolicies and Certificates: those are network-policies' and certificates'. Wave 2, root's last: after plane-prod, so a Frameflow
-# that fails cannot hold Wayline's wave, and after its operator at 1, which serves its Infisical CRs.
+# NetworkPolicies and Certificates: those are network-policies' and certificates'. Wave 2, root's last: after plane-prod, so in a sync of
+# root a Frameflow that fails cannot hold Wayline's wave, and after its operator at 1, which serves its Infisical CRs. A sync of this one
+# that never finishes still holds root's operation open, and with it every later change to an Application file, Wayline's among them,
+# until one of the two is ended: docs/hosted-apps.md, Root waits on frameflow.
 #
 # It deploys in two releases, which kustomization.yaml describes: the Hatchet client token can only be minted once Hatchet runs.
 #

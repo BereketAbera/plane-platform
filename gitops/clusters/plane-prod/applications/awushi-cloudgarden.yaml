@@ -1,7 +1,8 @@
 # Awushi Cloudgarden, https://devops.bereket.dev, from platform/awushi-cloudgarden. Under its own project, which deploys only to
-# namespace awushi-cloudgarden, so nothing here can reach past it. Wave 1, after plane-prod, so a site that fails cannot hold Wayline's
-# wave. Finalizer kept: the site is its image and holds no data, so removing this file from Git cleanly removes the app. Every object
-# names its own namespace.
+# namespace awushi-cloudgarden, so nothing here can reach past it. Wave 1, after plane-prod, so in a sync of root a site that fails cannot
+# hold Wayline's wave. A sync of this one that never finishes still holds root's operation open, and with it every later change to an
+# Application file (infrastructure/terraform/README.md, After a stuck first sync). Finalizer kept: the site is its image and holds no
+# data, so removing this file from Git cleanly removes the app. Every object names its own namespace.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

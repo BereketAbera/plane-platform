@@ -1,8 +1,9 @@
 # Frameflow's own operator, as ADR 0009 gives each namespace that reads Infisical: it reads and writes Secrets in frameflow alone, and
 # mints tokens for its ServiceAccounts alone. Platform project, not frameflow's: the chart renders a ClusterRole, which that project
-# refuses. Wave 1, with the static sites and after plane-prod, so an operator that fails cannot hold Wayline's wave, and before frameflow
-# at 2, whose InfisicalAuth it serves. No finalizer, as for iso-prod: removing this file by mistake should leave frameflow's Secrets
-# syncing, not cascade. It installs no CRDs, which iso-prod owns.
+# refuses. Wave 1, with the static sites and after plane-prod, so in a sync of root an operator that fails cannot hold Wayline's wave, and
+# before frameflow at 2, whose InfisicalAuth it serves. A sync of this one that never finishes still holds root's operation open, and with
+# it every later change to an Application file (infrastructure/terraform/README.md, After a stuck first sync). No finalizer, as for
+# iso-prod: removing this file by mistake should leave frameflow's Secrets syncing, not cascade. It installs no CRDs, which iso-prod owns.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
