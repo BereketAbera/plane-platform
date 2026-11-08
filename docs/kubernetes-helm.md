@@ -370,14 +370,15 @@ scripts/render.sh --check
 
 **Where it runs.**
 
-- `scripts/ci/validate-manifests.sh`, through `make ci` and on every push to `main`. `ci.yml` also names `pull_request`, and no job has run there: GitHub holds a pull request opened with `GITHUB_TOKEN` at `action_required` ([runs](evidence/ci/ci-1-20261105T060416Z-pull-request-runs.txt)).
+- `scripts/ci/validate-manifests.sh`, through `make ci` and on every push to `main`. `ci.yml` also names `pull_request`, and has run there on pull requests opened from a user account since 2026-11-08. One opened with `GITHUB_TOKEN` starts no job: GitHub holds it at `action_required` ([runs](evidence/ci/ci-1-20261105T060416Z-pull-request-runs.txt)) until a person approves or re-runs that run.
 - `scripts/promote.sh`, before it edits anything, so unrelated drift cannot fold into a promotion commit.
 
 `scripts/rollback.sh` renders instead of checking: a later change beside an image line makes the revert conflict in the rendered file, and
 that file is generated, so rendering replaces it and the rollback goes on.
 
-CI also runs kubeconform in strict mode and conftest against the rendered files. Nothing makes a failing check block a merge
-on this GitHub plan. See [security.md](security.md).
+CI also runs kubeconform in strict mode and conftest against the rendered files. Since 2026-11-08 a failing `Lint`, `Manifests` or
+`Security` check blocks a merge to `main`. Anyone with write access can still change the check in the same pull request.
+See [security.md](security.md).
 
 `scripts/render.sh --check` exits 0 on a clean checkout on `ubuntu-24.04`, so a render from this Mac matched one from Linux byte for byte: run
 41909741166 at `5fdf41d` on 2026-11-04 ([log](evidence/ci/ci-1-20261104T204614Z-run-41909741166.log)), and again at `9c8e098` and `0dde813` on
@@ -483,7 +484,7 @@ LoadBalancer Service, no `hostPort` but Traefik's, and no `kind: Ingress` in Git
 What they use on the node is in [resource-utilization.md](resource-utilization.md).
 
 **To change a value here.** Edit `helm/plane/overlays/prod/`, or `gitops/clusters/plane-prod/values/<chart>.yaml` for a platform chart,
-then `make render`, read `git diff gitops/environments/prod/`, run `make ci`, commit and push to `main`. CI's release job moves
+then `make render`, read `git diff gitops/environments/prod/`, run `make ci`, commit on a branch, open a pull request and merge it with a merge commit. CI's release job moves
 `deploy/plane-prod`, and Argo CD syncs it. A change that is not an image needs no new evidence, because a set is images alone, so read
 the rendered diff as the review it is.
 

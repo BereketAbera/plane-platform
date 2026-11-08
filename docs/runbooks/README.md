@@ -132,7 +132,7 @@ else in one go. Never merge that kubeconfig into `~/.kube/config`.
    [the evidence README](../evidence/README.md#publishing). For hosted production, `make remote-publish-evidence TARGET=plane-prod` reads its
    Secrets' values first, so the scrub knows them too.
 7. **On hosted production the way in is `main`.** Its Argo CD reads only branch `deploy/plane-prod`, which CI's `release-plane-prod` job
-   writes after a push to `main` passes, so pushing `main` deploys and `make gitops-publish` reaches nothing there. Self-heal puts back a
+   writes after a merge to `main` passes CI, so merging to `main` deploys and `make gitops-publish` reaches nothing there. Self-heal puts back a
    change made with `kc` there as it does here.
 8. **Name hosted production twice.** `TARGET=plane-prod` aims a command at it, and `CONFIRM=plane-prod` lets the command change something.
    `CONFIRM=yes` never does.

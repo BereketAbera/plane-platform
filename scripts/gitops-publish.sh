@@ -59,7 +59,9 @@ if prod_sim_digests_move "$old" "$new"; then
 
   # make promote ties each digest to its image through what dev recorded. A change by hand never met
   # that, and the plane-dev check below is content with a digest that runs anywhere in dev, under any
-  # image. CI has this check too and cannot block a merge. Only a warning: rollback uses this path.
+  # image. CI has this check too: since 2026-11-08 a failing Lint, Manifests or Security check blocks a merge
+  # to main, and anyone with write access can still change the check in the same pull request. Only a warning:
+  # rollback uses this path.
   pairs=()
   while read -r name digest; do
     for added_digest in ${added[@]+"${added[@]}"}; do

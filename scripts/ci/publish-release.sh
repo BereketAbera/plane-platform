@@ -7,9 +7,9 @@
 # In order, stopping at the first that fails, so a failure leaves the branch where it is and reaches nothing:
 #   1. scripts/ci/check-prod-evidence.sh. Exit 3 means plane-prod is not promoted yet, and the release holds the platform alone.
 #   2. The refusal to move backwards: RELEASE.json on the branch names a main commit, and this one must descend from it.
-#   3. The branch must still hold what that commit released. GitHub Free cannot stop a push to it, and this would overwrite one and
-#      report success, which hides that it happened. So it stops, and names the commit. scripts/ci/check-deploy-branch.sh makes the
-#      same comparison every day, because a push between two releases can otherwise stay for as long as main is quiet.
+#   3. The branch must still hold what that commit released. The ruleset covers main only, so nothing stops a push to it, and this would
+#      overwrite one and report success, which hides that it happened. So it stops, and names the commit. scripts/ci/check-deploy-branch.sh
+#      makes the same comparison every day, because a push between two releases can otherwise stay for as long as main is quiet.
 #   4. A branch that runs a set must not go back to none, which is what a revert of the first promotion leaves. Exit 3 cannot know
 #      that, and root would prune Application plane-prod, leaving Plane running unmanaged with its availability alerts quiet.
 #   5. Nothing to do if the two hosted trees match the branch's, and the branch stays where it is.

@@ -186,7 +186,7 @@ that exists on both clusters as two resources.
 - **Argo CD source:** `git://plane-git/plane-platform.git`, branch `main`. `plane-git` is a read-only
   container on the `kind` Docker network serving the bare repo at `.local/git/plane-platform.git`. The only
   writer is `make gitops-publish`, which pushes from the working repo to that path.
-- **GitHub** (`origin`, private `BereketAbera/plane-platform`) runs CI. The local Argo CD does not read it, and hosted production's reads one
+- **GitHub** (`origin`, public `BereketAbera/plane-platform`) runs CI. The local Argo CD does not read it, and hosted production's reads one
   branch of it, below. `images.yml` builds plain `linux/amd64` images on `ubuntu-24.04`, publishes them to private GHCR packages under
   `ghcr.io/bereketabera/wayline/`, whose digests differ from a local build's, and opens a digest bump for dev. Those images reach the kind
   cluster only if a merged bump is pulled, `scripts/ci/copy-to-local-registry.sh` copies them with their digests, and `make gitops-publish` runs.
@@ -207,7 +207,8 @@ that exists on both clusters as two resources.
   the same image (`scripts/ci/check-promoted-digests.sh`), refuses unless `plane-dev` is Synced and Healthy with that digest in a
   ready container (`scripts/lib/dev-check.sh`), and takes a Postgres dump first. For a prod-sim digest that arrives through a merged
   pull request, `make gitops-publish` repeats the `plane-dev` check and the dump. It runs `check-promoted-digests.sh` only as a warning,
-  because rollback uses that path. That check blocks in `scripts/promote.sh`, and a check in CI cannot block a merge on this plan.
+  because rollback uses that path. That check blocks in `scripts/promote.sh`. Since 2026-11-08 a failing Lint, Manifests or Security check
+  blocks a merge to `main`. Anyone with write access can still change the check in the same pull request.
   A changed prod-sim line that is not an image also gets a warning, and goes out. `OVERRIDE_DEV_CHECK="<reason>"` goes
   past the `plane-dev` check and is logged, and `SKIP_BACKUP=yes` skips the dump. With no cluster in reach the check is skipped: `scripts/promote.sh`
   says so in the commit message, and `make gitops-publish`, which makes no commit, only warns.
@@ -348,7 +349,7 @@ does not fail root's sync. Alerts report those instead.
 
 `policy/gitops.rego` refuses a Plane Application under any other project, any Application under project `default` or none,
 rendered manifests of an environment under any project but its own, and a document that wraps others under any kind, because conftest
-reads only the outer one, and `policy/charts.rego` refuses the same through a chart's values. That check runs in CI, and nothing makes it block a merge on this GitHub plan. `scripts/ci/lib-manifests.sh`
+reads only the outer one, and `policy/charts.rego` refuses the same through a chart's values. That check runs in CI. Since 2026-11-08 a failing Lint, Manifests or Security check blocks a merge to `main`. Anyone with write access can still change the check in the same pull request. `scripts/ci/lib-manifests.sh`
 also refuses a `.yml`, `.json` or `.jsonnet` file in a plain directory Argo CD reads, because no check would read it, and any other `*.yaml` beside a rendered `manifests.yaml`.
 
 **Hosted production.** Terraform installs two AppProjects from `gitops/clusters/plane-prod/bootstrap-chart/`, read from no branch, so

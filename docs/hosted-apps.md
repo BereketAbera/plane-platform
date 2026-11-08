@@ -94,9 +94,10 @@ any two apps.
    ```
    Without `tag` the tag stays as it is, and may then name the commit of the image before. A dispatch for an app that already runs that
    image opens nothing. A second dispatch for the same app replaces the open pull request's change with its own.
-3. **Merging is the approval.** GitHub cannot enforce it on this plan: see [.github/workflows/README.md](../.github/workflows/README.md).
-   Check the digest before merging, as the next section says, because nothing else does: `publish-release.sh` confirms Wayline's digests
-   on GHCR and no others.
+3. **Merging is the approval.** The ruleset on `main` requires no reviewer: see [.github/workflows/README.md](../.github/workflows/README.md).
+   A pull request this workflow opens starts no checks until a person approves or re-runs its held `ci` run, and it cannot merge until
+   `Lint`, `Manifests` and `Security` pass. Merge it with a merge commit. Check the digest before merging, as the next section says, because nothing else does:
+   `publish-release.sh` confirms Wayline's digests on GHCR and no others.
 4. **The release.** The merge to `main` runs `ci.yml`, and its `release-plane-prod` job moves `deploy/plane-prod` once the other jobs
    pass. A red `main` releases nothing, and production keeps what it ran.
 5. **Argo CD syncs that app alone.** It polls `deploy/plane-prod`, with no webhook, so this takes a few minutes. The pull request changed

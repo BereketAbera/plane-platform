@@ -16,7 +16,7 @@ nothing. Row IDs are from [validation.md](../../validation.md), and results use 
 | CI-6, refuses an unrecorded digest | PASS | Runs 41976950402, an invented digest, and 41977025314, another image's digest, at 9c8e098. Both exit 1 at `promote.sh`, and no branch is pushed. Run 41905513020 was the first, at f733b87 |
 | CI-6b, opens a pull request | PASS | Run 41977114312 at 9c8e098 opened [pull request 2](https://github.com/BereketAbera/plane-platform/pull/2), closed unmerged as a test. Run 41977288287, the same inputs again, succeeds and changes nothing. Runs 41905611391 and 41908167069 show GitHub's refusal while the setting was off |
 | CI-7b, the images built here have no CRITICAL finding with a fix | PASS | The step `Scan what was just pushed`, in run 42044273310 and in run 41975430939, on the GHCR digests. Exit 0 on a real runner, each time. Only the table in the log remains, because the raw results stayed on the runner. The Mac's digests are in [security/scan-images-20261105T052024Z](../security/scan-images-20261105T052024Z/run.log), not repeated here |
-| BR-3, `/source` from outside | FAIL | `br-3-20261105T054812Z-source-logged-out.txt`: 302 to 84b63d9, which answers 404 with no credentials. The commit is on GitHub. The repository is private |
+| BR-3, `/source` from outside | FAIL | `br-3-20261105T054812Z-source-logged-out.txt`: 302 to 84b63d9, which answered 404 with no credentials. The commit is on GitHub. The repository was private then, and has been public since 2026-11-08 |
 
 ## What GitHub has not seen
 
@@ -53,7 +53,7 @@ nor the check-run API returns them: `plan-step-summary-check-20261104T204404Z.tx
 | [41907667785](https://github.com/BereketAbera/plane-platform/actions/runs/41907667785) | `ci`, ada8dc9 | push | success | After the concurrency and lint changes |
 | [41907841985](https://github.com/BereketAbera/plane-platform/actions/runs/41907841985) | `ci`, b350fdc | push | success | With the temporary probe linted too |
 | [41909741166](https://github.com/BereketAbera/plane-platform/actions/runs/41909741166) | `ci`, 5fdf41d | push | success | After the probe was removed, with this directory in the tree |
-| [41903137226](https://github.com/BereketAbera/plane-platform/actions/runs/41903137226) | `images`, f733b87 | push | success | **Not a build.** It warns that there is nothing to build. It does show `ubuntu-24.04-arm` running in this private repository and `docker login ghcr.io` accepting `GITHUB_TOKEN` |
+| [41903137226](https://github.com/BereketAbera/plane-platform/actions/runs/41903137226) | `images`, f733b87 | push | success | **Not a build.** It warns that there is nothing to build. It does show `ubuntu-24.04-arm` running in this repository while it was private, and `docker login ghcr.io` accepting `GITHUB_TOKEN` |
 | [41905415595](https://github.com/BereketAbera/plane-platform/actions/runs/41905415595) | `promote-prod-sim`, f733b87 | dispatch, no inputs | success | Dev and prod-sim match, so there is nothing to open |
 | [41905513020](https://github.com/BereketAbera/plane-platform/actions/runs/41905513020) | `promote-prod-sim`, f733b87 | dispatch, `image=web`, invented digest | failure, as intended | The digest was never recorded for dev, so `promote.sh` refuses it and no branch is pushed |
 | [41905611391](https://github.com/BereketAbera/plane-platform/actions/runs/41905611391) | `promote-prod-sim`, f733b87 | dispatch, `image=web`, the admin digest | failure | Edits, validates and pushes `promote/prod-sim`. GitHub then refuses the pull request |
@@ -138,6 +138,8 @@ token lacks `read:packages`. The same logs hold the runner sizes the workflows R
 | `publish-evidence-20261105T145421Z.txt`, `publish-evidence-20261105T150341Z.txt` | What `make publish-evidence` printed, with its exit code, for the two publishes after `76e98ee`. Not CI results either, and here for the same reason |
 
 ## GitHub Free, private repository: what is measured and what is only documented
+
+Read on 2026-11-05, while the repository was private. It has been public since 2026-11-08, and ruleset `Protect main` has covered `main` since then, so the last row below and the `ci.yml` pull request item under Not run yet are history.
 
 | Question | Answer | Basis |
 |---|---|---|

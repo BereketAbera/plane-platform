@@ -1,4 +1,3 @@
-# Not in effect here. GitHub offers code owners on private repositories only on paid plans, and this
-# one is private on GitHub Free, so a pull request requests no review from this file. It is kept
-# because it applies by itself if the plan or the visibility changes. See workflows/README.md.
+# By GitHub's documentation this applies to a public repository, so a pull request from anyone but this owner
+# requests this review. The ruleset does not require it. See workflows/README.md.
 * @BereketAbera

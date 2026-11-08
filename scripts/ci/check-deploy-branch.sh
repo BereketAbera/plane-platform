@@ -5,10 +5,11 @@
 #
 # Exit 0 it does, or there is no branch yet. 1 it does not, and it says what differs. 2 the branch could not be read, which says nothing.
 #
-# GitHub Free has no protected branches for a private repository, so anyone with write access can push that branch, and so can a job
+# The ruleset covers main only, so anyone with write access can push that branch, and so can a job
 # with contents: write, whatever its comments say. Root and its children sync what it holds, so writing it amounts to cluster-admin.
-# Nothing short of a paid plan or verification on the cluster prevents that. This only detects it, and by then Argo CD may have deployed
-# it. check-deploy-branch.yml runs this each day, make remote-status runs it, and publish-release.sh refuses on the same comparison.
+# GitHub Free can protect that branch now the repository is public, and no rule does. Nothing short of such a rule or verification on
+# the cluster prevents a push. This only detects it, and by then Argo CD may have deployed it. check-deploy-branch.yml runs this each
+# day, make remote-status runs it, and publish-release.sh refuses on the same comparison.
 # shellcheck source=../lib/common.sh
 source "$(dirname "$0")/../lib/common.sh"
 # shellcheck source=lib-release-branch.sh

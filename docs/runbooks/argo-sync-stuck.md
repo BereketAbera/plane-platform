@@ -273,7 +273,7 @@ With a refresh asked and no retry open, the sync starts within about a second of
 Hosted production has its own Argo CD, v3.5.7 as here, with one replica of each part, no Dex and no notifications. Its UI has no public
 route: `make remote-ui TARGET=plane-prod UI=argocd`. The display trap, the alerts, ending an operation and putting auto-sync back read the
 same there, with `kc` in place of `kubectl` ([conventions](README.md#hosted-production)). Where a fix above says `make gitops-publish`,
-hosted production takes a push to `main` instead. The alert rules are copies, in
+hosted production takes a pull request to `main` instead. The alert rules are copies, in
 [`rules-hosted-platform.yaml`](../../gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted-platform.yaml), and reach
 Telegram. Ending an operation, pausing auto-sync and the first-install states have not been tried on hosted production: NOT RUN. What
 differs is where it reads from.
