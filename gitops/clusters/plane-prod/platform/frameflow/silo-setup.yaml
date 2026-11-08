@@ -98,7 +98,7 @@ spec:
               done
               mc mb --ignore-existing silo/frameflow-media
               mc anonymous set none silo/frameflow-media
-              mc quota set silo/frameflow-media --size 12GiB
+              mc quota set silo/frameflow-media --size 18GiB
               cat >/tmp/frameflow-app.json <<'JSON'
               {
                 "Version": "2012-10-17",
@@ -129,7 +129,7 @@ spec:
               mc admin user add silo "$BACKUP_ACCESS_KEY" <<<"$BACKUP_SECRET_KEY" >/dev/null
               mc admin policy attach silo frameflow-app --user "$APP_ACCESS_KEY" >/dev/null
               mc admin policy attach silo frameflow-backup --user "$BACKUP_ACCESS_KEY" >/dev/null
-              echo "silo-setup: frameflow-media is private with a 12GiB quota, and the app's and the backup's users hold their policies"
+              echo "silo-setup: frameflow-media is private with an 18GiB quota, and the app's and the backup's users hold their policies"
       volumes:
         - name: tmp
           emptyDir:
