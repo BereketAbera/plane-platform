@@ -133,7 +133,7 @@ tar -C .local -cf - secret-zero backups \
 
 A backup records the sha256 of each secret zero file and never holds the file, and a restore finds them by that checksum. Keeping `ENCRYPTION_KEY` in the same archive as a dump is a tradeoff, acceptable for a local platform whose backups are themselves unencrypted, when the archive is encrypted. To separate them, put `ENCRYPTION_KEY` in a password manager.
 
-Push `main` to `origin` as well, and check it: `git fetch origin && git status && git log -1 origin/main`.
+Get `main`'s work to `origin` through a pull request as well, and check it: `git fetch origin && git status && git log -1 origin/main`.
 
 ## RPO and RTO: to measure, not promised
 
@@ -226,9 +226,9 @@ Three copies exist, and each has a role.
 |---|---|---|
 | `.local/git/plane-platform.git`, served by `plane-git` | What Argo CD reads | Rebuilt: `make gitops-publish` creates it if absent and pushes the working repo. Running workloads are unaffected in the meantime. Argo CD cannot compare or sync, and it reports errors |
 | Working repo `/Users/bek/dev/pr/plane-platform` | Source of truth | `git clone` from `origin`. Commits never pushed are gone |
-| GitHub `origin` | CI, off-machine copy | `git push` from the working repo |
+| GitHub `origin` | CI, off-machine copy | Recreate it and `git push` from the working repo: a new repository has no ruleset until one is added. While the ruleset is in place, `main` takes a pull request |
 
-`gitops-publish` pushes without force. A non-fast-forward means history was rewritten, and it refuses. Reverts are the way back. If `main` was rewritten on purpose, delete the bare repo to republish from scratch. The one rewrite so far did that, and is [recorded](evidence/history-rewrite.md).
+`gitops-publish` pushes without force. A non-fast-forward means history was rewritten, and it refuses. Reverts are the way back. If `main` was rewritten on purpose, delete the bare repo to republish from scratch. The rewrite of 2026-11-05 did that, and is [recorded](evidence/history-rewrite.md).
 
 Repo rights do not imply data. A Git restore brings no secret zero and no backups.
 
@@ -337,7 +337,7 @@ gpg --decrypt plane-platform-recovery-<stamp>.tar.gpg | tar -C .local -xf -
 chmod 700 .local/secret-zero .local/backups
 ```
 
-`origin` is private today, so that clone needs a GitHub login ([BR-3-20261105T054812Z.txt](evidence/runs/BR-3-20261105T054812Z.txt)).
+`origin` has been public since 2026-11-08, so that clone needs no login. Before that it did ([BR-3-20261105T054812Z.txt](evidence/runs/BR-3-20261105T054812Z.txt)).
 
 Check before continuing:
 

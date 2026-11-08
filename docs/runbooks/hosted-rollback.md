@@ -84,18 +84,29 @@ ls docs/evidence/promotions/
 gh workflow run promote-plane-prod.yml -f set_hash=<older-set-hash>
 ```
 
-That runs the gate on the change and opens a pull request with the older digests. Read it, and merge it. Or revert the promotion on `main`,
-which does the same with no pull request:
+That runs the gate on the change and opens a pull request with the older digests. Read it. A pull request opened by a workflow starts no
+checks by itself, so approve or re-run its held `ci` run in Actions, or close and reopen the pull request. Wait for `Lint`, `Manifests` and
+`Security`, and merge it with a merge commit, the method this project uses because a squash or rebase changes any commit already published to local dev. Or revert the
+promotion from a branch, which does the same through a pull request of your own, and that one starts its checks by itself:
 
 ```bash
-git switch main && git pull --ff-only
-git log origin/main..main                                  # pushing main sends all of these, so this should print nothing
+git fetch origin
+git switch -c rollback/<name> origin/main
 git log --grep='^promote(plane-prod)' --format='%h %s' -3
 git revert <commit>                                        # a merge commit needs -m 1
-git push origin main                                       # pushing main deploys
+git push -u origin HEAD
+gh pr create --fill
+sleep 30
+gh pr checks --watch --required
+gh pr merge --merge
 ```
 
-CI then runs, `release-plane-prod` moves `deploy/plane-prod`, and Argo CD takes it at its next look. To ask for that look now:
+The `sleep` is there because `gh pr checks` stops with an error until the run has started. A rollback through a pull request has to wait for
+those three checks. The ruleset on `main` requires them, refuses a direct push and has no
+bypass actors, so going around them would need an admin to change the ruleset. Whether an emergency may do that has not been decided.
+
+After the merge CI runs again on `main`, `release-plane-prod` moves `deploy/plane-prod`, and Argo CD takes it at its next look. To ask for
+that look now:
 
 ```bash
 kc -n argocd annotate application root argocd.argoproj.io/refresh=normal --overwrite
@@ -106,7 +117,7 @@ kc -n argocd annotate application plane-prod argocd.argoproj.io/refresh=normal -
 unmanaged with its availability alerts quiet. So `publish-release.sh` refuses to go from a promoted set back to none, and the branch stays
 where it is. Promote another set, or revert the revert.
 
-**A platform change**, such as values, policies, monitoring or the backup Jobs, rolls back the same way: `git revert` on `main`, and a push.
+**A platform change**, such as values, policies, monitoring or the backup Jobs, rolls back the same way: `git revert` on a branch, and a pull request.
 Argo CD's own install, the namespaces, quotas, LimitRanges, the CoreDNS rewrite and the bootstrap chart belong to Terraform's
 [`environments/prod`](../../infrastructure/terraform/environments/prod/README.md), and the DNS records to
 [`environments/prod-host`](../../infrastructure/terraform/environments/prod-host/README.md). A revert of those needs their apply as well,
@@ -141,7 +152,7 @@ make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=argo
 make remote-smoke TARGET=plane-prod
 ```
 
-You want `RELEASE.json` naming the `main` commit you pushed or merged, every Application Synced and Healthy, and no pod on the digest you
+You want `RELEASE.json` naming the merge commit on `main`, every Application Synced and Healthy, and no pod on the digest you
 left. The smoke signs
 in with an existing account, whose email and password it asks for at hidden prompts, so the owner runs it in a terminal.
 
@@ -149,7 +160,7 @@ in with an existing account, whose email and password it asks for at hidden prom
 
 | Do not | Why |
 |---|---|
-| Push `deploy/plane-prod` by hand | GitHub Free cannot stop it, and Argo CD syncs whatever the branch holds. The next release then stops and names the commit, and [`check-deploy-branch.yml`](../../.github/workflows/check-deploy-branch.yml) goes red each day until the branch matches its `RELEASE.json` again |
+| Push `deploy/plane-prod` by hand | The ruleset covers `main` only, so nothing stops anyone with write access, and Argo CD syncs whatever the branch holds. The next release then stops and names the commit, and [`check-deploy-branch.yml`](../../.github/workflows/check-deploy-branch.yml) goes red each day until the branch matches its `RELEASE.json` again |
 | Force-push or rewrite `main` | The release refuses to move backwards: the commit `RELEASE.json` names must be an ancestor of the next one. Revert instead |
 | `kubectl set image` or `kubectl rollout undo` | Self-heal puts back what the branch says |
 | Edit `gitops/environments/prod/manifests.yaml` by hand | It is generated, CI fails on the difference, and a digest with no evidence is refused |

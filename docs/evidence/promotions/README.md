@@ -9,17 +9,19 @@ needs it, and so do the files under `docs/evidence/runs/` they name, and the ima
 
 ## The flow
 
-1. `images.yml` builds plain linux/amd64 manifests and opens a digest bump for dev. A person merges it.
+1. `images.yml` builds plain linux/amd64 manifests and opens a digest bump for dev. A person starts its held `ci` run and merges it with a merge commit once `Lint`, `Manifests` and `Security` pass.
 2. `scripts/ci/copy-to-local-registry.sh ghcr.io/bereketabera/wayline dev`, `make gitops-publish`, `make test-e2e ENV=dev`,
    `make publish-evidence`. Dev runs the exact bytes, under Rosetta.
 3. `make record-dev-evidence` writes the two files here, and refuses unless all of it holds. The script's header lists every
-   condition. Commit them with the published smoke, and push.
-4. `gh workflow run promote-plane-prod.yml -f set_hash=<set-hash>` checks the change and opens a pull request. A person merges
-   it, and that merge is the approval.
+   condition. Commit them with the published smoke on a branch, open a pull request, and merge it with a merge commit once `Lint`,
+   `Manifests` and `Security` pass.
+4. `gh workflow run promote-plane-prod.yml -f set_hash=<set-hash>` checks the change and opens a pull request. Like step 1's, it
+   starts no checks until a person approves or re-runs its held `ci` run. A person merges it with a merge commit once `Lint`,
+   `Manifests` and `Security` pass, and that merge is the approval.
 5. `ci.yml`'s `release-plane-prod` job checks the merged commit, reads each Wayline digest on GHCR, and moves `deploy/plane-prod`,
    the only branch hosted Argo CD reads. If it fails, the branch stays where it is.
 
-A rollback is a revert on main, or step 4 with an older hash. The older set still has its evidence, so the gate passes. Neither
+A rollback is a revert through a pull request, or step 4 with an older hash. The older set still has its evidence, so the gate passes. Neither
 reverts the database: a migration that set ran stays applied, and `scripts/hosted/README.md` has the restore path.
 
 The first promotion is the one a revert does not undo. It would take Application plane-prod away, and root would prune it, leaving Plane
@@ -56,12 +58,13 @@ and anything else in `applications/`. It finds a Wayline image outside the rende
 would need no evidence. `scripts/ci/validate-manifests.sh` holds every image there to `policy/hosted-images.txt`, which makes a new or
 renamed one a diff a person reads, and no more than that.
 
-`.github/evidence-signers` is read as the commit under test holds it. On GitHub Free with a private repository, anyone with write
-access can change that file and the check in one commit, push `deploy/plane-prod` directly, or merge unread. Nothing here can stop
+`.github/evidence-signers` is read as the commit under test holds it. The ruleset on `main` requires no reviewer and does not cover
+`deploy/plane-prod`, so anyone with write access can change that file and the check in one pull request, push `deploy/plane-prod`
+directly, or merge unread. Nothing here can stop
 any of that, and it can only notice a push: `publish-release.sh`, `check-deploy-branch.yml` each day and `make remote-status` go red if
 the branch differs from what its `RELEASE.json` says, and by then Argo CD may have deployed it.
 
-So all of this deserves the same reading as a change to production, and none of it is more than a process on this plan. The check and
+So all of this deserves the same reading as a change to production, and none of it is more than a process while no review is required and no rule covers `deploy/plane-prod`. The check and
 the signers are not all of it: whatever runs in the release job could mint the same result. That is `.github/workflows/ci.yml`,
 `scripts/ci/publish-release.sh`, `scripts/ci/lib-release-branch.sh`, `scripts/lib/common.sh`, `scripts/install-tools.sh`, `tools.lock` and
 `.tools`, which the check and `publish-release.sh` refuse to find tracked. See `.github/workflows/README.md`.

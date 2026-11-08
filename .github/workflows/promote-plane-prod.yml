@@ -2,8 +2,9 @@
 # reach the cluster. ci.yml's release-plane-prod job moves what production reads, after this merges. This job's token could push that
 # branch too, as any with contents: write can, and only publish-release.sh and check-deploy-branch.yml would notice.
 #
-# A person merging that pull request is the approval. GitHub cannot enforce that on the Free plan with a private
-# repository: no environment reviewers, no protected branches. See README.md.
+# A person merging that pull request is the approval. The ruleset on main requires a pull request and the checks Lint, Manifests and
+# Security, and no reviewer, so anyone with write access can merge it. A pull request opened by this workflow starts no checks until
+# a person approves or re-runs its held run. See README.md.
 name: promote-plane-prod
 
 on:
@@ -76,8 +77,12 @@ jobs:
             change before this pull request opened: every image here is in one signed record that plane-dev ran exactly this set.
             Nothing was rebuilt. The record is in `docs/evidence/promotions/`, named by the `Promote-Set` line of the commit.
 
-            **Merging this is the approval. GitHub cannot enforce it**: this repository is private on the Free plan, so there are no
-            environment reviewers and no protected branches. Review it as the control it stands in for.
+            **Merging this is the approval.** The ruleset on `main` requires this pull request and the checks Lint, Manifests and
+            Security, and no reviewer, so anyone with write access can merge it. Review it as the control it stands in for.
+
+            **A person has to start CI.** A pull request opened by this workflow starts no checks until a person approves or re-runs
+            its held `ci` run. Do that in the merge box or from Actions, wait for Lint, Manifests and Security, then merge with a
+            merge commit.
 
             After merging, `ci.yml`'s `release-plane-prod` job checks the merged commit again, confirms each digest on GHCR, and
             moves `deploy/plane-prod`, the one branch hosted Argo CD reads. If that job goes red, the branch stays where it is

@@ -35,26 +35,29 @@ just built, with `SCAN_ONLY=built` and `PLATFORM=linux/amd64`. Runs 41975430939 
 `images.yml` also runs `apps/wayline/checks/smoke-images.sh` on that x86-64 runner, against the digests it just published, and a
 failure stops the digest bump. That step has not run on a runner yet. Run by hand, on the Mac, it passed for `linux/arm64` images.
 
-The runs behind every statement below are in [docs/evidence/ci/](../../docs/evidence/ci/README.md), along with
-what has not run yet.
+The runs behind the statements below up to 2026-11-05 are in [docs/evidence/ci/](../../docs/evidence/ci/README.md), along with
+what had not run by then. The ruleset and the pull request runs of 2026-11-08 have no file there.
 
 ## What GitHub does and does not enforce on this plan
 
-The repository is private on the GitHub Free plan. For a private repository that plan has **no environment
-reviewers or wait timers, no protected branches, no rulesets, no code owners, and no artifact attestations**.
-The branch protection and ruleset APIs answer 403 here. The rest comes from GitHub's documentation.
+The repository has been public since 2026-11-08, on GitHub Free. Ruleset `Protect main` covers `main`: a pull request, the
+checks Lint, Manifests and Security, no force push or deletion, and no reviewer. By GitHub's documentation, environments with
+reviewers, code owners and artifact attestations are available on a public repository. Of those, only `CODEOWNERS` is set up.
 
 So production approval here is a process, not a control:
 
 - `promote-prod-sim.yml`, `promote-plane-prod.yml` and `promote-app.yml` each open a pull request, and a person merging it is the
   approval.
-- **GitHub cannot enforce that.** Anyone with write access can merge their own pull request, push straight
-  to `main`, or skip CI. `CODEOWNERS` does nothing on this plan, so it does not even request a review.
-- The same goes for `deploy/plane-prod`, which hosted Argo CD syncs: anyone with write access can push it, and so can any job with
+- **The ruleset does not enforce that.** It requires a pull request and the three checks, and no reviewer, so anyone with write
+  access can merge their own pull request. Nobody can put a commit on `main` outside a pull request whose checks passed, or merge past a red required check, unless a repository admin changes the ruleset. By GitHub's
+  documentation `CODEOWNERS` applies to a public repository, so a pull request from anyone but the owner it names requests that owner's review. The ruleset does not require it.
+- The ruleset covers `main` only, so nothing stops a push to `deploy/plane-prod`, which hosted Argo CD syncs, by anyone with write access or a job with
   `contents: write`. `publish-release.sh`, `check-deploy-branch.yml` and `make remote-status` go red if it differs from what its `RELEASE.json`
-  says. They notice a push, and by then Argo CD may have deployed it. Only a paid plan or verification on the cluster would prevent one.
-- What is enforced is in the scripts: `scripts/promote.sh` and `scripts/ci/check-promoted-digests.sh` refuse a prod-sim
-  digest dev never recorded for that image. CI runs that check, but nothing makes a failing check block a merge.
+  says. They notice a push, and by then Argo CD may have deployed it. GitHub Free can protect that branch now the repository is public, and no rule
+  does. Nothing short of such a rule or verification on the cluster would prevent one.
+- The rest of what is enforced is in the scripts: `scripts/promote.sh` and `scripts/ci/check-promoted-digests.sh` refuse a prod-sim
+  digest dev never recorded for that image. CI runs that check. Since 2026-11-08 a failing Lint, Manifests or Security check blocks a
+  merge to `main`. Anyone with write access can still change the check in the same pull request.
 - For the apps beside Wayline, `scripts/ci/promote-app.sh` holds the manifest and `policy/hosted-images.txt` to one and the
   same image string, and refuses one named anywhere else Argo CD reads. Nothing confirms the digest itself: `publish-release.sh`
   confirms Wayline's on GHCR and no others, so a wrong one shows only after the sync, as ImagePullBackOff.
@@ -64,7 +67,7 @@ So production approval here is a process, not a control:
   digest dev has not proven unless `OVERRIDE_DEV_CHECK="<reason>"` is set. `rollback.sh` publishes with `SKIP_DEV_CHECK`, so an
   emergency does not depend on dev. Both reasons go in `.local/evidence-raw/promotion-overrides.log`.
 - On kind a merge changes nothing running. It reaches the cluster only when someone pulls `main` and runs
-  `make gitops-publish`, which takes a prod-sim backup first if the change touches a prod-sim image. On hosted production a push to
+  `make gitops-publish`, which takes a prod-sim backup first if the change touches a prod-sim image. On hosted production a merge to
   `main` is a deploy: once CI passes, `release-plane-prod` moves `deploy/plane-prod`, and Argo CD syncs it.
 
 ## Settings and limits to know
@@ -77,18 +80,20 @@ So production approval here is a process, not a control:
 - A pull request opened with `GITHUB_TOKEN` starts no job. GitHub does make a `ci` run for it, and holds it at `action_required`
   with no jobs and no log until someone approves it. Closing the pull request turned such a run to `failure`, still with no jobs,
   so that red run is no check's result: runs 41976206674, 42045522553 and 41977201138, the last being the red one. Those workflows run `validate-manifests.sh` themselves
-  before opening it. No job of `ci.yml` has run on `on: pull_request` yet, and no person has opened a pull request here.
+  before opening it. Lint, Manifests and Security are required on `main`, so before such a pull request can merge a person has to approve
+  or re-run its held run, or close and reopen the pull request. `ci.yml` has run on pull requests opened from a user account since 2026-11-08.
 - **`images.yml` builds on `ubuntu-24.04`, because the VPS is x86-64, and has not yet run there.** That runner, on this plan, was
   measured at about 2 cores and 7 GiB of memory, with about 14 GiB free on `/`. So each job first removes `/usr/local/lib/android` and
   `/opt/hostedtoolcache/CodeQL`, which hold nothing it uses, and allows two build tasks.
-- **Native arm64 runners work here, and `images.yml` used them until then.** `ubuntu-24.04-arm` ran in this private repository, billed as
+- **Native arm64 runners work here, and `images.yml` used them until then.** `ubuntu-24.04-arm` ran here while the repository was private, billed as
   `Actions Linux ARM` at $0.005 a minute against included compute. It had 2 cores, 7.7 GiB of memory and 34 GiB free on `/`. Those sizes
   come from one run, so treat them as what was seen, not as a promise. Run 41975430939 built, checked and published all four images in a
   job of 6 minutes 26 seconds, 321 seconds of it in the build step, billed as 7 minutes. Run 42044273310 did the same in 6 minutes
   49 seconds, 325 seconds of it in the build step.
-- **Included compute on Free is $12 a month**, shared by all of the account's private repositories: about 2,000 x64 minutes
-  or 2,400 arm64 minutes. Without a payment method, GitHub blocks usage once it is spent. A build that reaches the
-  90-minute timeout in `images.yml` costs about $0.54, at the x64 rate those figures give.
+- **Included compute applies to private repositories.** Standard runners cost nothing on a public one, by GitHub's documentation.
+  On Free it is $12 a month, shared by all of the account's private repositories: about 2,000 x64 minutes
+  or 2,400 arm64 minutes. Without a payment method, GitHub blocks usage once it is spent. While this repository was private, a build that reached the
+  90-minute timeout in `images.yml` would have cost about $0.54, at the x64 rate those figures give.
 - **`GITHUB_TOKEN` pushes to GHCR.** Runs 41975430939 and 42044273310 each pushed all four images to `ghcr.io/bereketabera/wayline/` and walked every
   layer again as GHCR served it. **The packages are private:** with no credentials, GHCR's token endpoint answered 401 for those
   names after the first build, 200 for a public image, and 403 for a name with no package. Do not push these names by hand: GitHub's documentation says

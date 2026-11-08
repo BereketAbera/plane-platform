@@ -13,10 +13,10 @@ These checks deployed and promoted nothing. The promotions came after, at `1fc9f
 
 `b2ba587`, named below, is the build before this one: web `316d6dd37336`, admin `0480d65f1078`, space `79c25c465f33`, backend `cd44a752e7ee`. Of what the images hold, only text changed since: `MODIFICATIONS.md` and `NOTICE.md`, which ship in every image. `images-compare-since-b2ba587.txt` lists what differs, and the other source paths that changed, which do not ship. `ec45e21`, also named below, is the build before that: web `96841278d02a`, admin `c24ead5a02a1`, space `0a4ca742292d`, backend `9c7130942d90`. What changed between those two is what `cache-errors.txt` and `walk-before-publish.txt` record, and the licence texts.
 
-**The source offer is not live yet.** The repository is private as of 2026-11-05, so `/source` returns 404 to anyone without
-access until it is made public. The commit it names, `84b63d9`, is on GitHub. This must be fixed before anyone else uses an
-instance. `smoke.txt` marks the redirect PASS, which proves only that the image answers with a 302 to the right commit. Its
-NOTE line records what that target answered: 404.
+**The source offer was not live when this was captured.** The repository was private on 2026-11-05, so `/source` ended in a 404 for
+anyone without access. It has been public since 2026-11-08. The commit it names, `84b63d9`, is on GitHub. `smoke.txt` marks the
+redirect PASS, which proves only that the image answers with a 302 to the right commit. Its NOTE line records what that target
+answered then: 404.
 
 ## Files
 
@@ -167,4 +167,4 @@ arm64 build on GitHub, the throwaway registry on a runner, the copy to GHCR, the
 
 GitHub's documentation conflicts on a linked package's visibility, read on 2026-11-05: its page on publishing with Actions says a package a workflow creates takes the repository's visibility, and its page on access control and visibility says a linked
 package takes the repository's access permissions and not its visibility. It says elsewhere that a package is private when first published. Images have been pushed twice, at `9c8e098` and `76e98ee`. With no credentials the first four answered 401 ([record](../ci/ci-4-20261105T055033Z-ghcr-visibility.txt)). The API that states a package's visibility was not read, because the local token lacks `read:packages`. `apps/wayline/README.md` has the step: read each package's
-visibility before making the repository public.
+visibility on its GitHub page.

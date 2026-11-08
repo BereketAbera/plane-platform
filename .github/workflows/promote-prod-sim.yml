@@ -1,7 +1,8 @@
 # Opens a pull request copying digests dev has already recorded into prod-sim. It never builds.
 #
-# A person merging that pull request is the approval. GitHub cannot enforce that on the Free plan
-# with a private repository: no environment reviewers, no protected branches. See README.md.
+# A person merging that pull request is the approval. The ruleset on main requires a pull request and the
+# checks Lint, Manifests and Security, and no reviewer, so anyone with write access can merge it. A pull
+# request opened by this workflow starts no checks until a person approves or re-runs its held run. See README.md.
 name: promote-prod-sim
 
 on:
@@ -82,9 +83,13 @@ jobs:
             Promotion to prod-sim, requested by @${{ github.actor }}. Every digest here was already recorded
             for dev, and `scripts/promote.sh` refused anything else. Nothing was rebuilt.
 
-            **Merging this is the approval. GitHub cannot enforce it**: this repository is private on the Free
-            plan, so there are no environment reviewers and no protected branches. Review it as the control it
-            stands in for.
+            **Merging this is the approval.** The ruleset on `main` requires this pull request and the checks
+            Lint, Manifests and Security, and no reviewer, so anyone with write access can merge it. Review it
+            as the control it stands in for.
+
+            **A person has to start CI.** A pull request opened by this workflow starts no checks until a person
+            approves or re-runs its held `ci` run. Do that in the merge box or from Actions, wait for Lint,
+            Manifests and Security, then merge with a merge commit.
 
             After merging:
 

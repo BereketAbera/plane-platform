@@ -101,7 +101,7 @@ ARGO_REVISION="$(jq -r '.status.sync.revision // ""' "$WORK/application.json")"
 git fetch --quiet origin "+refs/heads/main:refs/remotes/origin/main" || die "could not fetch origin's main, and everything below is measured against it"
 # make gitops-publish can publish a commit GitHub does not have. The check needs this one in history, so a commit that
 # is only here can never pass there.
-git merge-base --is-ancestor "$ARGO_REVISION" refs/remotes/origin/main 2>/dev/null || die "plane-dev is at $ARGO_REVISION, which is not on origin's main. Push it first"
+git merge-base --is-ancestor "$ARGO_REVISION" refs/remotes/origin/main 2>/dev/null || die "plane-dev is at $ARGO_REVISION, which is not on origin's main. Merge it through a pull request first, with a merge commit"
 git cat-file blob "$ARGO_REVISION:$DEV_OVERLAY" >"$WORK/overlay.yaml" 2>/dev/null || die "$ARGO_REVISION has no $DEV_OVERLAY"
 
 yq -o=json -I=0 '.' "$WORK/overlay.yaml" | jq -c --arg ghcr "$GHCR_PREFIX/" '
@@ -251,8 +251,13 @@ mv "$RECORD" "$TARGET"
 ok "wrote $TARGET and its signature"
 cat <<NEXT
 Next:
+  git switch -c evidence/${SET_HASH:0:12}
   git add $TARGET $TARGET.sig $PUBLISHED
   git commit -m 'evidence: plane-dev ran set ${SET_HASH:0:12}'
-  git push
+  git push -u origin HEAD
+  gh pr create --fill
+Once Lint, Manifests and Security pass on that pull request:
+  gh pr merge --merge
+  git switch main && git pull --ff-only
   gh workflow run promote-plane-prod.yml --repo $HOSTED_REPOSITORY -f set_hash=$SET_HASH
 NEXT

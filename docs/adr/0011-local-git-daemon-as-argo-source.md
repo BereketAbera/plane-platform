@@ -4,11 +4,11 @@
 
 ## Context
 
-Argo CD needs a Git URL it can reach from inside the cluster. The repository is on GitHub (`origin`, private), where CI runs. The obvious setup is to point Argo CD at GitHub.
+Argo CD needs a Git URL it can reach from inside the cluster. The repository is on GitHub (`origin`, private when this was decided, public since 2026-11-08), where CI runs. The obvious setup is to point Argo CD at GitHub.
 
 That has costs for a local platform:
 
-- A private repository means a deploy key or token inside the cluster, in the first Application, before Infisical exists. That is one more secret-zero item.
+- A private repository meant a deploy key or token inside the cluster, in the first Application, before Infisical exists. That was one more secret-zero item.
 - Every change would need a push and CI before it could be tried on a laptop.
 - Cluster state would depend on an external service for a platform that is meant to be rebuilt locally.
 

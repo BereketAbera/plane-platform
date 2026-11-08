@@ -90,9 +90,9 @@ uncommitted source, or one whose source has changed since, and warns when the co
 routes `/` to web, so the path works from `/god-mode/` and `/spaces/` too. The target can be overridden at image build time
 with `WAYLINE_SOURCE_REPO`.
 
-**The link works once the repository is public. It is private as of 2026-11-07, so `/source` returns 404 to anyone without access. An image `images.yml` publishes is built from a commit already on GitHub, so the commit the link names is there. The owner must make the repository public before anyone else uses an instance.**
+**The repository has been public since 2026-11-08, so the link answers anyone. An image `images.yml` publishes is built from a commit already on GitHub, so the commit the link names is there.**
 
-`NOTICE.md` and `MODIFICATIONS.md` say the same, in words meant to stay true after that. Both ship in every image and `images.yml` watches them, so an edit to either rebuilds the images on the next push.
+`NOTICE.md` and `MODIFICATIONS.md` say the same. Both ship in every image and `images.yml` watches them, so an edit to either rebuilds the images on the next push.
 
 The licence texts are in every image at `/usr/share/licenses/wayline/`, and at `/licenses/` on the web image.
 
@@ -151,11 +151,11 @@ What the owner still has to confirm. The first push of this directory went ahead
 
 - [ ] D12 in `MODIFICATIONS.md`, all of it: `email.py` replaced with upstream's later AGPL-3.0-only version, the backend flattened, and publishing with no requirement that the repository be private. All three are done, none has been reviewed, and no lawyer or other legal reviewer has looked at them.
 
-Before the repository is made public, in this order:
+The repository went public on 2026-11-08. Still to do from this order:
 
 1. Read each package's visibility on its GitHub page: `web`, `admin`, `space`, `backend`. Images have been published twice. With no credentials the first four answered 401 ([record](../../docs/evidence/ci/ci-4-20261105T055033Z-ghcr-visibility.txt)), and no file records anyone reading the package pages. The API needs `read:packages`, which the local token lacks.
-2. Do this before making the repository public, because GitHub's documentation conflicts. One page says a package a workflow creates takes the repository's visibility. Another says a linked package takes the repository's access permissions and not its visibility. So do not assume either way what a package becomes.
-3. Read them again after making the repository public. The same documentation says a package made public cannot be made private again.
+2. GitHub's documentation conflicts. One page says a package a workflow creates takes the repository's visibility. Another says a linked package takes the repository's access permissions and not its visibility. So do not assume either way what a package becomes.
+3. The packages still answered 401 anonymously after the repository went public. Read the package pages as well. The same documentation says a package made public cannot be made private again.
 
 Pruning was a precaution, not a response to a known limit, so GHCR can keep growing for now. GitHub's Packages billing page lists 500 MB of storage for private
 packages on Free, and also says "Container image storage and bandwidth for the Container registry is currently free", with at

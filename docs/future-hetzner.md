@@ -86,7 +86,7 @@ This root calls `modules/foundation` and `modules/argocd`, as `environments/loca
 |---|---|---|---|---|
 | `kubeconfig_path` | string | no | Yes | Kubernetes and Helm providers |
 | `kube_context` | string | no | Yes | Same |
-| `git_repo_url` | string | no | Yes | GitHub HTTPS URL, replacing `git://plane-git/plane-platform.git`. The repository is private today, and making it public is an open owner decision ([D10](../PASS2_HANDOFF.md#12-open-decisions)) |
+| `git_repo_url` | string | no | Yes | GitHub HTTPS URL, replacing `git://plane-git/plane-platform.git`. The repository has been public since 2026-11-08 |
 | `git_target_revision` | string | no | Yes | `main` unless the owner decides otherwise |
 | `environment` | string | no | New | Selects the one Plane namespace |
 | `base_domain` | string | no | New | Public parent domain, replacing `*.localhost` |

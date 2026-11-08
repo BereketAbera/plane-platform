@@ -9,8 +9,9 @@
 # One branch per app, promote/<app>. A second dispatch for the same app before the first pull request merges replaces that pull
 # request's change with its own, so promote an app's components one at a time.
 #
-# A person merging that pull request is the approval. GitHub cannot enforce that on the Free plan with a private repository: no
-# environment reviewers, no protected branches. See README.md.
+# A person merging that pull request is the approval. The ruleset on main requires a pull request and the checks Lint, Manifests and
+# Security, and no reviewer, so anyone with write access can merge it. A pull request opened by this workflow starts no checks until
+# a person approves or re-runs its held run. See README.md.
 name: promote-app
 
 on:
@@ -138,12 +139,16 @@ jobs:
             linux/amd64 image passed its smoke test and scan. `docs/hosted-apps.md`, under Checking a digest, has the commands, with your own
             login. A wrong digest shows only after the sync, as ImagePullBackOff, while the pod before it keeps serving.
 
-            **Merging this is the approval. GitHub cannot enforce it**: this repository is private on the Free plan, so there are no
-            environment reviewers and no protected branches. Review it as the control it stands in for.
+            **Merging this is the approval.** The ruleset on `main` requires this pull request and the checks Lint, Manifests and
+            Security, and no reviewer, so anyone with write access can merge it. Review it as the control it stands in for.
+
+            **A person has to start CI.** A pull request opened by this workflow starts no checks until a person approves or re-runs
+            its held `ci` run. Do that in the merge box or from Actions, wait for Lint, Manifests and Security, then merge with a
+            merge commit.
 
             After merging, `ci.yml`'s `release-plane-prod` job moves `deploy/plane-prod`, and Argo CD syncs Application
             `${{ steps.check.outputs.app }}` and no other. `make remote-status TARGET=plane-prod` shows it. If that job goes red, the branch
-            stays where it is and production keeps running what it ran. To roll back, revert this commit on main.
+            stays where it is and production keeps running what it ran. To roll back, revert this commit on main through a pull request.
       # GitHub refuses the pull request after the branch is pushed, so a person can still finish the
       # promotion. The run stays red, because the pull request this workflow promises does not exist.
       - name: Explain a refused pull request

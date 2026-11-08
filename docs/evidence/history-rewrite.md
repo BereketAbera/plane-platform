@@ -18,7 +18,7 @@ Read at 13:53Z, and again across every ref at 13:55Z:
 | `gitleaks git` over the history | Exit 0, which says nothing about the session value on its own |
 | The search below | 0 |
 
-The search for session values, which gitleaks does not do. It belongs beside `gitleaks` before the repository goes public:
+The search for session values, which gitleaks does not do. It belongs beside `gitleaks`:
 
 ```bash
 git log -p --all | grep -cE '"session(_id|-id)?" *: *"[A-Za-z0-9_-]{16,}|session(-id|_id)?=[A-Za-z0-9_-]{16,}'
@@ -32,7 +32,7 @@ It still worked. Read at 13:55:43Z from this machine, `GET /api/users/me/` on `p
 
 - GitHub never held the value. `origin/main` read `0dde813` until the push after this rewrite.
 - The old commits stay as unreachable objects in this checkout's own Git store until Git expires them. No push sends them.
-- `scripts/gitops-publish.sh` refuses a non-fast-forward on purpose, so that Argo CD never follows a rewrite with no record of it. This page is that record. The bare repository also refuses it on its own, through `receive.denyNonFastForwards`. So it was rebuilt the way that script names for this: moved aside, then `make gitops-publish` from the rewritten `main`. `.local/publishes.log` was put through the same map, so `make rollback` still finds each publish.
+- `scripts/gitops-publish.sh` refuses a non-fast-forward on purpose, so that Argo CD never follows a rewrite with no record of it. This page is that record for the rewrite of 2026-11-05. The bare repository also refuses it on its own, through `receive.denyNonFastForwards`. So it was rebuilt the way that script names for this: moved aside, then `make gitops-publish` from the rewritten `main`. `.local/publishes.log` was put through the same map, so `make rollback` still finds each publish.
 - Raw evidence was not edited. A commit id inside a file under `runs/`, or in a commit message, is the id at the time, so read it through the map below. Prose under `docs/`, `README.md` and `PASS2_HANDOFF.md` was moved to the new ids.
 
 ## Map of old ids to new ids
