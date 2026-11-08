@@ -1,6 +1,7 @@
 # cert-manager. Only the controller leaves the cluster, and only to ACME on 443. The solver pods it starts run beside each Certificate,
-# in plane-prod, monitoring and infisical, under those namespaces' policies. Its self-check of each needs no rule there: it reads the token
-# through Traefik, because CoreDNS rewrites each public host to Traefik's Service, and Traefik's egress reaches the solver.
+# in plane-prod, monitoring, infisical, rillmark, awushi-cloudgarden and frameflow, under those namespaces' policies. Its self-check of
+# each needs no rule there: it reads the token through Traefik, because CoreDNS rewrites each public host to Traefik's Service, and
+# Traefik's egress reaches the solver.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

@@ -1,0 +1,25 @@
+# Rillmark's public route, https://rillmark.bereket.dev, and its only one. The whole host goes to nginx, which sets the site's headers
+# itself, and the site is files with nothing to write to, so the route carries no Middleware. policy/hosted.rego binds this host to
+# this namespace, and this namespace to this Service and certificate.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: rillmark
+  namespace: rillmark
+  labels:
+    app.kubernetes.io/name: rillmark-web
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: rillmark
+  annotations:
+    # After the pod, so its first answer is not Traefik's 503.
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: Host(`rillmark.bereket.dev`)
+      services:
+        - name: rillmark
+          port: 80
+  tls:
+    secretName: rillmark-tls

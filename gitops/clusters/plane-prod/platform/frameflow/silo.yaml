@@ -1,0 +1,141 @@
+# Frameflow's own Silo, for its media, with nothing shared with Plane's: the same image and digest as Plane's render, and the same
+# hardening (helm/plane/components/hardening/patches/silo.yaml). Plane's pods all hold that Silo's root keys, so a bucket of Frameflow's
+# there would be theirs too. Here only this pod and the setup hook hold root, and the app and the backup each have a user of their own,
+# which silo-setup.yaml makes.
+#
+# The Service is never named *-minio, which policy/plane.rego binds to Plane's /uploads route. Its S3 port is what the upload route, the
+# app, the backup and Prometheus reach. The console's port is here only so that make remote-ui can port-forward it: no route names it,
+# and network-policies/frameflow.yaml lets nothing reach it. Headless, as Plane's is: it is the StatefulSet's own.
+apiVersion: v1
+kind: Service
+metadata:
+  name: frameflow-silo
+  labels:
+    app.kubernetes.io/name: frameflow-silo
+    app.kubernetes.io/component: s3
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/component: s3
+  ports:
+    - name: api
+      port: 9000
+      targetPort: api
+    - name: console
+      port: 9090
+      targetPort: console
+---
+# No auto-reload, as on Postgres: Silo reads its root keys only when it starts, so a new pair takes effect at a restart a person chooses,
+# not one that cuts off an upload in flight.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: frameflow-silo
+  labels:
+    app.kubernetes.io/name: frameflow-silo
+    app.kubernetes.io/component: s3
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  serviceName: frameflow-silo
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frameflow-silo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: frameflow-silo
+        app.kubernetes.io/component: s3
+        app.kubernetes.io/part-of: frameflow
+    spec:
+      serviceAccountName: silo
+      automountServiceAccountToken: false
+      securityContext:
+        # The image's own user is root, so this names one. Measured locally as 1000, with a read-only root filesystem and no capability:
+        # it starts, serves and is ready in about 2 s. A volume's root is writable by it, as on Plane's.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: silo
+          image: docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z-distroless@sha256:e6544a902f426f2b4e775b89f3c1cd78310dbffc262d1ed82e9800c1cb1b5885
+          args:
+            - server
+            - /data
+            - --console-address
+            - :9090
+          env:
+            # The ServiceMonitor scrapes without credentials, and the default `jwt` answers 403, so a rule on these metrics would read a
+            # healthy Silo as down. Safe: the only route here sends PUTs under one prefix, and the NetworkPolicy limits who reaches 9000.
+            - name: MINIO_PROMETHEUS_AUTH_TYPE
+              value: public
+          envFrom:
+            - secretRef:
+                name: frameflow-silo-root
+          ports:
+            - name: api
+              containerPort: 9000
+            - name: console
+              containerPort: 9090
+          # Distroless, so HTTP only. The image sets HOME=/tmp and need not ship a writable /tmp.
+          startupProbe:
+            httpGet:
+              path: /minio/health/live
+              port: api
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: api
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: api
+            periodSeconds: 30
+            timeoutSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # About 90Mi at idle and about 460Mi after a test of uploads, copies and listings, measured locally, and Go returned little of it.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+  # 25Gi for a bucket whose quota is 12GiB (silo-setup.yaml), which leaves room for Silo's own system area and for the parts of an upload
+  # that never finished, which this release removes once they are 24h old, at a sweep every 6h. local-path enforces no size, and a
+  # volumeClaimTemplate cannot change later.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path-retain
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 25Gi

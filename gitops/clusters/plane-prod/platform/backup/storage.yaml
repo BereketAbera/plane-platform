@@ -1,5 +1,6 @@
 # A PV binds one PVC, so each namespace has its own, on its own folder of /srv/wayline/backups. Capacity is a label: hostPath
-# enforces nothing, and the disk rules in monitoring-extras are what watch it. 50 GiB is capacity.yaml's budget for backups.
+# enforces nothing, and the disk rules in monitoring-extras are what watch it. Each size is the backups claim in that namespace's quota
+# in capacity.yaml, 74 GiB in all.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -49,3 +50,30 @@ spec:
   volumeName: backups-infisical
   resources:
     requests: {storage: 10Gi}
+---
+# Frameflow's quota must hold this claim before it is here: the backup Application syncs at root's first wave, and a claim the quota
+# refuses would stop root there. So the quota comes from Terraform first, through make remote-bootstrap.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: backups-frameflow
+  labels: {plane-platform/backups: frameflow}
+spec:
+  capacity: {storage: 24Gi}
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef: {apiVersion: v1, kind: PersistentVolumeClaim, namespace: frameflow, name: backups}
+  hostPath: {path: /srv/wayline/backups/frameflow, type: Directory}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backups
+  namespace: frameflow
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: backups-frameflow
+  resources:
+    requests: {storage: 24Gi}

@@ -1,10 +1,24 @@
-# Frameflow is not deployed. Its namespace exists so its reservation has a name (infrastructure/hosted/plane-prod/capacity.yaml), with
-# a quota of no pods, so deploying it takes a pull request. Whatever lands here first has nothing allowed.
+# frameflow. Frameflow, https://frameflow.bereket.dev: video upload and processing. Next.js serves the site and proxies the API, a Fastify
+# process on SQLite. A Hatchet worker runs FFmpeg, and CronJobs clean up, reconcile and back up. Beside them run three services this app
+# shares with no other: Silo for the media, hatchet-lite for the workflows, and Postgres for Hatchet. Traefik is the only way in: to the web
+# pods, to Silo's S3 port for the browser's presigned uploads, and to the solver for frameflow-tls. Nothing here reaches the internet or
+# another app, and only the operator reaches the API server or Infisical.
 #
-# Prometheus scrapes any namespace by itself, and this one will need letting in. No rule yet, because a rule needs the port Frameflow's
-# metrics turn out to be on, and no pod here to open it for. That pull request adds two: an ingress rule here, from namespace monitoring
-# and pods named prometheus, on that port, and the same port for namespace frameflow in Prometheus's egress in monitoring.yaml.
-# docs/monitoring-new-app.md has both, written out.
+# One policy per component, named for it. Frameflow's own pods are selected by the app.kubernetes.io/component each carries, the operator's
+# and the solver's by the labels their chart and cert-manager give them, and a pod that matches none is allowed nothing but DNS. A call
+# between two components needs the caller's egress and the callee's ingress, both here. A call that crosses a namespace has its other half
+# in traefik.yaml, monitoring.yaml or infisical.yaml.
+#
+# Frameflow arrives in two releases, because the Hatchet client token can only be minted once Hatchet runs: first Hatchet, its Postgres,
+# Silo and its setup Job, and the web server, with the operator ahead of them, then the API, the worker and the two maintenance CronJobs.
+# platform/frameflow/kustomization.yaml lists the two apart. These policies are written for both, so until the second lands, those for its
+# components select no pod.
+#
+# The kubelet's probes come from the node, which policy exempts, so no rule opens a health port: not the worker's 8001, nor Hatchet's 8733.
+# kubectl port-forward to the Hatchet dashboard or Silo's console enters the pod's own network namespace, and the token script's kubectl
+# exec runs inside Hatchet's pod, so neither needs a rule.
+#
+# Policies see pod IPs and target ports: kube-router evaluates after DNAT, so each port below is the container's.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -13,3 +27,264 @@ metadata:
 spec:
   podSelector: {}
   policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: frameflow
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# The public route, and the one call the web server makes: Next.js proxies /api/* and /streams/* to the API, at the address its build
+# baked in, frameflow-api:4000. Every page renders in the browser, so the server fetches nothing else. Traefik's half is in traefik.yaml.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: web } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 3000 }
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: api } }
+      ports:
+        - { protocol: TCP, port: 4000 }
+---
+# Only the web server's proxy and the worker's status callbacks reach the API: no route names it. The proxy passes the public routes and
+# not /internal/*, where the callbacks land behind WORKER_CALLBACK_SECRET. The API submits each video to Hatchet, whose client speaks gRPC
+# on 7070 and REST on 8888, and keeps the media in Silo. Owner sign-in checks a hash the API holds, so it calls no identity provider.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: api } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/component, operator: In, values: [web, worker] }
+      ports:
+        - { protocol: TCP, port: 4000 }
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: hatchet } }
+      ports:
+        - { protocol: TCP, port: 7070 }
+        - { protocol: TCP, port: 8888 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: s3 } }
+      ports:
+        - { protocol: TCP, port: 9000 }
+---
+# FFmpeg, and nothing comes in: the worker serves no traffic, and the kubelet's probes of /livez and /readyz come from the node. It takes
+# its tasks from Hatchet over gRPC. On SIGTERM, SDK 1.43 asks Hatchet's REST API to assign it no more before it drains, so without 8888 a
+# draining worker could still be handed tasks. It reads each source from Silo, writes the renditions back, and reports each step to the
+# API. No internet: FFmpeg could fetch a URL, and a source here is only ever what Silo holds.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: worker
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: worker } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: hatchet } }
+      ports:
+        - { protocol: TCP, port: 7070 }
+        - { protocol: TCP, port: 8888 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: s3 } }
+      ports:
+        - { protocol: TCP, port: 9000 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: api } }
+      ports:
+        - { protocol: TCP, port: 4000 }
+---
+# hatchet-lite: the engine's gRPC on 7070, and on 8888 the dashboard with the REST API behind it, for the API, the worker and reconcile.
+# The REST API's own 8080, the dashboard's files on 8081 and the engine's health on 8733 stay closed: lite's proxy on 8888 reaches the first
+# two inside the pod, and only the kubelet calls 8733, from the node. The dashboard has no route, so people reach it by port-forward.
+# Postgres is its database and its queue. Its security check is off, and would find no way out if it were on.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hatchet
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: hatchet } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/component, operator: In, values: [api, worker, maintenance] }
+      ports:
+        - { protocol: TCP, port: 7070 }
+        - { protocol: TCP, port: 8888 }
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: postgres } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+---
+# Hatchet's database, and its queue. Hatchet's pod runs the migrations and the seed against it at every start, so Hatchet's rule covers
+# them, and an init container in that pod as well. The backup Job dumps it. Nothing else here holds its password: the app's own data is
+# SQLite.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: postgres } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/component, operator: In, values: [hatchet, backup] }
+      ports:
+        - { protocol: TCP, port: 5432 }
+---
+# Frameflow's own Silo, never Plane's, on its S3 port alone. The console on 9090 stays closed, and people reach it by port-forward.
+# Traefik reaches it for the upload route, which policy/hosted.rego keeps to presigned PUTs under the one prefix the API signs, a limit no
+# NetworkPolicy can see. Prometheus scrapes its metrics on the same port, as on Plane's.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: s3
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: s3 } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/component, operator: In, values: [api, worker, maintenance, s3-setup, backup] }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports:
+        - { protocol: TCP, port: 9000 }
+---
+# The Sync hook that makes the bucket, its quota, and the app's and the backup's users and policies with Silo's root keys, on every sync.
+# mc's admin calls use the S3 port too.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: s3-setup
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: s3-setup } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: s3 } }
+      ports:
+        - { protocol: TCP, port: 9000 }
+---
+# The hourly cleanup and the reconcile CronJob. Both open the API's SQLite file on its volume, so neither calls the API. Cleanup deletes
+# expired uploads and staging from Silo. Reconcile reads each stale run from Hatchet, and looks for its playlist in Silo. The two share
+# this label, so cleanup gets Hatchet's ports as well, which it does not use.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: maintenance
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: maintenance } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: s3 } }
+      ports:
+        - { protocol: TCP, port: 9000 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: hatchet } }
+      ports:
+        - { protocol: TCP, port: 7070 }
+        - { protocol: TCP, port: 8888 }
+---
+# Backup and restore Jobs must carry this label. The nightly plane-backup CronJob takes Hatchet's database with pg_dump, the media with
+# rclone as Silo's read-only backup user, and the SQLite file from its volume. It writes to a volume, so no other egress is needed, and it
+# holds database credentials, so none of it reaches the internet. Off-VPS copies are pulled and pushed from the laptop.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backup
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: backup } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: postgres } }
+      ports:
+        - { protocol: TCP, port: 5432 }
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/component: s3 } }
+      ports:
+        - { protocol: TCP, port: 9000 }
+---
+# iso-frameflow, Frameflow's own operator, as plane-prod has its own. It must precede the app, or no Secret exists and nothing starts. The
+# node's address on 6443 is what kube-router sees for the API server. See traefik.yaml. Nothing scrapes its metrics, so nothing may enter.
+# The server's half is in infisical.yaml.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: infisical-operator
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: secrets-operator } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: infisical } }
+          podSelector: { matchLabels: { app: infisical-standalone, component: infisical } }
+      ports:
+        - { protocol: TCP, port: 8080 }
+    - to:
+        - ipBlock: { cidr: 5.253.234.127/32 }
+      ports:
+        - { protocol: TCP, port: 6443 }
+---
+# cert-manager starts one of these for each HTTP-01 challenge of frameflow-tls, with this label, beside that Certificate. Each answers
+# Let's Encrypt on 8089 through Traefik, and has nothing to call, the app least of all. Its quota room is in
+# infrastructure/hosted/plane-prod/capacity.yaml.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: acme-http01-solver
+  namespace: frameflow
+spec:
+  podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: "true" } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports:
+        - { protocol: TCP, port: 8089 }

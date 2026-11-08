@@ -1,0 +1,40 @@
+# Frameflow, https://frameflow.bereket.dev, for the Application of the same name (applications/frameflow.yaml). Every object goes to
+# namespace frameflow, and Argo CD applies exactly what is listed here, so a file that is not listed is not deployed.
+#
+# It comes in two releases, because the Hatchet client token exists only once Hatchet runs, and the API, the worker and reconcile refuse to
+# start without it:
+#
+# - Release A, the list below: Infisical's CRs but the token's, the settings, Hatchet's Postgres, Silo and the Sync hook that makes its
+#   bucket and users, hatchet-lite, the web server and its route. The pages load, and every call to the API fails until release B.
+# - Then scripts/hosted/frameflow-hatchet-token.sh mints the token inside Hatchet's pod and writes it to Infisical.
+# - Release B, the commented block: the token's CR, the API with its volume, the worker, the two CronJobs and the upload route. One change
+#   uncomments all five, and only once Infisical holds the token. CI builds this folder as Argo CD does, from this list, so the schema,
+#   policy, image and quota checks read those five only in that change's pull request. The same change adds the backend image's line to
+#   policy/hosted-images.txt, which fails on an entry nothing names, and nothing names the backend before release B.
+#
+# The token's CR reads Degraded until Infisical holds the token, and a sync waits on it. Listed before that, it would stop this
+# Application's first sync, and root's with it: frameflow is root's last wave, and root holds every later change to an Application while a
+# child's operation is open (gitops/clusters/plane-prod/values/argocd.yaml).
+#
+# Waves: -3 the ServiceAccounts and Infisical's connection, -2 its login, -1 the Secrets, 0 the settings and the Services, 1 Postgres and
+# Silo, 2 Hatchet and Silo's setup hook, 3 the web server and in release B the token, 4 the route and in release B the API, its volume, the
+# worker, the CronJobs and the upload route.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: frameflow
+resources:
+  - serviceaccounts.yaml
+  - infisical.yaml
+  - config.yaml
+  - hatchet-postgres.yaml
+  - silo.yaml
+  - silo-setup.yaml
+  - hatchet.yaml
+  - web.yaml
+  - routes.yaml
+  # Release B, all five together, once the Hatchet client token is in Infisical, and the backend's line in policy/hosted-images.txt:
+  # - token.yaml
+  # - api.yaml
+  # - worker.yaml
+  # - cronjobs.yaml
+  # - upload-route.yaml

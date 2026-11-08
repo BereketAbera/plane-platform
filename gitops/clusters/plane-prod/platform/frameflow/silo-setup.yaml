@@ -1,0 +1,135 @@
+# What Silo holds besides objects, made again at every sync of this Application: the bucket, private, with its quota, and two users with a
+# policy each. Silo keeps users and policies in its own system area, which the nightly backup does not copy, so a Silo rebuilt or restored
+# from that backup gets them back at its next sync. Each command is safe to repeat: run four times over against this Silo release, every
+# run exited 0, and a changed policy was replaced in place.
+#
+# A Sync hook at wave 2, once Silo at wave 1 is ready. BeforeHookCreation deletes the last run before the next, and there is no
+# ttlSecondsAfterFinished, because Argo CD can wait forever on a hook Kubernetes already deleted (helm/plane/components/hardening).
+#
+# Silo names a user by its access key. The two:
+# - The app's, for the API, the worker and the CronJobs: list the bucket, and read, write and delete its objects. Abort is there because
+#   the upload library aborts a multipart upload when a part fails, and a refused abort would hide that part's own error.
+# - The backup's, for platform/backup's rclone: list the bucket and read its objects.
+# Neither can make or remove a bucket, change its policy, versioning or quota, reach another bucket, or call an admin API: measured against
+# this release, as were the app's own calls through Frameflow's S3 client.
+#
+# No lifecycle rule: a prefix cannot name each video's staging folder, and delete markers need versioning, which this bucket has not.
+# Frameflow's hourly cleanup removes staging and expired uploads, and the quota bounds the rest. A changed access key in Infisical makes a
+# new user at the next sync, and the old one keeps its policy until someone removes it, in the console that
+# make remote-ui TARGET=plane-prod UI=frameflow-silo opens, or with mc admin user remove.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: frameflow-silo-setup
+  labels:
+    app.kubernetes.io/name: frameflow-silo-setup
+    app.kubernetes.io/component: s3-setup
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  # A Silo that restarts under this, and the next try starts clean.
+  backoffLimit: 3
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: frameflow-silo-setup
+        app.kubernetes.io/component: s3-setup
+        app.kubernetes.io/part-of: frameflow
+    spec:
+      restartPolicy: Never
+      serviceAccountName: silo-setup
+      automountServiceAccountToken: false
+      securityContext:
+        # The image's own user is root, so this names one, as for Silo.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mc
+          image: docker.io/pgsty/mc:RELEASE.2026-10-26T00-00-00Z@sha256:ce62c9053c69ce12a527a322345b5ad9f44b5f8a7b8189f82e516f2e3f30f1d8
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            # mc writes its configuration even when its alias comes from the environment, and HOME is / for this user, so it fails on a
+            # read-only root without this.
+            - name: MC_CONFIG_DIR
+              value: /tmp/.mc
+          envFrom:
+            - secretRef:
+                name: frameflow-silo-setup
+          # Peaked at 79Mi under these limits, measured locally.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          # The image's entrypoint is mc, and it holds bash and coreutils, but no grep, sed or curl.
+          command: [/bin/bash, -c]
+          args:
+            - |
+              set -euo pipefail
+              # Root's keys reach mc through its environment alone: never its arguments, which any process in the pod can read, and
+              # never its configuration file. They are hex, so they need no encoding in this URL.
+              export MC_HOST_silo="http://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@frameflow-silo:9000"
+              # kube-router admits a new pod a second or two after it starts, and until then refuses its connections just as a closed
+              # port does, so an early refusal says nothing. Two minutes, for a Silo that restarts under this too.
+              for ((i = 1; ; i++)); do
+                if mc ready silo >/dev/null 2>&1; then break; fi
+                if ((i >= 60)); then
+                  echo "silo-setup: frameflow-silo:9000 did not answer ready in 2 minutes" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+              mc mb --ignore-existing silo/frameflow-media
+              mc anonymous set none silo/frameflow-media
+              mc quota set silo/frameflow-media --size 12GiB
+              cat >/tmp/frameflow-app.json <<'JSON'
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {"Effect": "Allow", "Action": ["s3:ListBucket"], "Resource": ["arn:aws:s3:::frameflow-media"]},
+                  {
+                    "Effect": "Allow",
+                    "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:AbortMultipartUpload"],
+                    "Resource": ["arn:aws:s3:::frameflow-media/*"]
+                  }
+                ]
+              }
+              JSON
+              cat >/tmp/frameflow-backup.json <<'JSON'
+              {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {"Effect": "Allow", "Action": ["s3:ListBucket"], "Resource": ["arn:aws:s3:::frameflow-media"]},
+                  {"Effect": "Allow", "Action": ["s3:GetObject"], "Resource": ["arn:aws:s3:::frameflow-media/*"]}
+                ]
+              }
+              JSON
+              mc admin policy create silo frameflow-app /tmp/frameflow-app.json
+              mc admin policy create silo frameflow-backup /tmp/frameflow-backup.json
+              # Each secret key reaches mc on stdin, which it reads when that argument is left out and stdin is no terminal. mc prints
+              # the access key of each user it adds or attaches, so that goes nowhere, and the log says only what was done.
+              mc admin user add silo "$APP_ACCESS_KEY" <<<"$APP_SECRET_KEY" >/dev/null
+              mc admin user add silo "$BACKUP_ACCESS_KEY" <<<"$BACKUP_SECRET_KEY" >/dev/null
+              mc admin policy attach silo frameflow-app --user "$APP_ACCESS_KEY" >/dev/null
+              mc admin policy attach silo frameflow-backup --user "$BACKUP_ACCESS_KEY" >/dev/null
+              echo "silo-setup: frameflow-media is private with a 12GiB quota, and the app's and the backup's users hold their policies"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi

@@ -1,0 +1,20 @@
+# What a browser gets at Rillmark's public route: the same TLS, certificate and route, without leaving the node, because CoreDNS rewrites
+# this name to Traefik's Service too. The home page, the site's one HTML page: every other page is a hash on it. RillmarkDown in
+# shared/rules-hosted.yaml reads this.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: rillmark
+spec:
+  jobName: rillmark-http
+  interval: 30s
+  scrapeTimeout: 10s
+  module: http_html
+  prober:
+    url: blackbox.monitoring.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://rillmark.bereket.dev/
+      labels: { probe: rillmark }

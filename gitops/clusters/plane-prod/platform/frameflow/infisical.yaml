@@ -1,0 +1,412 @@
+# How the Secrets reach this namespace: from Infisical project frameflow-prod, environment prod, which only Frameflow's identity reads, as
+# only Plane's reads plane-prod. iso-frameflow, the operator for this namespace alone, logs in with a token for plane-infisical-auth. Every
+# value comes from the flat keys there, so each one has one source. scripts/infisical-seed.sh writes the ones it generates and those the
+# owner's files under .local/hosted/plane-prod/frameflow/ hold, and never overwrites a value. The Hatchet client token is not here:
+# token.yaml says why.
+#
+# Templates use secretFrom, not the documented `.KEY.Value`: a missing key then fails the reconcile and the CR goes Degraded.
+# `.KEY.Value` renders a literal "<no value>" and reports success (operator #121), which Postgres or Silo would then accept as a real key.
+#
+# targets[].metadata stops the operator copying this CR's labels and annotations, including Argo's tracking id, onto the Secret.
+#
+# A target with a template gets only its template's keys, so no Secret carries a key its readers do not need. Generated values are hex,
+# because nothing URL-encodes them on their way into a URL: Hatchet's database password into DATABASE_URL below, and Silo's root keys
+# into the alias silo-setup.yaml gives mc.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalConnection
+metadata:
+  name: infisical
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  # Always set: when empty the operator falls back to its chart's hostAPI, whose default is
+  # Infisical Cloud, and would send identity tokens there.
+  address: http://infisical.infisical.svc.cluster.local:8080/api
+---
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalAuth
+metadata:
+  name: infisical
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  infisicalConnectionRef:
+    name: infisical
+    namespace: frameflow
+  method: kubernetes
+  kubernetes:
+    # The CRD accepts only a Secret reference here, and the id changes on every Infisical
+    # re-bootstrap, so it cannot be in Git. scripts/infisical-bootstrap writes this Secret. It is
+    # not a credential: login also needs a token for the ServiceAccount below.
+    identityIdRef:
+      name: plane-infisical-identity
+      namespace: frameflow
+      key: identityId
+    serviceAccountRef:
+      name: plane-infisical-auth
+      namespace: frameflow
+---
+# The API's alone. The callback secret is what the API checks on the worker's status callbacks. The owner's keys are the access key's
+# SHA-256, never the key, and what signs the owner's session cookie, so whoever holds them can sign in as the owner, from inside the
+# namespace or through the web server. The S3 keys are Silo's app user, which silo-setup.yaml makes and holds to the bucket's objects:
+# never Silo's root.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: frameflow-app
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: frameflow
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: frameflow-prod
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: frameflow-app
+      namespace: frameflow
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: frameflow
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          WORKER_CALLBACK_SECRET: '{{ (secretFrom "/" "WORKER_CALLBACK_SECRET").Value }}'
+          OWNER_TOKEN_SHA256: '{{ (secretFrom "/" "OWNER_TOKEN_SHA256").Value }}'
+          OWNER_SESSION_SECRET: '{{ (secretFrom "/" "OWNER_SESSION_SECRET").Value }}'
+          S3_ACCESS_KEY_ID: '{{ (secretFrom "/" "S3_ACCESS_KEY_ID").Value }}'
+          S3_SECRET_ACCESS_KEY: '{{ (secretFrom "/" "S3_SECRET_ACCESS_KEY").Value }}'
+---
+# The worker's: the callback secret it sends with each report to the API, and Silo's app user. Not the owner's keys. The worker runs FFmpeg
+# on whatever is uploaded, and checks no one's sign-in, so a source that broke into it would find no key to sign itself in as the owner
+# with. Frameflow refuses those keys without AUTH_MODE=owner, which the API alone sets, so a worker given them would not start.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: frameflow-worker
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: frameflow
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: frameflow-prod
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: frameflow-worker
+      namespace: frameflow
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: frameflow
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          WORKER_CALLBACK_SECRET: '{{ (secretFrom "/" "WORKER_CALLBACK_SECRET").Value }}'
+          S3_ACCESS_KEY_ID: '{{ (secretFrom "/" "S3_ACCESS_KEY_ID").Value }}'
+          S3_SECRET_ACCESS_KEY: '{{ (secretFrom "/" "S3_SECRET_ACCESS_KEY").Value }}'
+---
+# The two CronJobs': Silo's app user alone. Neither reports to the API nor signs anyone in, and a restore's objects step reads these two
+# as well (docs/hosted-apps.md).
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: frameflow-maintenance
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: frameflow
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: frameflow-prod
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: frameflow-maintenance
+      namespace: frameflow
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: frameflow
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          S3_ACCESS_KEY_ID: '{{ (secretFrom "/" "S3_ACCESS_KEY_ID").Value }}'
+          S3_SECRET_ACCESS_KEY: '{{ (secretFrom "/" "S3_SECRET_ACCESS_KEY").Value }}'
+---
+# Silo's root, which only Silo itself reads. The setup Job has its own copy, below.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: frameflow-silo-root
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: frameflow
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: frameflow-prod
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: frameflow-silo-root
+      namespace: frameflow
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: frameflow
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          MINIO_ROOT_USER: '{{ (secretFrom "/" "SILO_ROOT_USER").Value }}'
+          MINIO_ROOT_PASSWORD: '{{ (secretFrom "/" "SILO_ROOT_PASSWORD").Value }}'
+---
+# Silo's read-only backup user, for platform/backup's copy of the bucket.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: frameflow-silo-backup
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: frameflow
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: frameflow-prod
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: frameflow-silo-backup
+      namespace: frameflow
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: frameflow
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          S3_BACKUP_ACCESS_KEY_ID: '{{ (secretFrom "/" "S3_BACKUP_ACCESS_KEY_ID").Value }}'
+          S3_BACKUP_SECRET_ACCESS_KEY: '{{ (secretFrom "/" "S3_BACKUP_SECRET_ACCESS_KEY").Value }}'
+---
+# What silo-setup.yaml's Job needs to make the two users: root, and each user's keys, under the names its script reads.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: frameflow-silo-setup
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: frameflow
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: frameflow-prod
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: frameflow-silo-setup
+      namespace: frameflow
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: frameflow
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          MINIO_ROOT_USER: '{{ (secretFrom "/" "SILO_ROOT_USER").Value }}'
+          MINIO_ROOT_PASSWORD: '{{ (secretFrom "/" "SILO_ROOT_PASSWORD").Value }}'
+          APP_ACCESS_KEY: '{{ (secretFrom "/" "S3_ACCESS_KEY_ID").Value }}'
+          APP_SECRET_KEY: '{{ (secretFrom "/" "S3_SECRET_ACCESS_KEY").Value }}'
+          BACKUP_ACCESS_KEY: '{{ (secretFrom "/" "S3_BACKUP_ACCESS_KEY_ID").Value }}'
+          BACKUP_SECRET_KEY: '{{ (secretFrom "/" "S3_BACKUP_SECRET_ACCESS_KEY").Value }}'
+---
+# Hatchet's Postgres, which these act on only while its data directory is empty, and the backup's pg_dump.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: hatchet-db
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: frameflow
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: frameflow-prod
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: hatchet-db
+      namespace: frameflow
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: frameflow
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          POSTGRES_USER: '{{ (secretFrom "/" "HATCHET_PG_USER").Value }}'
+          POSTGRES_PASSWORD: '{{ (secretFrom "/" "HATCHET_PG_PASSWORD").Value }}'
+          POSTGRES_DB: '{{ (secretFrom "/" "HATCHET_PG_DB").Value }}'
+---
+# hatchet-lite's, under the names it reads. The three keysets belong together and to Hatchet's database: the JWT keysets are encrypted
+# under the master keyset, every token is signed with them, and a database restored without the same three is unreadable. So they are
+# made once, on the owner's machine, and never change. The cookie secrets are two keys of 32 characters each, which Hatchet requires to be
+# 16, 24 or 32 bytes long, and changing them only signs the dashboard out. ADMIN_PASSWORD makes the dashboard's one user once, when the
+# seed first runs, and a later change does not reach that user.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: hatchet-server
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: frameflow
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: frameflow-prod
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: hatchet-server
+      namespace: frameflow
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: frameflow
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          DATABASE_URL: 'postgresql://{{ (secretFrom "/" "HATCHET_PG_USER").Value }}:{{ (secretFrom "/" "HATCHET_PG_PASSWORD").Value }}@hatchet-postgres:5432/{{ (secretFrom "/" "HATCHET_PG_DB").Value }}?sslmode=disable'
+          SERVER_AUTH_COOKIE_SECRETS: '{{ (secretFrom "/" "HATCHET_COOKIE_SECRETS").Value }}'
+          SERVER_ENCRYPTION_MASTER_KEYSET: '{{ (secretFrom "/" "HATCHET_MASTER_KEYSET").Value }}'
+          SERVER_ENCRYPTION_JWT_PRIVATE_KEYSET: '{{ (secretFrom "/" "HATCHET_JWT_PRIVATE_KEYSET").Value }}'
+          SERVER_ENCRYPTION_JWT_PUBLIC_KEYSET: '{{ (secretFrom "/" "HATCHET_JWT_PUBLIC_KEYSET").Value }}'
+          ADMIN_PASSWORD: '{{ (secretFrom "/" "HATCHET_ADMIN_PASSWORD").Value }}'
+---
+# GHCR's packages are private, and only the accounts of the pods that run Frameflow's own images name this Secret. The token is the
+# owner's, the one Plane's and the static sites' pull Secrets hold, read:packages on every package of the account. The kubelet takes
+# username and password with no auth field. The account is not a secret: the token's scope, read:packages, is.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: ghcr-pull
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: frameflow
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: frameflow-prod
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: ghcr-pull
+      namespace: frameflow
+      kind: Secret
+      secretType: kubernetes.io/dockerconfigjson
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: frameflow
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          .dockerconfigjson: '{"auths":{"ghcr.io":{"username":"BereketAbera","password":"{{ (secretFrom "/" "GHCR_PULL_TOKEN").Value }}"}}}'

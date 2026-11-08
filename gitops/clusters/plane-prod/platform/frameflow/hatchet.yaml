@@ -1,0 +1,234 @@
+# Hatchet, the engine the API submits each video to and the worker takes its tasks from: hatchet-lite v0.114.2, whose own tag holds the
+# SDK Frameflow pins, 1.43.0. It runs the engine, its REST API and the dashboard in one process, with hatchet-postgres as its database
+# and its queue. Every start runs the migrations, then the seed, which makes the admin and the default tenant only if they are
+# missing, then the server. Recreate, so two never migrate at once.
+#
+# /config is where that start writes server.yaml and database.yaml, with the keysets in them. It is memory, so they never reach a disk,
+# and it is rebuilt from the environment at every start: measured locally, a token minted before a restart, and before the pod was
+# replaced, still worked after it, and the seed made no second tenant. Nothing else is written, so the root filesystem is read-only.
+#
+# No route. The dashboard is reached by port-forward, make remote-ui TARGET=plane-prod UI=hatchet, at http://localhost:18888, which is
+# SERVER_URL. Every token carries that URL and is checked against it, so it never changes, or every token stops working.
+apiVersion: v1
+kind: Service
+metadata:
+  name: hatchet
+  labels:
+    app.kubernetes.io/name: hatchet
+    app.kubernetes.io/component: hatchet
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/component: hatchet
+  # The engine's gRPC, the REST API, and the dashboard with the REST API behind it on /api, which the SDK and the port-forward use. Not the
+  # dashboard's files on 8081, which 8888 serves, nor the engine's health on 8733, which only the kubelet reads.
+  ports:
+    - name: grpc
+      port: 7070
+      targetPort: grpc
+    - name: api
+      port: 8080
+      targetPort: api
+    - name: ui
+      port: 8888
+      targetPort: ui
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hatchet
+  labels:
+    app.kubernetes.io/name: hatchet
+    app.kubernetes.io/component: hatchet
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    # After Postgres, and before what submits to it or works for it.
+    argocd.argoproj.io/sync-wave: "2"
+    # Must sit on the workload, not the pod template. It restarts Hatchet when hatchet-server changes, as a new image does, and the API and
+    # the worker reconnect. The keysets in that Secret never change, and new cookie secrets only sign the dashboard out.
+    secrets.infisical.com/auto-reload: "true"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hatchet
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hatchet
+        app.kubernetes.io/component: hatchet
+        app.kubernetes.io/part-of: frameflow
+    spec:
+      serviceAccountName: hatchet
+      automountServiceAccountToken: false
+      securityContext:
+        # The image sets no user, so this names one: 65532, as which it was measured to migrate, seed, serve and mint tokens on a
+        # read-only root filesystem, with no capability. Its ports are all above 1024.
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # The migrations run first thing at start, and the container exits 1 if they fail, so it waits for Postgres here. kube-router
+        # admits a new pod a second or two after it starts, and until then refuses its connections just as a closed port does, so an
+        # early refusal says nothing. Three minutes, then the kubelet starts this again.
+        - name: wait-for-postgres
+          image: docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # pg_isready asks only whether the server takes connections, so it needs no password.
+          env:
+            - name: PGHOST
+              value: hatchet-postgres
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: hatchet-db
+                  key: POSTGRES_USER
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: hatchet-db
+                  key: POSTGRES_DB
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          command: [/bin/sh, -c]
+          args:
+            - |
+              set -eu
+              TRIES=0
+              until pg_isready -q -t 5; do
+                TRIES=$((TRIES + 1))
+                if [ "$TRIES" -ge 90 ]; then
+                  echo "wait-for-postgres: hatchet-postgres:5432 did not answer in 3 minutes" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+      containers:
+        - name: hatchet
+          image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:v0.114.2@sha256:a205018e4ec2c35af4df9c86cf1e36d4b74b36ebbc849c3b33ca18815cf22d6b
+          # The database's URL, the cookie secrets, the three keysets and the admin's password, from infisical.yaml.
+          envFrom:
+            - secretRef:
+                name: hatchet-server
+          env:
+            # Lite builds several servers in its one process, each with pools of up to this many: 28 connections at idle, measured, which
+            # hatchet-postgres.yaml's max_connections leaves room above.
+            - name: DATABASE_MAX_CONNS
+              value: "15"
+            # Lite's default, written out: Postgres is the queue.
+            - name: SERVER_MSGQUEUE_KIND
+              value: postgres
+            # The port-forward's address, the one place a person reaches the dashboard. The session cookie is for that host and is sent
+            # over plain HTTP, which the port-forward is.
+            - name: SERVER_URL
+              value: http://localhost:18888
+            - name: SERVER_AUTH_COOKIE_DOMAIN
+              value: localhost
+            - name: SERVER_AUTH_COOKIE_INSECURE
+              value: "t"
+            # gRPC binds to the loopback by default, where no other pod can reach it. Plain, inside the namespace. The broadcast address
+            # is what each token names for clients to dial, and the internal one is how lite's own API reaches its engine.
+            - name: SERVER_GRPC_BIND_ADDRESS
+              value: 0.0.0.0
+            - name: SERVER_GRPC_PORT
+              value: "7070"
+            - name: SERVER_GRPC_BROADCAST_ADDRESS
+              value: hatchet:7070
+            - name: SERVER_GRPC_INSECURE
+              value: "t"
+            - name: SERVER_INTERNAL_CLIENT_INTERNAL_GRPC_BROADCAST_ADDRESS
+              value: localhost:7070
+            # On by default, it reports the version and an instance id to security.hatchet.run every hour. The NetworkPolicy would
+            # refuse it anyway.
+            - name: SERVER_SECURITY_CHECK_ENABLED
+              value: "f"
+            # One admin, made by the seed, and one tenant, the default one.
+            - name: SERVER_ALLOW_SIGNUP
+              value: "f"
+            - name: SERVER_ALLOW_CREATE_TENANT
+              value: "f"
+            - name: ADMIN_EMAIL
+              value: admin@frameflow.local
+            # A week of runs, rather than Hatchet's 30 days. Frameflow's own record of each video is in its SQLite.
+            - name: SERVER_LIMITS_DEFAULT_TENANT_RETENTION_PERIOD
+              value: 168h
+            # Loki's ingestion limit is the whole cluster's.
+            - name: SERVER_LOGGER_LEVEL
+              value: warn
+            - name: DATABASE_LOGGER_LEVEL
+              value: warn
+          ports:
+            - name: grpc
+              containerPort: 7070
+            - name: api
+              containerPort: 8080
+            - name: ui
+              containerPort: 8888
+            - name: health
+              containerPort: 8733
+          # The engine's own health server. gRPC has no standard health service here, so no grpc probe. /ready also fails when the
+          # database or the queue does, and both the REST API and the engine use those. Generous at start: the migrations run first,
+          # and a release's own may take a while on a full database.
+          startupProbe:
+            httpGet:
+              path: /live
+              port: health
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: health
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # About 40Mi at idle, measured locally, and Go's soft limit is set to 90% of the limit by itself. Starting values for one
+          # video at a time, not yet measured on this node.
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1536Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        # About 12K is written, so 16Mi is room to spare, and it counts against the memory limit.
+        - name: config
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi

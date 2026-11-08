@@ -1,0 +1,42 @@
+# Release B (kustomization.yaml). The Hatchet client token, which the API, the worker and reconcile read as HATCHET_CLIENT_TOKEN, and
+# refuse to start without. It cannot be seeded with the rest: Hatchet mints it once it runs. scripts/hosted/frameflow-hatchet-token.sh
+# mints it with hatchet-admin inside Hatchet's pod, for the default tenant and ten years, and writes it to Infisical, through stdin and
+# never a log or an argument. Hatchet checks every token against its own database, its keysets and SERVER_URL, so a token is revoked in
+# Hatchet, and stops working if either of the last two changes.
+#
+# Its own CR, and listed only once the token is in Infisical: a key secretFrom cannot find marks the CR Degraded, and a sync waits on it.
+# Beside the others at wave -1 it would hold Hatchet, which mints it, behind itself. Wave 3, ahead of what reads it at 4.
+apiVersion: secrets.infisical.com/v1beta1
+kind: InfisicalStaticSecret
+metadata:
+  name: hatchet-client-token
+  labels:
+    app.kubernetes.io/name: frameflow-secrets
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: frameflow
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  infisicalAuthRef:
+    name: infisical
+    namespace: frameflow
+  syncOptions:
+    refreshInterval: 60s
+  sources:
+    - projectSlug: frameflow-prod
+      environmentSlug: prod
+      secretPath: /
+  targets:
+    - name: hatchet-client-token
+      namespace: frameflow
+      kind: Secret
+      secretType: Opaque
+      creationPolicy: Owner
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: frameflow
+        annotations: {}
+      template:
+        engineVersion: v1
+        data:
+          HATCHET_CLIENT_TOKEN: '{{ (secretFrom "/" "HATCHET_CLIENT_TOKEN").Value }}'

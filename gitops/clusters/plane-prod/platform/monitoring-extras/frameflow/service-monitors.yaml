@@ -1,0 +1,23 @@
+# Silo's own metrics, for the bucket's size against its quota in rules.yaml. Needs MINIO_PROMETHEUS_AUTH_TYPE=public on the Silo container;
+# the default is jwt, which answers 403 here. The upload route sends Silo only PUTs under /frameflow-media/videos/, so /minio/* stays
+# unreachable from outside. Two paths on one port would give both scrape pools identical target labels, so their up series would collide,
+# and the metrics_path label keeps them apart, as for Plane's Silo. Only Service frameflow-silo carries this name label, and another Service
+# given it would have each path scraped twice.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: frameflow-silo
+spec:
+  selector:
+    matchLabels: { app.kubernetes.io/name: frameflow-silo }
+  endpoints:
+    - port: api
+      path: /minio/v2/metrics/cluster
+      interval: 60s
+      relabelings:
+        - { sourceLabels: [__metrics_path__], targetLabel: metrics_path }
+    - port: api
+      path: /minio/v2/metrics/bucket
+      interval: 60s
+      relabelings:
+        - { sourceLabels: [__metrics_path__], targetLabel: metrics_path }

@@ -1,0 +1,38 @@
+# Awushi Cloudgarden, https://devops.bereket.dev, from platform/awushi-cloudgarden. Under its own project, which deploys only to
+# namespace awushi-cloudgarden, so nothing here can reach past it. Wave 1, after plane-prod, so a site that fails cannot hold Wayline's
+# wave. Finalizer kept: the site is its image and holds no data, so removing this file from Git cleanly removes the app. Every object
+# names its own namespace.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: awushi-cloudgarden
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: awushi-cloudgarden
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: awushi-cloudgarden
+  source:
+    repoURL: ssh://git@ssh.github.com:443/BereketAbera/plane-platform.git
+    targetRevision: deploy/plane-prod
+    path: gitops/clusters/plane-prod/platform/awushi-cloudgarden
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    # Finite retries would strand this app on first boot: automated sync never reattempts a failed
+    # commit. refresh makes a retry pick up the newest commit, so a revert still lands while this
+    # loops. Without it the retry stays pinned to the bad revision.
+    retry:
+      limit: -1
+      refresh: true
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

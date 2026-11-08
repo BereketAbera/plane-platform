@@ -75,6 +75,9 @@ spec:
             absent(certmanager_certificate_ready_status{name="wayline-tls"})
               or absent(certmanager_certificate_ready_status{name="grafana-tls"})
               or absent(certmanager_certificate_ready_status{name="infisical-tls"})
+              or absent(certmanager_certificate_ready_status{name="rillmark-tls"})
+              or absent(certmanager_certificate_ready_status{name="devops-tls"})
+              or absent(certmanager_certificate_ready_status{name="frameflow-tls"})
           for: 30m
           labels: { severity: warning, component: certificate }
           annotations:
@@ -141,13 +144,43 @@ spec:
           labels: { severity: warning, component: infisical }
           annotations:
             summary: The probe of Infisical's sign-up and admin is not running, or does not read the config's body, so InfisicalOpenToClaim cannot fire
+    # The two static sites. Each is one nginx pod behind its own route, and its visitors have nothing else, so down is critical. 2m lets
+    # a pod restart without a page, and a rollout keeps the old pod until the new one is ready. Each Probe syncs with monitoring-extras,
+    # ahead of its site's wave, so a site's first deploy can page once before its route answers.
+    - name: hosted.sites
+      interval: 30s
+      rules:
+        - alert: RillmarkDown
+          expr: probe_success{probe="rillmark"} == 0
+          for: 2m
+          labels: { severity: critical, component: rillmark }
+          annotations:
+            summary: https://rillmark.bereket.dev has failed its probe for 2m
+        - alert: RillmarkNotWatched
+          expr: absent(probe_success{probe="rillmark"})
+          for: 15m
+          labels: { severity: warning, component: rillmark }
+          annotations:
+            summary: The probe of https://rillmark.bereket.dev is not running, so RillmarkDown cannot fire
+        - alert: CloudgardenDown
+          expr: probe_success{probe="cloudgarden"} == 0
+          for: 2m
+          labels: { severity: critical, component: cloudgarden }
+          annotations:
+            summary: https://devops.bereket.dev has failed its probe for 2m
+        - alert: CloudgardenNotWatched
+          expr: absent(probe_success{probe="cloudgarden"})
+          for: 15m
+          labels: { severity: warning, component: cloudgarden }
+          annotations:
+            summary: The probe of https://devops.bereket.dev is not running, so CloudgardenDown cannot fire
     # The metric appears only after a first success, so absent also covers a CronJob that has never worked, and for: gives the first
     # nightly run time to happen. PlaneBackupFailed sees only a Job that ran and failed, and misses one that never runs.
     - name: hosted.backups
       interval: 30s
       rules:
         - alert: BackupTooOld
-          expr: time() - kube_cronjob_status_last_successful_time{namespace=~"plane-prod|infisical",cronjob="plane-backup"} > 26 * 3600
+          expr: time() - kube_cronjob_status_last_successful_time{namespace=~"plane-prod|infisical|frameflow",cronjob="plane-backup"} > 26 * 3600
           labels: { severity: critical, component: backup }
           annotations:
             summary: "{{ $labels.namespace }}/{{ $labels.cronjob }} last succeeded {{ $value | humanizeDuration }} ago"
@@ -164,6 +197,18 @@ spec:
           labels: { severity: critical, component: backup, namespace: infisical }
           annotations:
             summary: No backup in infisical has succeeded, or its CronJob is gone
+        # Frameflow's pod mounts the API's volume, which comes with Frameflow's second release, so no night of it can run before that,
+        # and this waits for the volume. It reads the volume over 15 minutes, as wayline:plane_application:present reads Argo CD, so a
+        # kube-state-metrics restart does not start the 26 hours again. From then its night succeeds with nothing to back up until the
+        # API makes its database, so this needs no other gate.
+        - alert: BackupNeverSucceeded
+          expr: |
+            absent(kube_cronjob_status_last_successful_time{namespace="frameflow",cronjob="plane-backup"})
+              and on() max_over_time(kube_persistentvolumeclaim_info{namespace="frameflow",persistentvolumeclaim="frameflow-data"}[15m])
+          for: 26h
+          labels: { severity: critical, component: backup, namespace: frameflow }
+          annotations:
+            summary: No backup in frameflow has succeeded, or its CronJob is gone
     - name: hosted.network
       interval: 30s
       rules:

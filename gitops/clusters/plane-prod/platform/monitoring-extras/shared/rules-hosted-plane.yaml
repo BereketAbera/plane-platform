@@ -95,7 +95,7 @@ spec:
           annotations:
             summary: "{{ $value }} Celery messages waiting in {{ $labels.namespace }}"
         - alert: PlaneBackupFailed
-          expr: kube_job_status_failed{namespace=~"plane-.*|infisical",job_name=~"plane-backup-.*"} > 0
+          expr: kube_job_status_failed{namespace=~"plane-.*|infisical|frameflow",job_name=~"plane-backup-.*"} > 0
           labels: { severity: warning, component: backup }
           annotations:
             summary: "{{ $labels.job_name }} failed in {{ $labels.namespace }}"
