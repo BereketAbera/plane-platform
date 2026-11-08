@@ -143,6 +143,17 @@ chmod 644 /etc/cron.d/wayline-reboot-metric
 EOF
   ok "reboot and firewall metrics written every 5 minutes"
 
+  log "Hourly cache drop and trim that were on the VPS before setup"
+  # /etc/cron.hourly/free drops the page cache and fstrim trims the disk, at :17 of every hour. They are there before this
+  # project's setup runs, and no package owns them. All three of K3s's exits on its datastore (docs/known-limitations.md)
+  # came within 4 minutes of them. fstrim.timer still trims weekly, and the root mount has discard.
+  root_shell <<'EOF'
+set -euo pipefail
+rm -f /etc/cron.hourly/free /etc/cron.hourly/fstrim
+systemctl enable --now fstrim.timer >/dev/null 2>&1
+EOF
+  ok "no hourly cache drop or trim, and fstrim.timer is on"
+
   log "Firewall unit"
   install_file "$HOSTED/wayline-edge.service" /etc/systemd/system/wayline-edge.service 644
   if root_shell <<'EOF'

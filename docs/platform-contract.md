@@ -170,7 +170,7 @@ that exists on both clusters as two resources.
 
 | Owner | Owns | Never touches |
 |---|---|---|
-| **`scripts/hosted/provision-node.sh`**, from `infrastructure/hosted/plane-prod/` | K3s and `k3s-config.yaml`, the kubelet drop-in, sysctls, the sshd drop-in, the `wayline-edge` systemd unit, `registries.yaml` | Anything inside a namespace |
+| **`scripts/hosted/provision-node.sh`**, from `infrastructure/hosted/plane-prod/` | K3s and `k3s-config.yaml`, the kubelet drop-in, sysctls, the sshd drop-in, the `wayline-edge` systemd unit, `registries.yaml`, the removal of two hourly cron scripts | Anything inside a namespace |
 | **`scripts/hosted/edge.sh`** | The firewall table's stage | |
 | **Terraform** via `infrastructure/terraform/environments/prod-host` | DNS records `wayline`, `grafana`, `infisical`, with `prevent_destroy`. The VPS only as `data "contabo_instance"`, because a resource can reinstall or cancel it | The VPS, and the rest of the zone |
 | **Terraform** via `infrastructure/terraform/environments/prod` | Namespaces and labels, ResourceQuota `budget` and LimitRange `defaults` in each, storage class `local-path-retain`, ConfigMap `kube-system/coredns-custom`, the Argo CD Helm release, the bootstrap chart's AppProjects and root Application | Anything Argo CD deploys |
