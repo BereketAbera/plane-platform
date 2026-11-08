@@ -19,7 +19,7 @@ spec:
   podSelector: {}
   policyTypes: [Ingress, Egress]
 ---
-# Outside Frameflow's reservation, because it lasts minutes, and small enough that a mistake here cannot starve the node.
+# Outside the quotas in capacity.yaml, because it lasts minutes, and small enough that a mistake here cannot starve the node.
 apiVersion: v1
 kind: ResourceQuota
 metadata:
