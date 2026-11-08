@@ -293,7 +293,7 @@ Two rules from reading upstream code: passwords are hex because the chart does n
 flowchart TB
   dev["Commit on main in the working repo"]
 
-  subgraph github["GitHub: private repo, runs CI. The local Argo CD does not read it"]
+  subgraph github["GitHub: public repo, runs CI. The local Argo CD does not read it"]
     ci["ci.yml: lint, render drift, kubeconform,<br/>conftest, ownership, gitleaks, trivy"]
     images["images.yml: build linux/amd64, walk each image in a throwaway registry,<br/>push to GHCR, walk and scan what was pushed,<br/>open a digest-bump PR for dev"]
     promo["promote-prod-sim.yml: manual dispatch,<br/>opens a PR copying a digest dev recorded"]
@@ -340,7 +340,7 @@ flowchart TB
 
 1. **An image is its digest.** Every image in the rendered manifests is `@sha256:`, and `render.sh` and policy `environments.rego` fail on anything else. Digests live only in `helm/plane/overlays/<env>/kustomization.yaml`. Only `make promote` edits those lines, `make rollback` takes an edit back with `git revert`, and nothing else writes them. A digest cannot silently change, and copying between registries preserves it where rebuilding would not.
 2. **Argo CD syncs plain manifests.** `make render` runs `kustomize build --enable-helm` over the vendored chart and writes `gitops/environments/<env>/manifests.yaml`. Argo CD runs no Helm or Kustomize for Plane. CI fails if rendering produces a diff. So a reviewer can read exactly what will apply, and Argo CD regression #30215, which appears only at manifest regeneration, cannot affect Plane. Platform charts are different: Traefik, monitoring, and Infisical are Argo CD Helm sources at exact versions, with values from `helm/values/` through a `$values` ref.
-3. **The cluster reads Git, and CI never touches the cluster.** No workflow has cluster credentials. On kind a merged pull request changes nothing that runs. It reaches the cluster only when someone pulls `main` and runs `make gitops-publish`, and that script is where a prod-sim change takes its backup. Hosted production differs here: a push to `main` that passes CI moves `deploy/plane-prod`, which its Argo CD reads, so a merge there does deploy ([GitOps path](#gitops-path)).
+3. **The cluster reads Git, and CI never touches the cluster.** No workflow has cluster credentials. On kind a merged pull request changes nothing that runs. It reaches the cluster only when someone pulls `main` and runs `make gitops-publish`, and that script is where a prod-sim change takes its backup. Hosted production differs here: a merge to `main` that passes CI moves `deploy/plane-prod`, which its Argo CD reads, so a merge there does deploy ([GitOps path](#gitops-path)).
 
 | Step | Mechanism | Failure mode it guards |
 |---|---|---|
@@ -363,9 +363,9 @@ Argo CD reads `git://plane-git/plane-platform.git` from the repo-server under it
 
 **Current state of branding.** `plane-dev` has run `localhost:5001/wayline/{web,admin,space,backend}` by digest since promotion `4f622e3`, and `plane-prod-sim` since `0af8956`, both on 2026-11-05. Both ran the final build from commit `84b63d9`, which reached dev at `1fc9fbe` and prod-sim at `9c8e098` ([digests](evidence/branding/digests.tsv), [FINAL-state-20261105T062807Z.txt](evidence/runs/FINAL-state-20261105T062807Z.txt)). Prod-sim still does. Since 2026-11-07 dev runs set `6d3610b95f01` instead, GitHub's linux/amd64 build from `5161bf9`, copied into the same local registry under the same digests ([copy and publish](evidence/runs/DEV-VALIDATE-copy-publish-20261107T050522Z.txt)). Dev left it and came back three times during the drills, last at `9891630`. The one full browser session, with sign-in, onboarding, a board, the page editor, admin and `/spaces/`, was on the earlier build, from `1563cbf`, in dev only ([live-dev](evidence/branding/live-dev/README.md)). On the final images after the restore, with `make test` running beside it, a real browser signed in through the form on both hosts. On dev it found a work item typed before the delete and opened a published board. On prod-sim it reached onboarding, the workspace home and the instance admin's sign-in page. Both sessions held at once ([live-final](evidence/branding/live-final/README.md)). That is Chromium, with no admin sign-in on prod-sim. A real browser now gets the new HTML after a promotion with no hard reload: Chromium, on `/sign-in/`, across one promotion in each environment and one rollback in dev ([auth-6-browser-promotion-dev-1.txt](evidence/runs/auth-6-browser-promotion-dev-1.txt), [AUTH-6-rollback-20261105T064032Z.txt](evidence/runs/AUTH-6-rollback-20261105T064032Z.txt)). `live` stays upstream's in both. The final images came through `make images` and `make promote` on the laptop.
 
-The GitHub half of the diagram above ran on 2026-11-05 at `9c8e098`, and again at `76e98ee`, and it has not carried an image to the cluster. `ci.yml` passed, most recently at `6edde64`, after two runs that each lost a job to a 504 fetching a pinned tool, before any check in that job ran. `images.yml` built the four images on `ubuntu-24.04-arm`, its layer walks came back clean, and it published them as four private GHCR packages, under digests that differ from the local build's. It opened pull request 1, and the second build force-updated it, head `de9525e`. It stayed open and unmerged until 2026-11-07, when it carried the linux/amd64 build's bump, `e499212`, and was merged as `6204af2`. `promote-prod-sim.yml` opened pull request 2, closed unmerged as a test ([ci evidence](evidence/ci/README.md)). So on 2026-11-05 nothing had copied a GHCR image to the local registry. At that pull request's first head, `33b9109`, on this Mac, `scripts/ci/copy-to-local-registry.sh` stopped at the first image with a 401 on an anonymous token, because docker here had no GHCR login and the packages are private ([rehearsal](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt)). Since then `images.yml` builds plain linux/amd64 images on `ubuntu-24.04`, for hosted production. On 2026-11-07 the script copied that build's four images, set `6d3610b95f01`, into the local registry with their digests, and `make gitops-publish` published `main` at `201c85b`, whose dev overlay names them ([copy and publish](evidence/runs/DEV-VALIDATE-copy-publish-20261107T050522Z.txt)). Dev runs them under Rosetta. `/source` points at the commit that built the web image, `84b63d9` in prod-sim and, since that copy, `5161bf93e424` in dev ([smoke](evidence/runs/smoke-dev-20261107T051309Z-98217.json)), and GitHub answers 404 to outsiders while the repository is private ([BR-3](evidence/runs/BR-3-20261105T054812Z.txt)). So `/source` needs a public repository before anyone else uses an instance, which is one of the [owner decisions still open](technology-choices.md#owner-decisions-still-open).
+The GitHub half of the diagram above ran on 2026-11-05 at `9c8e098`, and again at `76e98ee`, and it has not carried an image to the cluster. `ci.yml` passed, most recently at `6edde64`, after two runs that each lost a job to a 504 fetching a pinned tool, before any check in that job ran. `images.yml` built the four images on `ubuntu-24.04-arm`, its layer walks came back clean, and it published them as four private GHCR packages, under digests that differ from the local build's. It opened pull request 1, and the second build force-updated it, head `de9525e`. It stayed open and unmerged until 2026-11-07, when it carried the linux/amd64 build's bump, `e499212`, and was merged as `6204af2`. `promote-prod-sim.yml` opened pull request 2, closed unmerged as a test ([ci evidence](evidence/ci/README.md)). So on 2026-11-05 nothing had copied a GHCR image to the local registry. At that pull request's first head, `33b9109`, on this Mac, `scripts/ci/copy-to-local-registry.sh` stopped at the first image with a 401 on an anonymous token, because docker here had no GHCR login and the packages are private ([rehearsal](evidence/ci/ci-5-20261105T060504Z-copy-rehearsal.txt)). Since then `images.yml` builds plain linux/amd64 images on `ubuntu-24.04`, for hosted production. On 2026-11-07 the script copied that build's four images, set `6d3610b95f01`, into the local registry with their digests, and `make gitops-publish` published `main` at `201c85b`, whose dev overlay names them ([copy and publish](evidence/runs/DEV-VALIDATE-copy-publish-20261107T050522Z.txt)). Dev runs them under Rosetta. `/source` points at the commit that built the web image, `84b63d9` in prod-sim and, since that copy, `5161bf93e424` in dev ([smoke](evidence/runs/smoke-dev-20261107T051309Z-98217.json)), and GitHub answered 404 until the repository went public on 2026-11-08 ([BR-3](evidence/runs/BR-3-20261105T054812Z.txt)).
 
-GitHub's Free plan on a private repository has no environment reviewers, no protected branches, no code owners, and no artifact attestations. A person merging a pull request is the approval, and GitHub cannot enforce it. See [security.md](security.md) and `.github/workflows/README.md`.
+A person merging a pull request is the approval, and the ruleset requires no reviewer. See [security.md](security.md) and `.github/workflows/README.md`.
 
 ## 5. Observability flow
 
@@ -476,7 +476,7 @@ Every resource has exactly one owner. If two tools believe they own the same thi
 | AppProjects `plane-dev`, `plane-prod-sim` | Cluster-scoped objects, NetworkPolicy, ResourceQuota, LimitRange, and any other namespace | Namespaced workloads and routes inside their own namespace |
 | `CreateNamespace=false` on every Application | Argo CD creating a namespace | |
 | Policy `environments.rego` | A rendered Plane manifest carrying a platform-only kind | Hand-applied objects |
-| Policy `gitops.rego` | A Plane Application under any project but its own, any Application under `default`, and an environment's manifests under another project | A merge on this GitHub plan, where no check can block one |
+| Policy `gitops.rego` | A Plane Application under any project but its own, any Application under `default`, and an environment's manifests under another project | A change to the check itself, in the same pull request, by anyone with write access. Since 2026-11-08 a failing Lint, Manifests or Security check blocks a merge to `main` |
 | Policy `plane.rego` | A route in a Plane namespace off its own host, a route elsewhere naming a Plane host, a TCP or UDP route in a Plane namespace, a route to an internal UI by host, Service or namespace with no `node-network-only`, and a TCP or UDP route to or beside one | Hand-applied objects |
 
 A human with the admin kubeconfig can still change anything. Self-heal reverts tracked fields: a replica change on `plane-admin-wl` in dev was put back in 3s, with nobody running a second command ([GITOPS-4](evidence/runs/GITOPS-4-20261105T073240Z.txt)). It does not see untracked objects.
@@ -567,7 +567,7 @@ flowchart TB
   le["Let's Encrypt"]
   alerting["Telegram, Healthchecks.io"]
 
-  subgraph gh["GitHub: private repo, Free plan"]
+  subgraph gh["GitHub: public repo, Free plan"]
     main["main"]
     deploybranch["deploy/plane-prod, written only by CI"]
     ghcr["GHCR: four private Wayline packages,<br/>and the apps' four"]
@@ -697,7 +697,7 @@ flowchart TB
   ghcr --> copy
   copy --> devrun
   devrun --> record
-  record -->|"commit and push"| main
+  record -->|"pull request"| main
   main --> promo
   promo -->|"PR, a person merges: the approval"| main
   main --> ci
@@ -714,7 +714,7 @@ flowchart TB
 | Dev runs the exact bytes | `scripts/ci/copy-to-local-registry.sh` copies by digest, so the bytes dev runs are the bytes production pulls. Dev's CPU is emulated | Production running an image no environment ran |
 | Evidence | `make record-dev-evidence` refuses unless dev's newest smoke passed and every container started before it, every digest runs in a ready container, and each branded digest is a plain linux/amd64 manifest built by `images.yml` on a commit in `main`'s history. The key stays on the Mac | CI, or anything without that key, minting evidence |
 | The gate | `scripts/ci/check-prod-evidence.sh`, stateless, with no cluster: every Wayline digest in `gitops/environments/prod/manifests.yaml` must be one signed set, checked against `.github/evidence-signers` as committed | A set dev never ran reaching production |
-| Approval | A person merges the promotion pull request | Nothing on GitHub Free: anyone with write access can merge their own, or push |
+| Approval | A person merges the promotion pull request | Ruleset on `main`: a pull request and three checks, no reviewer. Anyone with write access can merge their own |
 | Release | `publish-release.sh`, in order: the gate, never backwards, the branch still what its `RELEASE.json` names, never from a promoted set back to none, each digest a plain linux/amd64 manifest on GHCR, a commit with only the two hosted trees, pushed without force. A failure leaves the branch where it is | An unsigned set, an image GHCR does not hold, a revert of the first promotion pruning Plane, a hand push being overwritten silently, a workflow file crossing to the branch |
 | Detection | `check-deploy-branch.yml` every day at 05:23 UTC, and `make remote-status` | A hand push to `deploy/plane-prod` going unnoticed. It does not prevent one, and Argo CD may have synced it by then |
 | Sync | Argo CD on the node. Root retries without limit, with `refresh: true`. The AppProjects come from Terraform and no branch, so nothing Git delivers can widen them | Drift. A change behind Git's back is reverted |
@@ -843,7 +843,7 @@ Each resource has one owner here too, and `scripts/ci/ownership.sh` reads the ho
 - **No IPv6.** There is no AAAA record, so Traefik serves IPv4 only.
 - **No mail.** No SMTP server is configured, so nothing sends mail, and Infisical's admin uses an authenticator app.
 - **One copy off the VPS,** on the Mac, made by hand.
-- **No branch protection.** GitHub Free cannot protect `deploy/plane-prod`. `check-deploy-branch.yml` and `make remote-status` notice a hand push afterwards.
+- **No rule on the deploy branch.** The ruleset covers `main` only, so nothing stops a push to `deploy/plane-prod` by anyone with write access or a job with `contents: write`. GitHub Free can protect it now the repository is public, and no rule does. `check-deploy-branch.yml` and `make remote-status` notice a hand push afterwards.
 - **Two consoles on the internet behind a password.** Grafana has one admin login with failures counted per address, and no second factor. Infisical's admin adds an authenticator app. Plane's own `/god-mode` and `/uploads` are public, as upstream serves them.
 - **Evidence for the render only,** as above, and no way back for the database on a rollback but a restore.
 

@@ -68,7 +68,7 @@ A number with no measurement behind it says "estimate" and how it was derived. P
 | Understand the design | [architecture.md](architecture.md), then [technology-choices.md](technology-choices.md) and [adr/](adr/) |
 | Read the build story, including what went wrong and what remains unproven | [case-study.md](case-study.md) |
 | Know what it does not do | [known-limitations.md](known-limitations.md) |
-| Know what only the owner can settle | [Owner decisions still open](../PASS2_HANDOFF.md#owner-decisions-still-open): D10, the public repository `/source` needs; D12, the replaced `email.py`; D16, the licence for platform code; D17, two GitHub Apps with access to the repository; and D18, whether to rename Wayline |
+| Know what only the owner can settle | [Owner decisions still open](../PASS2_HANDOFF.md#owner-decisions-still-open): D12, the replaced `email.py`; D16, the licence for platform code; D17, two GitHub Apps with access to the repository; and D18, whether to rename Wayline |
 | Check license obligations | [agpl-compliance.md](agpl-compliance.md) |
 
 ## All documents
@@ -138,7 +138,7 @@ A number with no measurement behind it says "estimate" and how it was derived. P
 | [infisical/README.md](../infisical/README.md) | Infisical layer |
 | [monitoring/README.md](../monitoring/README.md) | Monitoring layout and Grafana access |
 | [tests/load/README.md](../tests/load/README.md) | The k6 load test and what it captures. Results are in [resource-utilization.md](resource-utilization.md) |
-| [.github/workflows/README.md](../.github/workflows/README.md) | Workflows, and what GitHub Free does not enforce |
+| [.github/workflows/README.md](../.github/workflows/README.md) | Workflows, and what GitHub does and does not enforce |
 | [apps/wayline/README.md](../apps/wayline/README.md) | How the branded images are built from the pinned upstream source |
 | [apps/wayline/MODIFICATIONS.md](../apps/wayline/MODIFICATIONS.md) | The dated record of what changed from upstream |
 | [NOTICE.md](../NOTICE.md) | Upstream's notices, and the modified version's name and source |

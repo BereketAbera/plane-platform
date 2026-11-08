@@ -1816,8 +1816,8 @@ class Smoke:
         data["title"] = page_title(html)
         problems = brand_problems("/", html)
 
-        # Upstream's image answers /source with the app's page, 200. Not followed: the repository is private for now,
-        # so its answer says nothing about this image. See apps/wayline/README.md.
+        # Upstream's image answers /source with the app's page, 200. Not followed: GitHub's answer shows only whether
+        # that commit is pushed, and says nothing about this image. See apps/wayline/README.md.
         repository = configured_source_repo()
         source = self.http.get("/source", session=False, headers={"Accept": "*/*"})
         data.update(source_status=source.status, source_location=source.location)
@@ -1847,7 +1847,7 @@ class Smoke:
         if problems:
             raise StepFailed("; ".join(problems))
         return (f"title {data['title']!r}, /source 302 to {repository}/tree/{commit.group(1)[:12]}... (not followed: "
-                f"the repository is private for now), /licenses/ lists {len(LICENCE_FILES)} files and serves the AGPL")
+                f"it would show only whether that commit is pushed), /licenses/ lists {len(LICENCE_FILES)} files and serves the AGPL")
 
     def step_branding_page(self, data: dict, component: str, path: str) -> str:
         self.require_branded(component)

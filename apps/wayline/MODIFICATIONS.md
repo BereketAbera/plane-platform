@@ -18,7 +18,7 @@ form and the license statement. Paths such as `overlay/` and `scripts/apply.sh` 
 
 The `live` service is unmodified and keeps upstream's image.
 
-**The source offer needs a public repository.** The images `.github/workflows/images.yml` publishes are built from a commit already on GitHub, so the commit `/source` names is there. The link works once the repository is public. While the repository is private, `/source` returns 404 to anyone without access, so the owner must make it public before anyone else uses an instance.
+**The source offer needs a public repository.** The images `.github/workflows/images.yml` publishes are built from a commit already on GitHub, so the commit `/source` names is there. The repository has been public since 2026-11-08, so the link answers anyone.
 
 ## Behaviour changes
 

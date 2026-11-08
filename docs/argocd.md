@@ -48,7 +48,7 @@ flowchart TD
 | Bare repo at `.local/git/plane-platform.git` | `make gitops-publish`, the only writer | Publishes commits on `main`. Uncommitted work never reaches Argo CD |
 | `plane-git` | Compose | Read-only `git daemon` on the `kind` network. GitHub runs CI, and this Argo CD never reads it. Hosted production's reads only GitHub |
 | Argo CD release | Terraform | Values in `helm/values/argocd.yaml`. **A change there needs `terraform apply`, not a publish** |
-| AppProjects, root Application | Terraform, through local chart `gitops/bootstrap/chart` | Not synced from Git, so a commit cannot edit what a project allows. A commit can still set `project: platform` on an Application. `policy/gitops.rego` refuses that for both Plane Applications, for anything that syncs `gitops/environments`, and for project `default`, in `make ci` and in CI. GitHub Free cannot make a failing check block a merge. See [`.github/workflows/README.md`](../.github/workflows/README.md) |
+| AppProjects, root Application | Terraform, through local chart `gitops/bootstrap/chart` | Not synced from Git, so a commit cannot edit what a project allows. A commit can still set `project: platform` on an Application. `policy/gitops.rego` refuses that for both Plane Applications, for anything that syncs `gitops/environments`, and for project `default`, in `make ci` and in CI. Since 2026-11-08 a failing Lint, Manifests or Security check blocks a merge to `main`. Anyone with write access can still change the check in the same pull request. See [`.github/workflows/README.md`](../.github/workflows/README.md) |
 | Namespaces, quotas, LimitRanges, the CoreDNS rewrite | Terraform, through `infrastructure/terraform/modules/foundation` | No project may deploy a `Namespace`, `ResourceQuota` or `LimitRange`. See [terraform.md](terraform.md#what-terraform-owns) |
 | Everything else | Argo CD | |
 
@@ -566,7 +566,7 @@ asks GitHub for a pull request. It never builds. On a real runner it refused an 
 the pull request in runs 41905611391 and 41908167069. A pull request opened this way starts no job: GitHub holds its `ci` run for approval. No prod-sim promotion pull request has been merged, so steps 2 and 3 have not run. Hosted production's first promotion, pull request 3, is another workflow, [below](#exact-digest-image-sets).
 
 1. Run the workflow, with `image` and `digest` or with neither to copy every image from dev. If that setting is off, the run goes red at the pull request step and links to the page for opening it by hand.
-2. Review and merge. **Merging is the approval, and GitHub cannot enforce it.** The repository is private on the Free plan, so there are no environment reviewers and no protected branches. See [`.github/workflows/README.md`](../.github/workflows/README.md).
+2. Start its held `ci` run: approve or re-run it, because the ruleset requires Lint, Manifests and Security. Then review and merge with a merge commit. **Merging is the approval, and the ruleset requires no reviewer.** See [`.github/workflows/README.md`](../.github/workflows/README.md).
 3. Publish. The workflow could not reach the cluster, so both checks happen here.
 
 ```bash
@@ -768,12 +768,12 @@ From a digest bump to production:
 2. `make record-dev-evidence` writes the record and its signature. It refuses unless the newest dev smoke passed, with its branding
    check, every container started before that smoke began, every digest runs in a ready container in plane-dev, and each branded digest
    is a plain linux/amd64 manifest on GHCR, built by a successful `images.yml` run on a commit in `main`'s history. Commit the two files
-   with the published smoke, and push.
+   with the published smoke on a branch, open a pull request, and merge it with a merge commit once Lint, Manifests and Security pass.
 3. `gh workflow run promote-plane-prod.yml -f set_hash=<set_hash>` maps the set to GHCR names in `helm/plane/overlays/prod`, renders,
    adds `applications/plane-prod.yaml` on the first promotion, runs the check on the result, and opens a pull request from
    `promote/plane-prod`. It never builds, and cannot reach the cluster.
-4. A person merges it. **Merging is the approval, and GitHub cannot enforce it**: the repository is private on the Free plan, with no
-   environment reviewers and no protected branches. See [`.github/workflows/README.md`](../.github/workflows/README.md).
+4. A person approves or re-runs its held `ci` run, because the ruleset requires Lint, Manifests and Security, and then merges it with a merge commit.
+   **Merging is the approval, and the ruleset requires no reviewer.** See [`.github/workflows/README.md`](../.github/workflows/README.md).
 5. The release job checks the merged commit again, confirms each digest on GHCR, and moves `deploy/plane-prod`. Argo CD syncs it.
 
 On the first promotion Plane's first admin can be claimed by whoever posts first, so keep the firewall at `owner` or lower until the
@@ -788,9 +788,9 @@ its linux/amd64 child, which dev never ran, and the record says so. The promotio
 
 ### check-deploy-branch.yml
 
-GitHub Free cannot protect a branch of a private repository. Anyone with write access can push `deploy/plane-prod`, and so can any job
-with `contents: write`, whatever its comments say. Root and its children sync what the branch holds, so writing it amounts to
-cluster-admin. Nothing short of a paid plan or a check on the cluster prevents that. Three places detect it, and by then Argo CD may
+The ruleset covers `main` only, so nothing stops a push to `deploy/plane-prod` by anyone with write access or a job
+with `contents: write`, whatever its comments say. GitHub Free can protect it now the repository is public, and no rule does. Root
+and its children sync what the branch holds, so writing it amounts to cluster-admin. Three places detect it, and by then Argo CD may
 have deployed it:
 
 | Where | When | What it does |
@@ -811,10 +811,10 @@ to move it backwards, so never push an older release commit to the branch.
 
 | Way | How | Note |
 |---|---|---|
-| Revert a promotion | `git revert` of the promotion commit on `main`, then the release job | The older set still has its evidence, so the gate passes |
+| Revert a promotion | `git revert` of the promotion commit on a branch, a pull request merged to `main` with a merge commit, then the release job | The older set still has its evidence, so the gate passes |
 | Promote an older set | `gh workflow run promote-plane-prod.yml -f set_hash=<older set>`, then merge | The same gate, and the same evidence |
 | Revert the first promotion | Refused by the release job | It would leave no set, and root would prune Plane's Application. Promote another set, or revert the revert |
-| Revert a platform change | `git revert` on `main`, then the release job | A change Terraform owns needs root `prod` applied again: [terraform.md](terraform.md#plan-and-apply-on-hosted-production) |
+| Revert a platform change | `git revert` on a branch, a pull request merged to `main` with a merge commit, then the release job | A change Terraform owns needs root `prod` applied again: [terraform.md](terraform.md#plan-and-apply-on-hosted-production) |
 
 **Images roll back, the database does not.** A migration the newer image ran stays applied. If the older image runs on that schema,
 stop there. If it does not, or if the migration did the damage, restore the dump Job `plane-prod-predeploy-dump` took just before it.

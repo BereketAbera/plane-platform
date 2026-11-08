@@ -1,9 +1,10 @@
 # Runs the same scripts as `make ci`. No secrets and no cluster, so a compromised tool has little
 # to steal: every job holds a read-only token and persists no credentials. The one exception is
 # release-plane-prod, last below, which runs only on main, after the others. Its token can write any
-# branch, and its script moves only deploy/plane-prod, the branch hosted production reads. Nothing on
-# this plan holds it to that, or stops another job with contents: write or a person pushing that
-# branch. publish-release.sh and check-deploy-branch.yml go red on such a push, and do not prevent it.
+# branch but main, and its script moves only deploy/plane-prod, the branch hosted production reads. The
+# ruleset covers main only, so nothing holds it to that, or stops another job with contents: write or a
+# person pushing that branch. publish-release.sh and check-deploy-branch.yml go red on such a push, and
+# do not prevent it.
 name: ci
 
 on:

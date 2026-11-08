@@ -1,6 +1,6 @@
 # Pull request: build only. Push to main: build, walk, push to GHCR, record digests, scan and run what was pushed, and open
-# a pull request bumping dev. Merging that pull request is left to a person. See README.md for what this plan can and cannot
-# enforce, and for how a GHCR digest reaches the local registry.
+# a pull request bumping dev. Merging that pull request is left to a person. See README.md for what the ruleset on main
+# enforces, and for how a GHCR digest reaches the local registry.
 #
 # Both paths run the same native build through scripts/ci/build-images.sh as `make images` does, with PLATFORM=linux/amd64
 # on an x86-64 runner, because the VPS is x86-64. There is no emulation here. On the laptop `make images` stays linux/arm64,
@@ -227,6 +227,9 @@ jobs:
             Digest bump for dev, opened by `images.yml`. Merge it yourself: nothing merges this automatically.
 
             These are plain `linux/amd64` manifests, which is what production runs. Dev runs the same bytes under Rosetta.
+
+            A person has to start CI: approve or re-run this pull request's held `ci` run, in the merge box or from
+            Actions, wait for Lint, Manifests and Security, then merge with a merge commit.
 
             After merging:
 
