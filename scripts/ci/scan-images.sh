@@ -251,7 +251,11 @@ scan_source() { # scan_source <json>
 }
 
 scan() { # scan <image> <json>
-  if [[ "$1" == wayline-source-lockfiles ]]; then scan_source "$2"; else scan_one "$1" "$2"; fi
+  case "$1" in
+    docker.io/library/snake-production-*) "$ROOT/scripts/ci/scan-node-sbom.sh" "$1" "$2" "$LOCAL_DIR/trivy-cache" ;;
+    wayline-source-lockfiles) scan_source "$2" ;;
+    *) scan_one "$1" "$2" ;;
+  esac
 }
 
 : >"$OUT/not-scanned.txt"

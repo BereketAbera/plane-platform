@@ -11,7 +11,7 @@ snakebrawl_node_image if {
 	startswith(input.metadata.name, "snakebrawl-")
 	some c in kube.containers(input)
 	component := trim_prefix(input.metadata.name, "snakebrawl-")
-	expected := sprintf("^docker[.]io/library/snake-production-%s(:[a-f0-9]{12})?@sha256:[a-f0-9]{64}$", [component])
+	expected := sprintf("^docker[.]io/library/snake-production-%s@sha256:[a-f0-9]{64}$", [component])
 	regex.match(expected, c.image)
 	c.imagePullPolicy == "Never"
 	count(kube.containers(input)) == 1

@@ -40,7 +40,11 @@ esac
 REPOSITORY="ghcr.io/bereketabera/$APP/$COMPONENT"
 if [[ "$APP" == snakebrawl ]]; then
   case "$COMPONENT" in web|arena) ;; *) die "snakebrawl components are web and arena" ;; esac
+  [[ -z "$TAG" ]] || die "node imports use the manifest digest without a mutable tag"
   REPOSITORY="docker.io/library/snake-production-$COMPONENT"
+  INVENTORY="$ROOT/policy/node-images/${DIGEST#sha256:}"
+  [[ -s "$INVENTORY.cdx.json.gz" && -s "$INVENTORY.json" ]] ||
+    die "commit the verified release archive SBOM and metadata before promoting a node import"
 fi
 APP_DIR="$HOSTED_TREE/platform/$APP"
 MESSAGE="$ROOT/.build/promote-app-message.txt"

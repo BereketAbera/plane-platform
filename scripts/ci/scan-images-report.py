@@ -16,7 +16,7 @@ import re
 import sys
 import tempfile
 
-OURS = re.compile(r"^(localhost:5001|ghcr\.io/[^/]+)/wayline/")
+OURS = re.compile(r"^(?:(?:localhost:5001|ghcr\.io/[^/]+)/wayline/|docker\.io/library/snake-production-(?:arena|web)@sha256:)")
 SEVERITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]
 NO_PLATFORM = "none"
 LOCKFILES_ROW = "wayline-source-lockfiles"
@@ -47,6 +47,10 @@ def summarize(image, sources, report, why_not_scanned):
     metadata = report.get("Metadata") or {}
     system = metadata.get("OS") or {}
     config = metadata.get("ImageConfig") or {}
+    provenance = report.get("NodeImport") or {}
+    if (report.get("ArtifactType") == "cyclonedx" and provenance.get("image") == image and
+            provenance.get("config") == metadata.get("ImageID") and provenance.get("platform") == "linux/amd64"):
+        config = {"os": "linux", "architecture": "amd64"}
     row.update(
         scanned="yes",
         os=f"{system.get('Family', '')} {system.get('Name', '')}".strip() or "none",
