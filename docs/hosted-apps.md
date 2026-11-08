@@ -449,7 +449,7 @@ releases, with a token minted by hand between them.
 | `frameflow-api`, `api` | Deployment, 1 replica, `Recreate`. The `backend` image's default command, Fastify: it signs uploads, queues each video with Hatchet, takes the worker's reports and serves playback | 4000 | PVC `frameflow-data`, 1Gi, holding the SQLite file `/data/app.db` |
 | `frameflow-worker`, `worker` | Deployment, 1 replica, `Recreate`. The `backend` image as a Hatchet worker, running FFmpeg | 8001, its health, for the kubelet alone | emptyDir `/scratch`, 8Gi |
 | `frameflow-cleanup` and `frameflow-reconcile`, `maintenance` | CronJobs, hourly and every 10 minutes, from the `backend` image | none | `frameflow-data` |
-| `frameflow-silo`, `s3` | StatefulSet, 1. The Silo image and digest Plane's render runs | 9000 S3, 9090 console | PVC 25Gi, for bucket `frameflow-media`, held to 12GiB |
+| `frameflow-silo`, `s3` | StatefulSet, 1. The Silo image and digest Plane's render runs | 9000 S3, 9090 console | PVC 25Gi, for bucket `frameflow-media`, held to 18GiB |
 | `frameflow-silo-setup`, `s3-setup` | Job, an Argo CD Sync hook, so it runs again at every sync of `frameflow`, with `pgsty/mc` | none | none |
 | `hatchet`, `hatchet` | Deployment, 1 replica, `Recreate`. hatchet-lite v0.114.2: the engine, its REST API and its dashboard in one process | 7070 gRPC, 8080 REST, 8888 dashboard with the REST API under `/api`, 8733 health for the kubelet | `/config`, in memory, 16Mi |
 | `hatchet-postgres`, `postgres` | StatefulSet, 1. Postgres 16.15: Hatchet's database, and its queue | 5432 | PVC 5Gi |
@@ -817,7 +817,7 @@ from `frameflow-silo-backup` instead: that user can list and read the bucket and
 |---|---|---|
 | Videos at once | 1, `FRAMEFLOW_MAX_CONCURRENT_VIDEOS=1`. The rest wait in Hatchet's queue, for up to 12 hours, `FRAMEFLOW_SCHEDULE_TIMEOUT` | The node is Wayline's too |
 | Renditions at once | 1, `FRAMEFLOW_WORKER_SLOTS=1` and `MAX_CONCURRENT_ENCODES=1`: 360p and 720p one after the other, the second waiting in Hatchet's queue and not inside its own timeout | |
-| The worker's CPU and memory | Requests 500m and 1Gi, limits 3 CPU and 3Gi, and FFmpeg's `FFMPEG_THREADS=3` | The limit caps an encode, and Wayline's larger requests keep its share when the CPU is contended |
+| The worker's CPU and memory | Requests 500m and 2Gi, limits 3 CPU and 6Gi, and FFmpeg's `FFMPEG_THREADS=3` | The limit caps an encode, and Wayline's larger requests keep its share when the CPU is contended |
 | Scratch | emptyDir `/scratch` of 8Gi, in an ephemeral-storage limit of 10Gi. Past either, the kubelet evicts the pod, and the Deployment starts another with an empty scratch | One disk holds everything on the node |
 | Upload size | 500 MiB, `MAX_UPLOAD_BYTES=524288000` | One PUT must finish within Traefik's `readTimeout` of 180s, which every host shares, so a whole 500 MiB takes about 23 Mbit/s of upload, and 10 Mbit/s gets about 215 MiB through |
 | Upload URL | 15 minutes, `S3_PRESIGNED_UPLOAD_TTL_SECONDS=900` | |
@@ -838,11 +838,13 @@ What removes what:
 - Each task deletes its own scratch when it ends, on success or failure, and the worker clears what a killed one left when it starts.
 - Hatchet drops runs after 7 days, `SERVER_LIMITS_DEFAULT_TENANT_RETENTION_PERIOD=168h`. Frameflow's own record of each video stays.
 - Silo drops an incomplete multipart upload after 24 hours, at a sweep every 6, as this release does by default and as Docker showed.
-- The bucket's quota is 12GiB, and past it Silo refuses every write, the worker's renditions among them. `FrameflowBucketNearQuota` warns
+- The bucket's quota is 18GiB, and past it Silo refuses every write, the worker's renditions among them. `FrameflowBucketNearQuota` warns
   at 80% and `FrameflowBucketFull` pages at 95%.
 - Nothing deletes the owner's videos: sources, renditions and failed videos stay until deleted in the studio. When the bucket fills,
-  delete some there, or raise the quota, in the setup Job and in the two rules together, and within Silo's 25Gi volume and the backup's
-  20Gi of scratch, which holds the whole bucket each night.
+  delete some there, or raise the quota, in the setup Job, the two rules and their test together. 18GiB is about as far as it goes as sized:
+  it has to stay within Silo's 25Gi volume and the backup's 20Gi of scratch, which holds the whole bucket each night with the dumps beside
+  it, and the backup's 24Gi volume holds that and the history. Past that, each of the three grows with it, which counts about three times
+  against the disk in `capacity.yaml`.
 
 ### Frameflow: backups and restore
 

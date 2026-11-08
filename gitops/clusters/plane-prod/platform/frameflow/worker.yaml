@@ -2,7 +2,7 @@
 # 360p and 720p renditions with FFmpeg, publishes them to Silo, and reports each step to the API. It refuses to start without the Hatchet
 # client token. No Service: nothing calls it, and the kubelet reaches its health server from the node.
 #
-# One replica, and Recreate. A rolling update would start a second worker beside the first, with another 3Gi that frameflow's quota has
+# One replica, and Recreate. A rolling update would start a second worker beside the first, with another 6Gi that frameflow's quota has
 # no room for (infrastructure/hosted/plane-prod/capacity.yaml), so the rollout would stop there. Hatchet queues the next video meanwhile,
 # for up to FRAMEFLOW_SCHEDULE_TIMEOUT in config.yaml, which also holds the limits that keep it to one video and one rendition at a time.
 apiVersion: apps/v1
@@ -98,16 +98,18 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
-          # FFmpeg runs on 3 threads, FFMPEG_THREADS in config.yaml, within these 3 CPUs. Starting values for one video at a time, not yet
-          # measured on this node. ephemeral-storage bounds what scratch, /tmp and the logs take of the node's disk together.
+          # FFmpeg runs on 3 threads, FFMPEG_THREADS in config.yaml, within these 3 CPUs, for one video at a time. A 720p encode peaked at
+          # 412 MB on this node, so the memory is room for larger sources, and it does not speed an encode up. Past the LimitRange's max, a
+          # new pod is refused, so capacity.yaml's numbers go first, through Terraform. ephemeral-storage bounds what scratch, /tmp and the
+          # logs take of the node's disk together.
           resources:
             requests:
               cpu: 500m
-              memory: 1Gi
+              memory: 2Gi
               ephemeral-storage: 1Gi
             limits:
               cpu: "3"
-              memory: 3Gi
+              memory: 6Gi
               ephemeral-storage: 10Gi
           volumeMounts:
             - name: scratch

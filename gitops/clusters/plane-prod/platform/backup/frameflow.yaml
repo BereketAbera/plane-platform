@@ -78,7 +78,7 @@ spec:
               secret: {secretName: restic-password, defaultMode: 0440}
             - name: data
               persistentVolumeClaim: {claimName: frameflow-data}
-            # A full copy of the bucket each night, whose quota is 12GiB, and the dumps beside it. Fills up, and the pod is evicted,
+            # A full copy of the bucket each night, whose quota is 18GiB, and the dumps beside it. Fills up, and the pod is evicted,
             # and the failure alerts, rather than the node filling.
             - name: work
               emptyDir: {sizeLimit: 20Gi}

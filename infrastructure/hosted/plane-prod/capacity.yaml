@@ -115,15 +115,15 @@ quotas:
     pods: "5"
     persistentvolumeclaims: "0"
     requests.storage: "0"
-  # 8320Mi steady, the limits its seven pods set: web and the api 512Mi each, the worker 3Gi, Hatchet and its Postgres 1536Mi each, Silo
+  # 11392Mi steady, the limits its seven pods set: web and the api 512Mi each, the worker 6Gi, Hatchet and its Postgres 1536Mi each, Silo
   # 1Gi and the operator 128Mi. And 2432Mi of room, for what may run beside them at once: the nightly backup, the hourly cleanup
   # and the reconcile every ten minutes, which can start together and both meet the backup, web's surge, and the two probe pods
   # scripts/test-netpol.sh starts. Pods: those seven, and room for the backup, both CronJobs, two surges, two probes, frameflow-tls's
   # solver and the Silo setup hook.
   frameflow:
     requests.cpu: 1500m
-    requests.memory: 3584Mi
-    limits.memory: 10752Mi
+    requests.memory: 4608Mi
+    limits.memory: 13824Mi
     pods: "16"
     persistentvolumeclaims: "4"
     # frameflow-data 1, Hatchet's Postgres 5, Silo 25, and the backups PVC's 24.
@@ -168,8 +168,8 @@ limit_ranges:
     default: { memory: 64Mi }
     default_request: { cpu: 10m, memory: 16Mi }
     max: { memory: 128Mi }
-  # The worker's 3Gi is the largest container here.
+  # The worker's 6Gi is the largest container here.
   frameflow:
     default: { memory: 256Mi }
     default_request: { cpu: 10m, memory: 64Mi }
-    max: { memory: 3Gi }
+    max: { memory: 6Gi }

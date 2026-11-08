@@ -561,7 +561,7 @@ The quotas come from `infrastructure/hosted/plane-prod/capacity.yaml`, which Ter
 | `infisical` | 300m | 1664Mi | 2400Mi | 6 | 3 | 13Gi |
 | `rillmark` | 50m | 160Mi | 256Mi | 5 | 0 | 0 |
 | `awushi-cloudgarden` | 50m | 160Mi | 256Mi | 5 | 0 | 0 |
-| `frameflow` | 1500m | 3584Mi | 10752Mi | 16 | 4 | 55Gi |
+| `frameflow` | 1500m | 4608Mi | 13824Mi | 16 | 4 | 55Gi |
 
 Unlike the kind cluster's, these cap `requests.cpu` too, because requests are what the scheduler holds back and they must fit one node, and
 each `LimitRange/defaults` gives a container with no request 10m of CPU, so such a pod stays admissible. Each `limits.memory` is what every

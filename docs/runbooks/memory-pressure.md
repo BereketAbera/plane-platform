@@ -179,7 +179,7 @@ the overcommitted VM above do not apply. Its bounds are set in one file, [`capac
 |---|---|---|
 | Kept for the system | 1500m of CPU and 4 GiB, and the kubelet evicts pods when less than 1 GiB is available | [`kubelet.conf`](../../infrastructure/hosted/plane-prod/kubelet.conf) |
 | Per namespace | A ResourceQuota and a LimitRange each, which Terraform's [`environments/prod`](../../infrastructure/terraform/environments/prod/README.md) applies from `capacity.yaml` | `kc -n <namespace> describe resourcequota` |
-| The apps | A quota each like the rest: Frameflow's is 1500m of CPU and 3584Mi requested and 10752Mi of limits, and each static site's 50m, 160Mi and 256Mi | `scripts/ci/check-capacity.sh`, which fails CI unless every quota, the system's share and the scratch no quota counts still fit the node |
+| The apps | A quota each like the rest: Frameflow's is 1500m of CPU and 4608Mi requested and 13824Mi of limits, and each static site's 50m, 160Mi and 256Mi | `scripts/ci/check-capacity.sh`, which fails CI unless every quota, the system's share and the scratch no quota counts still fit the node |
 
 The quotas count each rollout's surge too, so a quota full to its last MiB stops a rollout, not the node. `infisical` is the tight one: it
 fits one of the server's rollout, the nightly backup and a certificate's solver at a time.

@@ -1,7 +1,7 @@
 # Frameflow's rules, in gitops/clusters/plane-prod/platform/monitoring-extras/frameflow/rules.yaml. Run by promtool from
 # scripts/ci/validate-manifests.sh, which writes each PrometheusRule's spec beside a copy of this file as rules-<name>.yaml.
 #
-# Each number here is the hosted design's: the probe 2 minutes, Hatchet and the API 5, the worker 15, and the bucket's 12GiB quota, a
+# Each number here is the hosted design's: the probe 2 minutes, Hatchet and the API 5, the worker 15, and the bucket's 18GiB quota, a
 # warning past 80% for 15 minutes and critical past 95% for 5. The series carry the labels kube-state-metrics' and Silo's scrapes add, so
 # each test also says which of them an alert keeps.
 rule_files:
@@ -120,9 +120,9 @@ tests:
   - name: the bucket past 80 percent of its quota warns after 15 minutes, and past 95 is critical after 5, with neither naming Silo's address
     interval: 1m
     input_series:
-      # 9GiB, then 10.5GiB from 20m, 11.25GiB from 40m, and 11.5GiB from 50m.
+      # 13.5GiB, then 15.75GiB from 20m, 16.875GiB from 40m, and 17.25GiB from 50m.
       - series: 'minio_bucket_usage_total_bytes{namespace="frameflow",bucket="frameflow-media",pod="frameflow-silo-0",instance="10.42.0.20:9000",metrics_path="/minio/v2/metrics/bucket"}'
-        values: '9663676416x19 11274289152x19 12079595520x9 12348030976x15'
+        values: '14495514624x19 16911433728x19 18119393280x9 18522046464x15'
     alert_rule_test:
       - { eval_time: 19m, alertname: FrameflowBucketNearQuota, exp_alerts: [] }
       - { eval_time: 34m, alertname: FrameflowBucketNearQuota, exp_alerts: [] }
@@ -131,7 +131,7 @@ tests:
         exp_alerts:
           - exp_labels: { namespace: frameflow, bucket: frameflow-media, severity: warning, component: silo }
             exp_annotations:
-              summary: Bucket frameflow-media holds 87.5% of its 12GiB quota
+              summary: Bucket frameflow-media holds 87.5% of its 18GiB quota
               description: The hourly cleanup removes only expired uploads and finished videos' staging, so the rest stays until the owner deletes videos. Delete some, or raise the quota in frameflow-silo-setup and in these rules together.
       - { eval_time: 36m, alertname: FrameflowBucketFull, exp_alerts: [] }
       - { eval_time: 49m, alertname: FrameflowBucketFull, exp_alerts: [] }
@@ -140,15 +140,15 @@ tests:
         alertname: FrameflowBucketFull
         exp_alerts:
           - exp_labels: { namespace: frameflow, bucket: frameflow-media, severity: critical, component: silo }
-            exp_annotations: { summary: "Bucket frameflow-media holds 95.83% of its 12GiB quota, and past it Silo refuses every upload, the worker's included" }
+            exp_annotations: { summary: "Bucket frameflow-media holds 95.83% of its 18GiB quota, and past it Silo refuses every upload, the worker's included" }
       - { eval_time: 56m, alertname: FrameflowBucketNotWatched, exp_alerts: [] }
-  - name: an empty bucket is watched, and Plane's bucket at 12GiB says nothing here
+  - name: an empty bucket is watched, and Plane's bucket at 18GiB says nothing here
     interval: 5m
     input_series:
       - series: 'minio_bucket_usage_total_bytes{namespace="frameflow",bucket="frameflow-media"}'
         values: '0x20'
       - series: 'minio_bucket_usage_total_bytes{namespace="plane-prod",bucket="uploads"}'
-        values: '12884901888x20'
+        values: '19327352832x20'
     alert_rule_test:
       - { eval_time: 70m, alertname: FrameflowBucketNearQuota, exp_alerts: [] }
       - { eval_time: 70m, alertname: FrameflowBucketFull, exp_alerts: [] }
