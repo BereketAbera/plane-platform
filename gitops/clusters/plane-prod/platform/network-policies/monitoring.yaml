@@ -47,6 +47,10 @@ spec:
       ports:
         - { protocol: TCP, port: 9090 }
   egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: snakebrawl } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: snakebrawl-arena } }
+      ports: [{ protocol: TCP, port: 9464 }]
     # Service discovery on 6443, kubelet and cAdvisor on 10250, node-exporter on 9100. All are at the
     # node's address, since the kubelet is on the host and node-exporter is hostNetwork.
     - to:

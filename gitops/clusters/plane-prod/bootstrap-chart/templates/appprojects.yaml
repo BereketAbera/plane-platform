@@ -150,3 +150,34 @@ spec:
       kind: Order
     - group: acme.cert-manager.io
       kind: Challenge
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: snakebrawl
+  namespace: "{{ .Release.Namespace }}"
+spec:
+  description: SnakeBrawl web and arena workloads in snakebrawl only.
+  sourceRepos:
+    - "{{ .Values.gitRepoURL }}"
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: snakebrawl
+  # clusterResourceWhitelist is deliberately absent: cluster scope is allow-list, so nothing passes.
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: cert-manager.io
+      kind: Certificate
+    - group: cert-manager.io
+      kind: CertificateRequest
+    - group: cert-manager.io
+      kind: Issuer
+    - group: acme.cert-manager.io
+      kind: Order
+    - group: acme.cert-manager.io
+      kind: Challenge

@@ -56,7 +56,7 @@ providers:
     enabled: true
     # Plane's route, Grafana's in monitoring, Infisical's in infisical, each app's in its own namespace (Frameflow's, Rillmark's, and
     # devops.bereket.dev's in awushi-cloudgarden), and the namespace that holds the TLSOption above. Nothing else here publishes anything.
-    namespaces: [plane-prod, monitoring, infisical, frameflow, rillmark, awushi-cloudgarden, traefik]
+    namespaces: [plane-prod, monitoring, infisical, frameflow, rillmark, awushi-cloudgarden, snakebrawl, traefik]
     # So a default TLSOption in a namespace with a route cannot lower the minimum version.
     defaultTLSResourcesNamespace: traefik
   # Only for cert-manager's HTTP-01 solver, which makes a temporary Ingress and has no IngressRoute shim, in the namespace of each
@@ -66,7 +66,7 @@ providers:
   kubernetesIngress:
     enabled: true
     ingressClass: traefik
-    namespaces: [plane-prod, monitoring, infisical, frameflow, rillmark, awushi-cloudgarden]
+    namespaces: [plane-prod, monitoring, infisical, frameflow, rillmark, awushi-cloudgarden, snakebrawl]
     # The status it would copy is empty on a ClusterIP Service, and cert-manager does not read it.
     publishedService:
       enabled: false
