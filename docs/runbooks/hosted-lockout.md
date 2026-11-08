@@ -51,8 +51,8 @@ the Secret. If both are gone, the recovery bundle holds a copy. To change the pa
 `make remote-bundle TARGET=plane-prod`. Rotate replaces the pod, and it has not run against production.
 
 The count per address rests on Traefik seeing each client's own address. The row `Traefik sees a client's own address` in
-`make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=outside` reads that on this cluster: PASS at 19:31Z, in a run not published yet
-(`test-hosted-20261107T193135Z.txt`).
+`make remote-test TARGET=plane-prod CONFIRM=plane-prod ONLY=outside` reads that on this cluster: PASS at 19:31Z ([run](../evidence/runs/test-hosted-20261107T193135Z.txt)), and again in the whole suite at 21:40Z
+([run](../evidence/runs/test-hosted-20261107T214054Z.txt)), each file with the address it saw redacted.
 
 ## Infisical
 

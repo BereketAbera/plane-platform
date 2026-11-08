@@ -181,6 +181,6 @@ None of this page reaches hosted production. `make backup` and `make restore` ta
 | Where they go | `.local/backups/<env>/<id>/` on this Mac, a folder at 0700 | restic repositories on the node under `/srv/wayline/backups`, encrypted, and a copy on this Mac when someone runs `make remote-pull-backups TARGET=plane-prod` |
 | Before a migration | `make promote ENV=prod-sim` takes a dump | The Sync hook `plane-prod-predeploy-dump` takes one per backend image |
 | Kept | The newest 3 or 5 | 7 daily, 4 weekly and 3 monthly. Predeploy dumps 90 days, and the copy on this Mac 90 days |
-| Proof | `make restore`, in place, with its sentinel | `make remote-restore-test`, into an isolated namespace. PASS on the VPS on 2026-11-07, with its evidence not published yet |
+| Proof | `make restore`, in place, with its sentinel | `make remote-restore-test`, into an isolated namespace. PASS on the VPS on 2026-11-07 ([record](../evidence/runs/restore-test-plane-prod-20261107071414.json)), and again on 2026-11-08 for Plane's backup with the objects step from one listing ([record](../evidence/runs/restore-test-plane-prod-20261108001626.json)) |
 | Restore in place | `make restore`, PASS in each environment | No script. The steps for Plane's database are in [`scripts/hosted/README.md`](../../scripts/hosted/README.md), section After a rollback: the database does not go back. NOT RUN |
 | Off the machine | No copy | This Mac's pull, the only one. S3 once its files exist |

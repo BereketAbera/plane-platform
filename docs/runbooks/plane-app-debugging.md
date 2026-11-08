@@ -256,5 +256,5 @@ curl -s "https://$HOST/live/health"; echo
 - Its alerts go to Telegram. `PlaneApiDown`, `PlaneApiDatabaseProbeFailing`, `PlaneFrontendDown` and `PlaneValkeyDown` fire only while
   Application `plane-prod` exists ([rules](../../gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted-plane.yaml)).
 - `make remote-smoke TARGET=plane-prod` signs in with an existing account, at hidden prompts, and removes what it makes. It passed all 21
-  steps on 2026-11-07 at 06:45Z, after a run at 06:41Z that read BLOCKED on a refused sign-in (`smoke-plane-prod-20261107T064551Z.json` and
-  `smoke-plane-prod-20261107T064131Z.json`, not published yet). Tonight's final smoke: PENDING.
+  steps on 2026-11-07 at 06:45Z, after a run at 06:41Z that read BLOCKED on a refused sign-in ([06:45Z](../evidence/runs/smoke-plane-prod-20261107T064551Z.json) and
+  [06:41Z](../evidence/runs/smoke-plane-prod-20261107T064131Z.json)). The final smoke on the owner's login: PENDING, waiting for the owner.
