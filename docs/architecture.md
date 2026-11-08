@@ -450,7 +450,7 @@ Every resource has exactly one owner. If two tools believe they own the same thi
 | **Infisical** | Secret values and their rotation history | Kubernetes objects | The operator materialises them |
 | **Scripts** through `.local/secret-zero/` | The only secrets that exist before Infisical does | Anything once Infisical is live | Something has to start first |
 
-**Terraform does not create the cluster, the node, the registry, or the Git remote.** kind and Compose do, driven by scripts. Locally, Terraform talks only to an existing Kubernetes API and an existing Infisical API. `infrastructure/terraform/environments/dev` is an untested interface document. On hosted production Terraform does not create the cluster or the VPS either: `environments/prod` talks to K3s's API through the tunnel, and `environments/prod-host` reads the VPS from Contabo's API and owns three DNS records in Vercel. [Section 9](#owners-on-hosted-production) has hosted production's owners. See [terraform.md](terraform.md).
+**Terraform does not create the cluster, the node, the registry, or the Git remote.** kind and Compose do, driven by scripts. Locally, Terraform talks only to an existing Kubernetes API and an existing Infisical API. `infrastructure/terraform/environments/dev` is an untested interface document. On hosted production Terraform does not create the cluster or the VPS either: `environments/prod` talks to K3s's API through the tunnel, and `environments/prod-host` reads the VPS from Contabo's API and owns six DNS records in Vercel. [Section 9](#owners-on-hosted-production) has hosted production's owners. See [terraform.md](terraform.md).
 
 **Argo CD does not manage itself.** A bad sync cannot take down the controller that would apply the fix, and `terraform apply` does not depend on the Git remote. The cost is that Argo CD upgrades are not GitOps.
 
@@ -688,7 +688,7 @@ flowchart TB
 
   subgraph vps["VPS"]
     argo["Argo CD: root, auto-sync with prune and self-heal"]
-    children["13 child Applications, plane-prod at wave 0"]
+    children["17 child Applications, plane-prod at wave 0"]
   end
 
   images --> ghcr

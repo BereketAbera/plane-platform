@@ -625,7 +625,7 @@ controller at 0 replicas. What differs is where it reads, who writes that, and h
 | Promotion | `make promote`, with the plane-dev check and a dump | A signed record that dev ran the exact set, then a pull request that a person merges |
 | Rollback | `make rollback`: a revert, then a publish | A revert on `main`, or the promotion of an older set. `make rollback` refuses `ENV=prod` |
 | Access | `http://argocd.localhost` | No public route: `make remote-ui TARGET=plane-prod UI=argocd`, on `http://localhost:18080` |
-| Applications | Root and 13 children | Root and 13 children, a different set, so 14 in all |
+| Applications | Root and 13 children | Root and 17 children, a different set with the apps beside Wayline, so 18 in all |
 
 No CI job holds a Kubernetes credential, so GitHub cannot reach the cluster: it changes what Argo CD reads, and Argo CD pulls, with no
 webhook, at its next look, as locally. With this Mac off, production should keep running, because by design nothing it needs is here, which no test has checked. New digests wait

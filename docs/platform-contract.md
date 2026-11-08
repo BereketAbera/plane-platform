@@ -85,7 +85,8 @@ provisioner, under the same narrow policy.
 | `monitoring-agents` | node-exporter only | `privileged` |
 | `infisical` | Infisical server, its Postgres and Redis, the Probes of its route, its nightly backup | `baseline` |
 | `plane-prod` | Plane, its secrets operator, exporters, the nightly backup. Label `plane-platform/environment: prod` | `baseline`, until a dry run of `restricted` passes on the branded images |
-| `frameflow` | Reserved for Frameflow, which is not deployed. Quota of 0 pods, default deny | `restricted` |
+| `rillmark`, `awushi-cloudgarden` | A static site each, one nginx pod: [hosted-apps.md](hosted-apps.md) | `restricted` |
+| `frameflow` | Frameflow: its web server, API, worker and CronJobs, Hatchet and its Postgres, its own Silo, its secrets operator and its nightly backup | `restricted` |
 
 ## 3. Hostnames and exposure
 
@@ -397,12 +398,15 @@ seventh synced Secret and the same identity Secret:
 | `ghcr-pull` | `.dockerconfigjson` for `ghcr.io`, from the token at `/GHCR_PULL_TOKEN`. ServiceAccount `plane` names it in `imagePullSecrets` |
 | `plane-infisical-identity` | `identityId`, as above |
 
-- One operator, from Application `infisical-operator-prod`, scoped to `plane-prod`. The identity may log in only from namespace `plane-prod`
-  and ServiceAccount `plane-infisical-auth`, through Infisical's Service and not its public route, which refuses a machine's credential.
+- Plane's operator, from Application `infisical-operator-prod`, scoped to `plane-prod`, beside Frameflow's own, which reads project
+  `frameflow-prod` into `frameflow` alone ([hosted-apps.md](hosted-apps.md#frameflow-secrets)). Plane's identity may log in only from namespace
+  `plane-prod` and ServiceAccount `plane-infisical-auth`, through Infisical's Service and not its public route, which refuses a machine's
+  credential.
 - Secret zero, the restic password, the deploy key and the alert credentials live in `.local/hosted/plane-prod/`, never in Infisical, so
-  nothing is circular. `scripts/hosted/bootstrap.sh` writes them as Secrets: Infisical's three, `restic-password` in `plane-prod` and
-  `infisical`, `argocd-repo-plane-platform`, `grafana-admin` and `alertmanager-wayline`. The GHCR pull token starts as
-  `.local/hosted/plane-prod/ghcr-pull-token`, and the seed puts it into Infisical, where `ghcr-pull` reads it.
+  nothing is circular. `scripts/hosted/bootstrap.sh` writes them as Secrets: Infisical's three, `restic-password` in `plane-prod`,
+  `infisical` and `frameflow`, `argocd-repo-plane-platform`, `grafana-admin`, `alertmanager-wayline`, and `ghcr-pull` in the two static
+  sites' namespaces. The GHCR pull token starts as `.local/hosted/plane-prod/ghcr-pull-token`, and the seed puts it into Infisical, where
+  `ghcr-pull` reads it.
 - `scripts/secret-zero.sh`, `infisical-bootstrap.sh` and `infisical-seed.sh` take hosted production only through `scripts/hosted/target.sh`,
   when `WAYLINE_TARGET=plane-prod` and `CONFIRM=plane-prod` are both set. Otherwise they behave as they do locally.
 - `scripts/hosted/bundle.sh` writes the recovery bundle: secret zero, every Terraform state, the deploy key, the restic password, the
@@ -497,15 +501,17 @@ makes, and Terraform applies them. Quotas cap and do not reserve:
 | `traefik` | 100m | 192Mi | 512Mi | 3 | 0 | 0 |
 | `cert-manager` | 50m | 192Mi | 448Mi | 6 | 0 | 0 |
 | `monitoring-agents` | 20m | 48Mi | 128Mi | 2 | 0 | 0 |
-| `frameflow` | | | | 0 | 0 | 0 |
+| `rillmark` | 50m | 160Mi | 256Mi | 5 | 0 | 0 |
+| `awushi-cloudgarden` | 50m | 160Mi | 256Mi | 5 | 0 | 0 |
+| `frameflow` | 1500m | 3584Mi | 10752Mi | 16 | 4 | 55Gi |
 
 `plane-prod`'s `limits.memory` is 12624Mi steady and 2064Mi of room for one surge, the api's, or a backup's or migrator's. The node is
-counted as 12 CPU, 47Gi and 400Gi, less the system's share: 1500m and 5Gi, which `kubelet.conf` reserves or keeps free for eviction, and
-40Gi of disk for the OS, K3s's data and the images.
-Frameflow's reservation, 18Gi of memory, 6 CPU requested and 100Gi of temporary disk, is not deployed, and exists as what the caps on everything
-else leave free. `scripts/ci/check-capacity.sh` runs in CI's Manifests job and fails unless every quota's sum, with the system's share and
-Frameflow's, still fits the node. A quota sized for the steady state alone would stop a rollout, so each leaves room for its largest surge,
-and several surging together go one after another.
+counted as 12 CPU, 47Gi and 386Gi, the root filesystem as measured, less the system's share: 1500m and 5Gi, which `kubelet.conf` reserves
+or keeps free for eviction, and 40Gi of disk for the OS, K3s's data and the images. `frameflow`'s is the limits of its seven pods, 8320Mi,
+and 2432Mi of room for what may run beside them, and its emptyDirs take up to 30Gi of the disk beside its claims, which no quota counts:
+the worker's scratch and the nightly's work space. `scripts/ci/check-capacity.sh` runs in CI's Manifests job and fails unless every quota's
+sum, with the system's share and that scratch, still fits the node. A quota sized for the steady state alone would stop a rollout, so each
+leaves room for its largest surge, and several surging together go one after another.
 
 ## 11. Make interface
 
