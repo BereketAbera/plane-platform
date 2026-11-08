@@ -1,0 +1,44 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata: { name: snakebrawl, namespace: monitoring }
+spec:
+  namespaceSelector: { matchNames: [snakebrawl] }
+  selector: { matchLabels: { app.kubernetes.io/name: snakebrawl-arena } }
+  endpoints: [{ port: metrics, path: /metrics/prometheus, interval: 15s, scrapeTimeout: 5s }]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata: { name: snakebrawl, namespace: monitoring }
+spec:
+  groups:
+    - name: snakebrawl
+      interval: 30s
+      rules:
+        - alert: SnakeBrawlTickBudget
+          expr: rate(arena_tick_budget_violations_total{namespace="snakebrawl"}[2m]) > 0.25
+          for: 3m
+          labels: { severity: warning }
+          annotations: { summary: 'Arena repeatedly exceeded its 40 ms tick interval' }
+        - alert: SnakeBrawlMemoryPressure
+          expr: process_resident_memory_bytes{namespace="snakebrawl"} / arena_memory_budget_bytes{namespace="snakebrawl"} > 0.85
+          for: 5m
+          labels: { severity: warning }
+          annotations: { summary: 'Arena RSS is above 85% of its cgroup budget' }
+        - alert: SnakeBrawlCpuPressure
+          expr: sum by (pod, container) (rate(container_cpu_usage_seconds_total{namespace="snakebrawl",container=~"arena|web"}[3m])) / on (pod, container) max by (pod, container) (kube_pod_container_resource_limits{namespace="snakebrawl",resource="cpu",unit="core"}) > 0.85
+          for: 5m
+          labels: { severity: warning }
+          annotations: { summary: 'SnakeBrawl container uses over 85% of its CPU limit' }
+        - alert: SnakeBrawlRepeatedRestart
+          expr: increase(kube_pod_container_status_restarts_total{namespace="snakebrawl",container=~"arena|web"}[10m]) >= 2
+          labels: { severity: critical }
+          annotations: { summary: 'SnakeBrawl container restarted repeatedly' }
+        - alert: SnakeBrawlRoomFailures
+          expr: increase(arena_room_errors_total{namespace="snakebrawl"}[5m]) > 0
+          labels: { severity: warning }
+          annotations: { summary: 'Colyseus encountered a room exception' }
+        - alert: SnakeBrawlUnavailable
+          expr: absent(up{namespace="snakebrawl",service="snakebrawl-arena"} == 1)
+          for: 3m
+          labels: { severity: critical }
+          annotations: { summary: 'No healthy SnakeBrawl arena metrics target' }

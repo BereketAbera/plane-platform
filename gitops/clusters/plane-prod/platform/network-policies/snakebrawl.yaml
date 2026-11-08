@@ -1,0 +1,65 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: default-deny, namespace: snakebrawl }
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: game-web, namespace: snakebrawl }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: snakebrawl-web } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports: [{ port: 3100, protocol: TCP }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: game-arena, namespace: snakebrawl }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: snakebrawl-arena } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports: [{ port: 2567, protocol: TCP }]
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports: [{ port: 9464, protocol: TCP }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: game-telemetry, namespace: snakebrawl }
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/part-of: snakebrawl } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports: [{ protocol: UDP, port: 53 }, { protocol: TCP, port: 53 }]
+    # The two Cloud SDKs use public HTTPS. The cluster, node, metadata and private
+    # ranges stay unreachable even if a future dependency tries to contact them.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16, 224.0.0.0/4, 240.0.0.0/4, 5.253.234.127/32]
+      ports: [{ protocol: TCP, port: 443 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: acme-http01-solver, namespace: snakebrawl }
+spec:
+  podSelector: { matchLabels: { acme.cert-manager.io/http01-solver: 'true' } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: traefik } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+      ports: [{ port: 8089, protocol: TCP }]

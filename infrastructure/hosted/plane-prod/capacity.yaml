@@ -128,6 +128,15 @@ quotas:
     persistentvolumeclaims: "4"
     # frameflow-data 1, Hatchet's Postgres 5, Silo 25, and the backups PVC's 24.
     requests.storage: 55Gi
+  # Stateless web and game pods, one concurrent solver or rollout, and a time-boxed capacity fixture.
+  snakebrawl:
+    requests.cpu: "4"
+    limits.cpu: "6"
+    requests.memory: 2560Mi
+    limits.memory: 4Gi
+    pods: "10"
+    persistentvolumeclaims: "0"
+    requests.storage: "0"
 # A quota on limits.memory or requests.cpu rejects a pod with no such value. These defaults make such a pod admissible and visibly small,
 # instead of failing a sync with a quota error. max is the largest container the sizing table allows here.
 limit_ranges:
@@ -173,3 +182,7 @@ limit_ranges:
     default: { memory: 256Mi }
     default_request: { cpu: 10m, memory: 64Mi }
     max: { memory: 6Gi }
+  snakebrawl:
+    default: { cpu: 250m, memory: 256Mi }
+    default_request: { cpu: 10m, memory: 32Mi }
+    max: { cpu: "4", memory: 3Gi }

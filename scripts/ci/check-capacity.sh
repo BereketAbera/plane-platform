@@ -32,7 +32,7 @@ as_json() { # as_json <yaml file> <output file>
 # Each folder as Argo CD reads it: what its kustomization.yaml lists, or else every plain file, in which each object names its own
 # namespace. A new app's folder is counted only once it is listed here, and a file its kustomization does not list only once it does. A
 # plain file is named by its folder too, because the static sites' folders hold files of the same names, and one would overwrite the other.
-for directory in monitoring-extras backup infisical certificates rillmark awushi-cloudgarden frameflow; do
+for directory in monitoring-extras backup infisical certificates rillmark awushi-cloudgarden frameflow snakebrawl; do
   if [[ -f "$HOSTED_TREE/platform/$directory/kustomization.yaml" ]]; then
     kustomize build "$HOSTED_TREE/platform/$directory" >"$WORK/$directory.yaml"
     as_json "$WORK/$directory.yaml" "$WORK/manifests/$directory.json"

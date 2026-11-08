@@ -41,7 +41,8 @@ module "foundation" {
     awushi-cloudgarden = { enforce = "restricted" }
     # Frameflow, its Hatchet, Postgres and Silo, its operator and its Jobs. Each runs as a user that is not root, with every capability
     # dropped and no privilege escalation, as cert-manager's solver does, so it keeps the strictest level, and anything added must pass it.
-    frameflow = { enforce = "restricted" }
+    frameflow  = { enforce = "restricted" }
+    snakebrawl = { enforce = "restricted" }
   }
 
   quotas       = local.capacity.quotas
@@ -66,6 +67,9 @@ module "foundation" {
     (local.target.frameflow_domain)   = "traefik.traefik.svc.cluster.local"
     (local.target.rillmark_domain)    = "traefik.traefik.svc.cluster.local"
     (local.target.cloudgarden_domain) = "traefik.traefik.svc.cluster.local"
+    "snakebrawl.io"                   = "traefik.traefik.svc.cluster.local"
+    "www.snakebrawl.io"               = "traefik.traefik.svc.cluster.local"
+    "ws.snakebrawl.io"                = "traefik.traefik.svc.cluster.local"
   }
 
   depends_on = [terraform_data.right_cluster]

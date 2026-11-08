@@ -24,6 +24,7 @@ on:
           - rillmark
           - awushi-cloudgarden
           - frameflow
+          - snakebrawl
       component:
         description: The image to move, as in ghcr.io/bereketabera/<app>/<component>, such as web or backend.
         required: true
@@ -69,7 +70,7 @@ jobs:
           DIGEST: ${{ inputs.digest }}
           TAG: ${{ inputs.tag }}
         run: |
-          [[ "$APP" =~ ^(rillmark|awushi-cloudgarden|frameflow)$ ]] || { echo '::error::app is rillmark, awushi-cloudgarden or frameflow'; exit 1; }
+          [[ "$APP" =~ ^(rillmark|awushi-cloudgarden|frameflow|snakebrawl)$ ]] || { echo '::error::invalid hosted application'; exit 1; }
           [[ "$COMPONENT" =~ ^[a-z]([a-z0-9-]{0,38}[a-z0-9])?$ ]] || { echo '::error::component is a lower-case name such as web or backend'; exit 1; }
           [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || { echo '::error::digest is sha256: and 64 lower-case hex characters'; exit 1; }
           [[ "$TAG" =~ ^([a-f0-9]{12})?$ ]] || { echo '::error::tag is empty, or the first 12 lower-case hex characters of a commit'; exit 1; }

@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: snakebrawl-tls
+  namespace: snakebrawl
+  annotations: { argocd.argoproj.io/ignore-healthcheck: "true" }
+spec:
+  secretName: snakebrawl-tls
+  privateKey: { algorithm: ECDSA, size: 256, rotationPolicy: Always }
+  revisionHistoryLimit: 3
+  dnsNames: [snakebrawl.io, www.snakebrawl.io, ws.snakebrawl.io]
+  issuerRef: { name: letsencrypt-production, kind: ClusterIssuer, group: cert-manager.io }

@@ -69,7 +69,7 @@ report "the hosted Infisical host in a local tree" "$(matches 'infisical\.bereke
 
 # The apps' public hosts, which policy/hosted.rego binds to their namespaces on the hosted trees alone. A local script that dials one
 # reaches production, and a local route on one answers for it on the laptop.
-report "a hosted app's host in a local tree" "$(matches '(frameflow|rillmark|devops)\.bereket\.dev' "${LOCAL_PATHS[@]}")"
+report "a hosted app's host in a local tree" "$(matches '(frameflow|rillmark|devops)\.bereket\.dev|snakebrawl\.io' "${LOCAL_PATHS[@]}")"
 
 # A kubectl of its own would follow whatever KUBECONFIG and current context this shell has, which may be kind's. On the node
 # it is `k3s kubectl`, which reaches only that node. Installing the tool is not running it.

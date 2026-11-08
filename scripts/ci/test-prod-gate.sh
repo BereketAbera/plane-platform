@@ -2107,7 +2107,7 @@ workflow_promote_app_job() {
   as_json "$ROOT/.github/workflows/promote-app.yml"
   expect "dispatch only" equal "$(workflow_says '.on | keys | join(" ")')" workflow_dispatch
   expect "it asks for the app, the component and the digest" equal "$(workflow_says '[.on.workflow_dispatch.inputs | to_entries[] | select(.value.required) | .key] | sort | join(" ")')" 'app component digest'
-  expect "the app is one of the three" equal "$(workflow_says '.on.workflow_dispatch.inputs.app.options | sort | join(" ")')" 'awushi-cloudgarden frameflow rillmark'
+  expect "the app is one of the hosted applications" equal "$(workflow_says '.on.workflow_dispatch.inputs.app.options | sort | join(" ")')" 'awushi-cloudgarden frameflow rillmark snakebrawl'
   expect "the workflow itself grants nothing" equal "$(workflow_says '.permissions | length')" 0
   expect "only what opening a pull request takes" equal "$(workflow_says "$job.permissions | to_entries | map(.key + \"=\" + .value) | sort | join(\" \")")" 'contents=write pull-requests=write'
   expect "every action pinned to a commit" equal "$(workflow_says "[$job.steps[] | select(.uses) | .uses | select(test(\"@[a-f0-9]{40}$\") | not)] | length")" 0

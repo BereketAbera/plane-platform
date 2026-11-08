@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: snakebrawl-web
+  namespace: snakebrawl
+  labels: { app.kubernetes.io/name: snakebrawl-web }
+spec:
+  type: ClusterIP
+  selector: { app.kubernetes.io/name: snakebrawl-web, app.kubernetes.io/component: web }
+  ports: [{ name: http, port: 3100, targetPort: http }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: snakebrawl-arena
+  namespace: snakebrawl
+  labels: { app.kubernetes.io/name: snakebrawl-arena }
+spec:
+  type: ClusterIP
+  selector: { app.kubernetes.io/name: snakebrawl-arena, app.kubernetes.io/component: arena }
+  ports:
+    - { name: http, port: 2567, targetPort: game }
+    - { name: metrics, port: 9464, targetPort: metrics }
