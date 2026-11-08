@@ -12,9 +12,8 @@ registry token. Until now it had no route. The admin reached it through the SSH 
 this repository's rule was that no management UI gets a public route. Grafana became the first exception, behind its own login
 ([`grafana-route.yaml`](../../gitops/clusters/plane-prod/platform/monitoring-extras/shared/grafana-route.yaml)).
 
-The owner asked for the same for Infisical, with admin access only, knowing what it holds: "we should also have similar setup for infisical just
-like grafana and only with admin user access". That is the decision recorded here. This record does not argue it. It says how the route is made as
-safe as it can be, and what is left.
+The owner chose the same for Infisical, with admin access only, knowing what it holds. That is the decision recorded here. This record does not
+argue it. It says how the route is made as safe as it can be, and what is left.
 
 What the evidence showed, at v0.167.6, read from its running server and its web client:
 

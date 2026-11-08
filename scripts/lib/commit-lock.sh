@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Changing tracked files in a checkout where other work goes on at the same time. promote.sh and
-# rollback.sh edit the overlay, stage it and commit, and agents commit in this same checkout, under the
+# rollback.sh edit the overlay, stage it and commit, and other commits are made in this same checkout, under the
 # lock below. A plain `git add` or a `git status` takes .git/index.lock for a moment and knows nothing
 # of that lock, so anything writing the index has to wait for that too. Source this after
 # scripts/lib/common.sh, from inside the repository.

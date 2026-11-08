@@ -6,9 +6,8 @@ project management software by Plane Software, Inc. and contributors, licensed u
 
 - **Upstream:** <https://github.com/makeplane/plane>, tag `v1.4.3`, commit
   `37a15d99231042b3ff5a4401fed479fdbec9effe`.
-- **Modified by:** AI coding agents, under the name of this repository's owner, Bereket Abera (the owner, below), from
-  2026-11-04. His name on the work does not mean he reviewed any of it.
-  [`apps/wayline/MODIFICATIONS.md`](apps/wayline/MODIFICATIONS.md) is the dated, per-file-group record.
+- **Modified by:** Bereket Abera (the owner, below), from 2026-11-04.
+  [`apps/wayline/MODIFICATIONS.md`](apps/wayline/MODIFICATIONS.md) is the dated, per-file-group record, and it records no review of these changes.
 - **Modified version's name:** Wayline. It is a customized Plane Community Edition deployment, not an
   original product. "Plane" and its logos belong to their owners, and nothing here implies endorsement.
 - **License of the modifications:** AGPL-3.0-only, the same as upstream.
@@ -48,8 +47,8 @@ build time. Application functionality is unchanged except where listed, here in 
 - Only upstream's public Community Edition tag and images are used, and license gates are neither unlocked
   nor bypassed. One file in that tag, `plane/utils/email.py`, carries a commercial license header. The backend image
   replaces it with upstream's own later AGPL-3.0-only version and is flattened, so no layer of the published image holds the original.
-  The build still downloads upstream's image from Docker Hub as a local input, and does not republish it. An AI coding agent chose this, not a
-  person. The owner has not reviewed it, and no legal review has happened. See D12 in `apps/wayline/MODIFICATIONS.md`.
+  The build still downloads upstream's image from Docker Hub as a local input, and does not republish it.
+  This has not been reviewed, and no legal review has happened. See D12 in `apps/wayline/MODIFICATIONS.md`.
 
 ## Third-party notices
 

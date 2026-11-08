@@ -17,7 +17,7 @@ To check that the committed overlay still matches its generators, run the first 
 cwebp 1.6.0 and ffmpeg 9.0.1. Other encoder versions may change bytes. No CI step runs this, because CI has no reason
 to install encoders.
 
-The images still draw the route in `#B0186E`, the brief's value. The token moved to `#9F1265` for contrast, and the
+The images still draw the route in `#B0186E`, the original value. The token moved to `#9F1265` for contrast, and the
 difference does not justify re-encoding 143 files. `lib/chart.mjs` is the place to change it if it ever does.
 
 A full run also writes a contact sheet of the encoded outputs to `.local/evidence-raw/wayline-assets-sheet.png`.

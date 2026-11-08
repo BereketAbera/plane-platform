@@ -145,11 +145,11 @@ Upstream's backend image stays on any machine that builds this one, because it i
 - `make images` to the local registry uses no GHCR storage and is the path in pass 1.
 - **Nothing prunes GHCR.** `images.yml` had a job that kept the newest two versions per image, and it was removed, because it could delete a digest production runs or the evidence names. It listed versions in both runs and deleted none, so a prune that deletes something has never run, and that may need the package's Actions access set to Admin. `scripts/prune-ghcr.sh` stays, and refuses to delete anything until it exempts every digest in `docs/evidence/promotions` and the prod overlay.
 
-**Publishing has no requirement that the repository be private.** The publish job used to require it, and the gate allowed only private packages. The agent coordinating the work also removed the requirement that the repository be private, because no layer holds the original, and the repository's owner, Bereket Abera, has not reviewed that. So nothing in `publish-gate.sh` stops a public image: it checks the namespace, not the visibility.
+**Publishing has no requirement that the repository be private.** The publish job used to require it, and the gate allowed only private packages. The requirement that the repository be private was removed, because no layer holds the original, and that has not been reviewed. So nothing in `publish-gate.sh` stops a public image: it checks the namespace, not the visibility.
 
 What the owner still has to confirm. The first push of this directory went ahead on 2026-11-05 at 05:39Z and published, with this review open, and `76e98ee` published again:
 
-- [ ] D12 in `MODIFICATIONS.md`, all of it: `email.py` replaced with upstream's later AGPL-3.0-only version, the backend flattened, and publishing with no requirement that the repository be private. Agents did all three, the owner has not reviewed any of them, and no lawyer or other legal reviewer has looked at them.
+- [ ] D12 in `MODIFICATIONS.md`, all of it: `email.py` replaced with upstream's later AGPL-3.0-only version, the backend flattened, and publishing with no requirement that the repository be private. All three are done, none has been reviewed, and no lawyer or other legal reviewer has looked at them.
 
 Before the repository is made public, in this order:
 

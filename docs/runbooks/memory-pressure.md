@@ -22,7 +22,7 @@ How it has run on the cluster restored from backup on 2026-11-05, with both envi
 
 In all three the node's memory pressure rate read 0.000, no OOM event rose, and nothing restarted. The highest share of a limit among Plane's containers was beat, at 148 of 256 MiB. So this load did not run memory out. It ran out Postgres's CPU: see [Symptoms](#symptoms). The cluster was about 37 minutes old when idle began, so Prometheus and Loki held little history, and this is not a steady state for a cluster that has run for days. These are one run each, on one laptop.
 
-How it ran on the first cluster, with both environments up, on 2026-11-04 and 2026-11-05. VM used, including about 1 GiB of the owner's unrelated containers and whatever other agents were doing. The first four rows are the first night, 23:17Z to 00:04Z ([plane-prod-sim-memory-1.txt](../evidence/runs/plane-prod-sim-memory-1.txt)):
+How it ran on the first cluster, with both environments up, on 2026-11-04 and 2026-11-05. VM used, including about 1 GiB of the owner's unrelated containers and whatever other concurrent work was running. The first four rows are the first night, 23:17Z to 00:04Z ([plane-prod-sim-memory-1.txt](../evidence/runs/plane-prod-sim-memory-1.txt)):
 
 | Phase | Images | Median | Top |
 |---|---|---:|---:|
