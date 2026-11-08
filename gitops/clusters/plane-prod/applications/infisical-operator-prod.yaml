@@ -1,5 +1,6 @@
-# Platform project, not plane-prod: the chart renders CRDs and a ClusterRole, which the Plane project refuses. This cluster has
-# one operator, so it installs the CRDs. No finalizer: cascading deletes the CRDs, and with them every Infisical CR in plane-prod.
+# Platform project, not plane-prod: the chart renders CRDs and a ClusterRole, which the Plane project refuses. Of this cluster's two
+# operators it alone installs the CRDs, which Frameflow's shares. No finalizer: cascading deletes the CRDs, and with them every Infisical
+# CR on the cluster, plane-prod's and frameflow's.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

@@ -563,14 +563,14 @@ Hosted production, `plane-prod`, is one K3s node on the owner's Contabo Cloud VP
 ```mermaid
 flowchart TB
   internet["Browsers on the internet"]
-  vercel["Vercel DNS, zone bereket.dev:<br/>wayline, grafana, infisical, A 5.253.234.127, no AAAA"]
+  vercel["Vercel DNS, zone bereket.dev:<br/>wayline, grafana, infisical, rillmark, devops, frameflow,<br/>A 5.253.234.127, no AAAA"]
   le["Let's Encrypt"]
   alerting["Telegram, Healthchecks.io"]
 
   subgraph gh["GitHub: private repo, Free plan"]
     main["main"]
     deploybranch["deploy/plane-prod, written only by CI"]
-    ghcr["GHCR: four private Wayline packages"]
+    ghcr["GHCR: four private Wayline packages,<br/>and the apps' four"]
   end
 
   subgraph mac["The owner's Mac"]
@@ -586,8 +586,8 @@ flowchart TB
     subgraph k3s["K3s v1.36.6+k3s1: SQLite datastore, Secrets encrypted at rest"]
       k3ssys["kube-system: API server, CoreDNS with coredns-custom,<br/>kube-router network policy, local-path, metrics-server"]
       tr["traefik: Traefik on hostPorts 80 and 443"]
-      cm["cert-manager: three Certificates"]
-      argo["argocd: Argo CD, root and 13 child Applications"]
+      cm["cert-manager: six Certificates"]
+      argo["argocd: Argo CD, root and 17 child Applications"]
       inf["infisical: server, Postgres, Redis, nightly backup"]
       mon["monitoring: Prometheus, Alertmanager, Grafana,<br/>Loki, Alloy, blackbox, alert sink"]
       agents["monitoring-agents: node-exporter"]
@@ -596,7 +596,8 @@ flowchart TB
         data["postgres, valkey, rabbitmq, silo"]
         ops["secrets operator, exporters, nightly backup"]
       end
-      ff["frameflow: reserved, quota of 0 pods"]
+      sites["rillmark and awushi-cloudgarden: one nginx pod each"]
+      ff["frameflow: web, API, worker, Hatchet and its Postgres,<br/>its own Silo, its secrets operator, nightly backup"]
     end
   end
 
@@ -606,16 +607,22 @@ flowchart TB
   tr --> app
   tr -->|"grafana.bereket.dev"| mon
   tr -->|"infisical.bereket.dev"| inf
+  tr -->|"rillmark and devops.bereket.dev"| sites
+  tr -->|"frameflow.bereket.dev"| ff
   app --> data
   cm -->|"orders"| le
   le -->|"HTTP-01 on port 80"| nft
   main -->|"release-plane-prod"| deploybranch
   argo -->|"SSH on port 443, read-only deploy key"| deploybranch
   pp -->|"pulls by digest"| ghcr
+  sites -->|"pull by digest"| ghcr
+  ff -->|"pulls by digest"| ghcr
   remote -->|"SSH tunnel: 127.0.0.1:16443 to 6443"| sshd
   sshd --> k3ssys
   ops -->|"reads its project"| inf
   ops --> disk
+  ff -->|"reads its own project"| inf
+  ff --> disk
   inf --> disk
   mon --> alerting
   disk -->|"make remote-pull-backups, read-only SFTP"| hostedlocal
@@ -761,12 +768,13 @@ flowchart TB
   admin -->|"https://infisical.bereket.dev: sign-in with an<br/>authenticator app, pages; machine logins refused"| server
 ```
 
-The shape is the local one ([section 3](#3-secret-flow)), with one project and one operator, and these differences:
+The shape is the local one ([section 3](#3-secret-flow)), with one project and one operator for Plane, and these differences:
 
 - **Nothing is circular.** Secret zero, the restic password, the deploy key and the alert credentials come from `.local/hosted/plane-prod/` and never from Infisical, because a restore and Argo CD's first look at the repository both start before Infisical runs. Bootstrap writes them as Secrets directly.
 - **The shared scripts are aimed, not copied.** `scripts/secret-zero.sh`, `infisical-bootstrap.sh` and `infisical-seed.sh` source `scripts/hosted/target.sh` when `WAYLINE_TARGET=plane-prod`, which re-roots their state and kubeconfig, checks the cluster against `target.yaml`, and needs `CONFIRM=plane-prod`. Unset, they behave as they do locally. The second bootstrap, at 05:03Z on 2026-11-07, made the first admin, then the project, its identity and their Kubernetes Auth through `infisical/terraform`, published the identity id, and exited 0 ([run](evidence/runs/hosted-bootstrap-20261107T050333Z.txt)). The first, at 04:26Z, had stopped at that step, because the GHCR pull token, one of the owner's inputs, did not exist yet ([run](evidence/runs/hosted-bootstrap-20261107T042651Z.txt)).
 - **The registry token is a secret like the rest.** `ghcr-pull`, a `dockerconfigjson` for `ghcr.io`, is the seventh synced Secret, and the ServiceAccount `plane` names it.
 - **The recovery bundle** holds what cannot be recreated and is in neither the cluster nor Git: secret zero, every Terraform state, the deploy key, the restic password, the read-only pull key, the alert credentials, the GHCR token, Grafana's admin login and the SSH known hosts. It is encrypted with age to a recipient in Git, and `make remote-bundle` proves it decrypts. The identity that opens it stays with the owner, never on the VPS. A Terraform apply makes the bundle stale until it is written again.
+- **Frameflow has its own, drawn the same way.** Project `frameflow-prod`, an identity that logs in only from namespace `frameflow`, and operator `iso-frameflow` there, which writes only that namespace's Secrets ([hosted-apps.md](hosted-apps.md#frameflow-secrets)).
 - **Infisical has a public route since 2026-11-07,** for its one admin, who signs in with a password and an authenticator app, because there is no SMTP for email codes. The operator does not use the route, and the route refuses a machine's credential ([ADR 0017](adr/0017-infisical-public-route.md)).
 
 ### Backup path
@@ -781,6 +789,9 @@ flowchart LR
     subgraph infns["Namespace infisical"]
       croni["CronJob plane-backup, 01:47 UTC:<br/>pg_dump of Infisical's database"]
     end
+    subgraph ffns["Namespace frameflow"]
+      cronf["CronJob plane-backup, 02:47 UTC:<br/>SQLite, Hatchet's database, its bucket"]
+    end
     repo["restic repositories, encrypted, in Retain hostPath PVs<br/>under /srv/wayline/backups: 7 daily, 4 weekly, 3 monthly,<br/>predeploy dumps 90 days, restic check each night"]
     rtest["make remote-restore-test: an isolated namespace,<br/>default deny, restore, prove, delete"]
   end
@@ -794,12 +805,14 @@ flowchart LR
   pre --> repo
   cronp --> repo
   croni --> repo
+  cronf --> repo
   repo --> rtest
   repo --> pull
   pull --> verify
   repo -.->|"make remote-backup-dest VERB=push"| s3
   cronp -.-> alerts
   croni -.-> alerts
+  cronf -.-> alerts
 ```
 
 - **Plaintext does not stay on the disk.** Each night dumps into an `emptyDir` that leaves with the pod, and only restic's encrypted repository stays on the host. A predeploy dump waits in plain under `/backups/predeploy` until that night seals it under tag `predeploy`, and a night that cannot seal it fails as a whole.
@@ -815,9 +828,9 @@ Each resource has one owner here too, and `scripts/ci/ownership.sh` reads the ho
 |---|---|---|
 | `scripts/hosted/provision-node.sh`, from `infrastructure/hosted/plane-prod/` | K3s and its config, the kubelet drop-in, sysctls, the sshd drop-in, the `wayline-edge` unit, the registry mirror | Anything inside a namespace |
 | `scripts/hosted/edge.sh` | Which stage the firewall table is at | The rest of the host |
-| Terraform, `infrastructure/terraform/environments/prod-host` | DNS records `wayline`, `grafana` and `infisical`. The VPS is a data source only, because a resource could reinstall its disk or cancel it | The VPS, and the rest of the zone |
+| Terraform, `infrastructure/terraform/environments/prod-host` | DNS records `wayline`, `grafana`, `infisical`, `rillmark`, `devops` and `frameflow`. The VPS is a data source only, because a resource could reinstall its disk or cancel it | The VPS, and the rest of the zone |
 | Terraform, `infrastructure/terraform/environments/prod` | Namespaces and labels, ResourceQuota `budget` and LimitRange `defaults` in each, storage class `local-path-retain`, ConfigMap `coredns-custom`, the Argo CD Helm release, and the bootstrap chart: AppProjects and root | Anything Argo CD deploys |
-| Terraform, `infisical/terraform`, state in `.local/hosted/plane-prod/` | Project `plane-prod`, its identity and its Kubernetes Auth | Secret values |
+| Terraform, `infisical/terraform`, state in `.local/hosted/plane-prod/` | Projects `plane-prod` and `frameflow-prod`, the identity of each and its Kubernetes Auth | Secret values |
 | CI, job `release-plane-prod` | Branch `deploy/plane-prod` | `main`, and the cluster |
 | Argo CD | Everything else on the node, from `deploy/plane-prod` | Namespaces, quotas, itself |
 | Infisical | Secret values | Kubernetes objects |

@@ -661,24 +661,30 @@ is one child, and every child reads the same branch. Paths are under `gitops/clu
 | Wave | Application | Project | Namespace | Source | Finalizer |
 |---:|---|---|---|---|---|
 | -10 | `network-policies` | platform | several | `platform/network-policies` | No |
-| -10 | `backup` | platform | `plane-prod`, `infisical` | `platform/backup`: the static volumes on `/srv/wayline/backups`, their claims, and the nightly CronJobs | No |
+| -10 | `backup` | platform | `plane-prod`, `infisical`, `frameflow` | `platform/backup`: the static volumes on `/srv/wayline/backups`, their claims, and the nightly CronJobs | No |
 | -9 | `traefik` | platform | `traefik` | chart 42.3.0 | Yes |
 | -8 | `cert-manager` | platform | `cert-manager` | chart v1.21.3, from the OCI repository | No |
 | -8 | `metrics-server` | platform | `kube-system` | chart 3.14.0 | Yes |
-| -7 | `certificates` | platform | `plane-prod`, `monitoring`, `infisical` | `platform/certificates`: ClusterIssuers `letsencrypt-staging` and `letsencrypt-production`, and Certificates `wayline-tls`, `grafana-tls` and `infisical-tls` | No |
+| -7 | `certificates` | platform | `plane-prod`, `monitoring`, `infisical`, `rillmark`, `awushi-cloudgarden`, `frameflow` | `platform/certificates`: ClusterIssuers `letsencrypt-staging` and `letsencrypt-production`, and Certificates `wayline-tls`, `grafana-tls`, `infisical-tls`, `rillmark-tls`, `devops-tls` and `frameflow-tls` | No |
 | -7 | `kube-prometheus-stack` | platform | `monitoring` | chart 92.18.0 | Yes |
 | -6 | `loki` | platform | `monitoring` | chart 20.4.1 | Yes |
 | -6 | `alloy` | platform | `monitoring` | chart 1.15.0 | Yes |
-| -5 | `monitoring-extras` | platform | `monitoring`, with probes and exporters in `plane-prod` and `infisical` | `platform/monitoring-extras` | Yes |
+| -5 | `monitoring-extras` | platform | `monitoring`, with probes and exporters in `plane-prod` and `infisical`, each app's Probe in its own namespace, and Frameflow's rules and Silo's ServiceMonitor in `frameflow` | `platform/monitoring-extras` | Yes |
 | -4 | `infisical` | platform | `infisical` | chart `infisical-standalone` 1.12.0, and `platform/infisical`: Postgres, Redis, the server's ServiceAccount and its public route | No |
-| -3 | `infisical-operator-prod` | platform | `plane-prod` | chart `secrets-operator` 0.11.16. The only operator on this cluster, so it installs the CRDs | No |
+| -3 | `infisical-operator-prod` | platform | `plane-prod` | chart `secrets-operator` 0.11.16. The first of the two operators, and the one that installs the CRDs | No |
 | 0 | `plane-prod` | plane-prod | `plane-prod` | `gitops/environments/prod` | No |
+| 1 | `rillmark` | rillmark | `rillmark` | `platform/rillmark` | Yes |
+| 1 | `awushi-cloudgarden` | awushi-cloudgarden | `awushi-cloudgarden` | `platform/awushi-cloudgarden` | Yes |
+| 1 | `infisical-operator-frameflow` | platform | `frameflow` | chart `secrets-operator` 0.11.16, as `iso-frameflow`, scoped to `frameflow`, with no CRDs | No |
+| 2 | `frameflow` | frameflow | `frameflow` | `platform/frameflow`, with `PruneLast=true` | No |
 
 Against the kind cluster's waves: cert-manager comes at -8, so its CRDs exist before the Certificates at -7. The Certificates, the
 ClusterIssuers and the backup CronJobs carry `argocd.argoproj.io/ignore-healthcheck`, so an ACME outage, a closed firewall or a failed
 night cannot hold root at their wave, and alert rules report those failures instead. postgres-exporter carries it too, because
-`plane-pgdb`'s Secret exists only once Plane's Application does, at wave 0, after it. There is no prod-sim, one operator, and no route
-for Argo CD.
+`plane-pgdb`'s Secret exists only once Plane's Application does, at wave 0, after it, and so do Frameflow's two CronJobs, so a run that
+fails cannot hold `frameflow`'s sync. There is no prod-sim and no route for Argo CD. There are two operators, `iso-prod` for `plane-prod`
+and `iso-frameflow` for `frameflow`, each a release of its own as ADR 0009 asks, and only the first installs the CRDs. The apps come
+last, after `plane-prod`, as [hosted-apps.md](hosted-apps.md) says, so in a sync of root none of them can hold Plane's wave.
 
 **Plane arrives with the first promotion.** `applications/plane-prod.yaml` is a copy of
 `gitops/clusters/plane-prod/plane-prod-application.yaml.tmpl`, which `scripts/ci/promote-prod.sh` makes on the first promotion. Until then

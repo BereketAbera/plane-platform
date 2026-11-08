@@ -327,12 +327,15 @@ retry without limit and `refresh: true`. Root has no resources finalizer, so rem
 | -4 | `infisical`: the chart, and from `platform/infisical` its Postgres, Redis, ServiceAccount, token reviewer and public route |
 | -3 | `infisical-operator-prod` |
 | 0 | `plane-prod`, added by the first promotion from `plane-prod-application.yaml.tmpl` |
+| 1 | `rillmark`, `awushi-cloudgarden`, `infisical-operator-frameflow` |
+| 2 | `frameflow` |
 
-That is 13 children and root, 14 Applications. Inside `plane-prod` the waves are the ones above, with two additions: the seventh
+That is 17 children and root, 18 Applications. The four at waves 1 and 2 are the apps beside Wayline, after it:
+[hosted-apps.md](hosted-apps.md). Inside `plane-prod` the waves are the ones above, with two additions: the seventh
 `InfisicalStaticSecret`, `ghcr-pull`, at -1, and Job `plane-prod-predeploy-dump`, a `Sync` hook at wave 1, which waits for Postgres,
-tolerates an empty database, and dumps to the backup volume before the migrator runs at wave 2. The ClusterIssuers and both backup
-CronJobs carry `argocd.argoproj.io/ignore-healthcheck`, so an outside service that cannot be reached, or one failed night, does not fail
-root's sync. Alerts report those instead.
+tolerates an empty database, and dumps to the backup volume before the migrator runs at wave 2. The ClusterIssuers, the Certificates and
+the three backup CronJobs carry `argocd.argoproj.io/ignore-healthcheck`, so an outside service that cannot be reached, or one failed night,
+does not fail root's sync. Alerts report those instead.
 
 ## 7. Argo CD projects
 
