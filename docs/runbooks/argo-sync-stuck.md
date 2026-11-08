@@ -319,6 +319,8 @@ whole root with no plan to read first, so plan it on its own before, with the tu
 TF_IN_AUTOMATION=1 .tools/bin/terraform -chdir=infrastructure/terraform/environments/prod plan
 ```
 
-Its Applications are `root` and thirteen children: `alloy`, `backup`, `cert-manager`, `certificates`, `infisical`,
-`infisical-operator-prod`, `kube-prometheus-stack`, `loki`, `metrics-server`, `monitoring-extras`, `network-policies`, `plane-prod` and
-`traefik`. `make remote-status TARGET=plane-prod` prints each one's sync, health and revision.
+Its Applications are `root` and seventeen children: `alloy`, `awushi-cloudgarden`, `backup`, `cert-manager`, `certificates`,
+`frameflow`, `infisical`, `infisical-operator-frameflow`, `infisical-operator-prod`, `kube-prometheus-stack`, `loki`, `metrics-server`,
+`monitoring-extras`, `network-policies`, `plane-prod`, `rillmark` and `traefik`. `make remote-status TARGET=plane-prod` prints each one's
+sync, health and revision. The four apps' are at waves 1 and 2, after `plane-prod`, and
+[Root waits on frameflow](../hosted-apps.md#root-waits-on-frameflow) says what holds root at the last of them.

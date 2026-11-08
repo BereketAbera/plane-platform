@@ -106,11 +106,11 @@ else in one go. Never merge that kubeconfig into `~/.kube/config`.
 | Name | Value |
 |---|---|
 | Node | `vmi3733427`, K3s, at 5.253.234.127 |
-| Namespaces | `plane-prod`, `infisical`, `monitoring`, `monitoring-agents`, `argocd`, `traefik`, `cert-manager`, and `frameflow`, which allows no pods |
-| Argo CD Applications | `root`, and thirteen children, `plane-prod` among them. [Argo sync stuck](argo-sync-stuck.md#hosted-production) lists them |
+| Namespaces | `plane-prod`, `infisical`, `monitoring`, `monitoring-agents`, `argocd`, `traefik`, `cert-manager`, and the apps' `rillmark`, `awushi-cloudgarden` and `frameflow`: [hosted-apps.md](../hosted-apps.md) |
+| Argo CD Applications | `root`, and seventeen children, `plane-prod` among them. [Argo sync stuck](argo-sync-stuck.md#hosted-production) lists them |
 | Plane workloads | The names in the table above, and the Sync hook `plane-prod-predeploy-dump` beside the migrator |
-| Consoles | `make remote-ui TARGET=plane-prod UI=argocd`, `grafana`, `prometheus`, `alertmanager` or `infisical`. Only Grafana and Infisical also have a public route |
-| Backups on the node | `/srv/wayline/backups/plane-prod` and `/srv/wayline/backups/infisical` |
+| Consoles | `make remote-ui TARGET=plane-prod UI=argocd`, `grafana`, `prometheus`, `alertmanager` or `infisical`, and Frameflow's `hatchet` or `frameflow-silo`. Only Grafana and Infisical also have a public route |
+| Backups on the node | `/srv/wayline/backups/plane-prod`, `/srv/wayline/backups/infisical` and `/srv/wayline/backups/frameflow` |
 | State on this Mac | `.local/hosted/plane-prod/`, at mode 0700, and never in Git |
 
 ## Rules that apply to every runbook
