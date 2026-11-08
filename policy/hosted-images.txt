@@ -15,7 +15,7 @@ docker.io/library/postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce477
 docker.io/library/python:3.13.18-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8
 docker.io/library/redis:7.2.17-alpine@sha256:2c933526722b4126a61d5c170f766dc159adf97682f0b1cbbc27b1666ba96d84
 docker.io/library/redis:8.6.4-alpine@sha256:2cc044fc5a07c9b701f8f1255a309ae9ad7856e694ac03513bf3648c01e40763
-docker.io/library/snake-production-arena@sha256:e86220faca6c3ee4b16e66508a6750589ec0dd9673a8574b2958e33fc98790c6
+docker.io/library/snake-production-arena@sha256:363918f68913ff140b49e0779915442d3937205dc8746a17313727da2d95316f
 docker.io/library/snake-production-web@sha256:db4178a76d03c7bdd5125074d5184830162c51388208617f82b4ce342a267c8d
 docker.io/oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26
 docker.io/pgsty/mc:RELEASE.2026-10-26T00-00-00Z@sha256:ce62c9053c69ce12a527a322345b5ad9f44b5f8a7b8189f82e516f2e3f30f1d8
