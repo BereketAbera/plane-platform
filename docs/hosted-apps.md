@@ -819,15 +819,17 @@ from `frameflow-silo-backup` instead: that user can list and read the bucket and
 | Renditions at once | 1, `FRAMEFLOW_WORKER_SLOTS=1` and `MAX_CONCURRENT_ENCODES=1`: 360p and 720p one after the other, the second waiting in Hatchet's queue and not inside its own timeout | |
 | The worker's CPU and memory | Requests 500m and 1Gi, limits 3 CPU and 3Gi, and FFmpeg's `FFMPEG_THREADS=3` | The limit caps an encode, and Wayline's larger requests keep its share when the CPU is contended |
 | Scratch | emptyDir `/scratch` of 8Gi, in an ephemeral-storage limit of 10Gi. Past either, the kubelet evicts the pod, and the Deployment starts another with an empty scratch | One disk holds everything on the node |
-| Upload size | 100 MiB, `MAX_UPLOAD_BYTES=104857600` | One PUT must finish within Traefik's `readTimeout` of 180s, which every host shares, and 100 MiB takes about 4.7 Mbit/s of upload to do so |
+| Upload size | 500 MiB, `MAX_UPLOAD_BYTES=524288000` | One PUT must finish within Traefik's `readTimeout` of 180s, which every host shares, so a whole 500 MiB takes about 23 Mbit/s of upload, and 10 Mbit/s gets about 215 MiB through |
 | Upload URL | 15 minutes, `S3_PRESIGNED_UPLOAD_TTL_SECONDS=900` | |
 | Source | MP4, at least 1280x720 | The probe fails a smaller one, with `SOURCE_TOO_SMALL` |
 | Task timeouts | validate 2m, probe 15m, each encode 30m, publish 15m, complete 2m. The probe, the encodes and publish retry twice | |
-| Stopping | `terminationGracePeriodSeconds: 600` | A stopping worker finishes its task first. Ten minutes covers an encode of a 100 MiB source on 3 threads, and one cut off is retried |
+| Stopping | `terminationGracePeriodSeconds: 600` | A stopping worker finishes its task first. Ten minutes covers an encode of about 20 minutes of 720p, at the 2.06x measured on 3 threads, and one cut off is retried |
 
-The studio's own text says up to 500 MB, and checks that much in the browser. The API's 100 MiB is the limit, and above it the upload
-stops with `The declared upload exceeds the configured size limit.` Raising it takes a faster uplink, or a longer `readTimeout` for every
-host.
+The studio's page says up to 500 MB and checks that much in the browser, and the API holds the same limit. Past it, the API answers
+`The declared upload exceeds the configured size limit.` The page's number is built into the web image, so a higher limit needs a new
+web image as well as `MAX_UPLOAD_BYTES`. A file within the limit can still be cut off at 180s on a slow uplink, and getting those
+through takes a longer `readTimeout` for every host. `MAX_UPLOAD_BYTES` reaches the API only when it restarts, so a change to it goes
+with a new `frameflow.bereket.dev/config-revision` on the pod template in `api.yaml`.
 
 What removes what:
 
@@ -1239,13 +1241,13 @@ Silo's answer, which names its error in XML.
 
 | The studio says | Why | What to do |
 |---|---|---|
-| `The declared upload exceeds the configured size limit.` (413, from the API) | The file is over 100 MiB. The studio's own text says 500 MB, and the API's limit is the one that holds | A smaller file. [Processing limits](#frameflow-processing-limits-and-retention) says what raising it takes |
+| `The declared upload exceeds the configured size limit.` (413, from the API) | The file is over 500 MiB | A smaller file. [Processing limits](#frameflow-processing-limits-and-retention) says what raising it takes |
 | `Only MP4 uploads are supported.` (415) | Another container or extension | An MP4 |
 | `Object storage rejected the upload.`, with Silo's 403 `SignatureDoesNotMatch` | The request's Host or Content-Type is not what the URL was signed for, or the app user's secret key in `frameflow-app` is not the one Silo holds | Traefik passes the Host on by default, so look for a change to the upload route. For the keys, sync `frameflow`, which runs the setup Job: [secrets](#frameflow-secrets) |
 | The same, with 403 `AccessDenied` and an expired request | More than 15 minutes since the URL was made | Upload again |
 | The same, with 403 `InvalidAccessKeyId` | Silo has no user by the app's access key, as after a new one in Infisical before the setup Job ran | Sync `frameflow` |
 | The same, with a quota error | The bucket is full | [Retention](#frameflow-processing-limits-and-retention) |
-| `Could not reach object storage.` | The connection broke: often Traefik's 180s `readTimeout`, which a 100 MiB PUT needs about 4.7 Mbit/s of upload to beat | A faster link or a smaller file. Traefik's log shows the PUT's `Duration` near 180s |
+| `Could not reach object storage.` | The connection broke: often Traefik's 180s `readTimeout`, which a whole 500 MiB PUT needs about 23 Mbit/s of upload to beat, and 10 Mbit/s gets about 215 MiB through | A faster link or a smaller file. Traefik's log shows the PUT's `Duration` near 180s |
 | `The upload authorization expired.` (410) | The upload finished more than 15 minutes after its URL was made, and the API no longer takes it | Upload again |
 | `The uploaded object size does not match the declared size.` (400) | The PUT stopped short, or the object Silo holds is not the size declared | Upload again |
 | `Upload storage is unavailable.` (503) | The API could not sign the URL. Signing calls nothing, so this is the API's S3 settings, not Silo | `kc -n frameflow logs deployment/frameflow-api --tail=50` |

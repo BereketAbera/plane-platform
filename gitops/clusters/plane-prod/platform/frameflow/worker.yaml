@@ -40,7 +40,8 @@ spec:
       serviceAccountName: worker
       automountServiceAccountToken: false
       # On SIGTERM, which tini passes on, SDK 1.43 asks Hatchet's REST API to stop assigning it tasks, and lets a running task finish
-      # before it exits. Ten minutes covers an encode of a 100 MiB source on 3 threads. A longer one is cut off, and Hatchet runs it again.
+      # before it exits. Ten minutes covers an encode of about 20 minutes of 720p, at the 2.06x measured on 3 threads. A longer one is cut
+      # off, and Hatchet runs it again.
       terminationGracePeriodSeconds: 600
       securityContext:
         # UID and GID 1000 are node in the image, which its Dockerfile runs as by number.
@@ -115,7 +116,7 @@ spec:
               mountPath: /tmp
       volumes:
         # WORKER_TEMP_DIR in config.yaml: each task's copy of its source and an encode's HLS output, one task at a time, of a source of up
-        # to 100 MiB. The worker clears what a start before it in this pod left, and the kubelet evicts the pod past 8Gi.
+        # to 500 MiB. The worker clears what a start before it in this pod left, and the kubelet evicts the pod past 8Gi.
         - name: scratch
           emptyDir:
             sizeLimit: 8Gi
