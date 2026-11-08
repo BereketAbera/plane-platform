@@ -23,9 +23,9 @@ system:
   disk: 40Gi
 # Space on the node's disk that a namespace's emptyDirs take beside its claims, which no quota counts, because none sets ephemeral-storage
 # (see below), for each namespace that budgets it. Frameflow's is its worker's ephemeral-storage limit of 10Gi, which holds the 8Gi scratch
-# an encode works in, and its nightly backup's 20Gi work space.
+# an encode works in, and its nightly backup's 22Gi work space.
 ephemeral:
-  frameflow: 30Gi
+  frameflow: 32Gi
 # Per namespace: Terraform makes a ResourceQuota of each. limits.memory counts what every pod here may reach at once, plus the room
 # one rollout needs: a Deployment surges a new pod before removing the old, so a quota with no room for the largest would stop that
 # rollout for good. Several surging together go one after another, and that is the price of every quota fitting the one node. cert-manager's

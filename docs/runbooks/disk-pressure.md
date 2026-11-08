@@ -167,7 +167,7 @@ images, every volume and the backups. It read 387G, with 2.7G used, right after 
 | What sees the real limit | Nothing in the cluster | `NodeDiskLow` under 20% free for 10 minutes, `NodeDiskCritical` under 10% for 5 minutes, `NodeDiskNotRead` when nothing reports `/` ([rules](../../gitops/clusters/plane-prod/platform/monitoring-extras/shared/rules-hosted.yaml)) |
 | Volumes | local-path on the VM, size ignored | Class `local-path-retain`, under `/var/lib/rancher/k3s/storage`, reclaim `Retain`. Sizes are not enforced either, and each namespace's `requests.storage` quota caps what claims ask for |
 | Backups | `.local/backups` on the Mac | `/srv/wayline/backups`, on the same disk. Its three PVs are 40Gi, 10Gi and 24Gi, which are labels: hostPath enforces nothing |
-| Budget | | [`capacity.yaml`](../../infrastructure/hosted/plane-prod/capacity.yaml): 40Gi for the system and images, every quota's `requests.storage`, the backups' 74 GiB among them, and Frameflow's 30Gi of scratch, which `scripts/ci/check-capacity.sh` holds under the 80% where `NodeDiskLow` warns |
+| Budget | | [`capacity.yaml`](../../infrastructure/hosted/plane-prod/capacity.yaml): 40Gi for the system and images, every quota's `requests.storage`, the backups' 74 GiB among them, and Frameflow's 32Gi of scratch, which `scripts/ci/check-capacity.sh` holds under the 80% where `NodeDiskLow` warns |
 
 **Diagnosis.** `make remote-status TARGET=plane-prod` prints `df -h` of `/` and `/srv/wayline/backups` over SSH. To look closer:
 

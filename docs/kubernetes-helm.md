@@ -566,7 +566,7 @@ The quotas come from `infrastructure/hosted/plane-prod/capacity.yaml`, which Ter
 Unlike the kind cluster's, these cap `requests.cpu` too, because requests are what the scheduler holds back and they must fit one node, and
 each `LimitRange/defaults` gives a container with no request 10m of CPU, so such a pod stays admissible. Each `limits.memory` is what every
 pod there may reach at once, plus room for one rollout's surge: a quota with no room for the largest pod would stop that rollout for good.
-Frameflow's emptyDirs take up to 30Gi more of the disk, which no quota counts, and `scripts/ci/check-capacity.sh` fails CI unless the
+Frameflow's emptyDirs take up to 32Gi more of the disk, which no quota counts, and `scripts/ci/check-capacity.sh` fails CI unless the
 quotas' sum, with the system's share and that scratch, fits the node. In `infisical` the quota fits one of a server rollout, the nightly
 backup or a certificate's solver at a time, so they wait for each other: `scripts/hosted/README.md`, section The first certificate.
 

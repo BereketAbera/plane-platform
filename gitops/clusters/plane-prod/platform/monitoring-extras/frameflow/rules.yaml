@@ -58,8 +58,8 @@ spec:
           labels: { severity: warning, component: worker }
           annotations:
             summary: No Frameflow worker has been available for 15m, so videos wait in Hatchet's queue
-    # Silo counts each bucket in its scanner, a minute or so behind the writes, and enforces the quota from that count, so these read what it
-    # enforces. 18GiB is the quota frameflow-silo-setup sets: change both together.
+    # Silo counts each bucket in its scanner, minutes behind the writes, and enforces the quota from that count, so these read what it
+    # enforces, and a bucket can pass its quota by what is written meanwhile. 18GiB is the quota frameflow-silo-setup sets: change both together.
     - name: frameflow.storage
       interval: 30s
       rules:
@@ -69,7 +69,7 @@ spec:
           labels: { severity: warning, component: silo }
           annotations:
             summary: Bucket frameflow-media holds {{ $value | humanizePercentage }} of its 18GiB quota
-            description: The hourly cleanup removes only expired uploads and finished videos' staging, so the rest stays until the owner deletes videos. Delete some, or raise the quota in frameflow-silo-setup and in these rules together.
+            description: The hourly cleanup removes only expired uploads and finished videos' staging, so the rest stays until the owner deletes videos. Delete some. Raising the quota past 18GiB also needs Silo's volume and the backup's work space and volume, as docs/hosted-apps.md says.
         - alert: FrameflowBucketFull
           expr: max by (namespace, bucket) (minio_bucket_usage_total_bytes{namespace="frameflow",bucket="frameflow-media"}) / (18 * 1024^3) > 0.95
           for: 5m

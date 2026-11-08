@@ -132,7 +132,7 @@ tests:
           - exp_labels: { namespace: frameflow, bucket: frameflow-media, severity: warning, component: silo }
             exp_annotations:
               summary: Bucket frameflow-media holds 87.5% of its 18GiB quota
-              description: The hourly cleanup removes only expired uploads and finished videos' staging, so the rest stays until the owner deletes videos. Delete some, or raise the quota in frameflow-silo-setup and in these rules together.
+              description: The hourly cleanup removes only expired uploads and finished videos' staging, so the rest stays until the owner deletes videos. Delete some. Raising the quota past 18GiB also needs Silo's volume and the backup's work space and volume, as docs/hosted-apps.md says.
       - { eval_time: 36m, alertname: FrameflowBucketFull, exp_alerts: [] }
       - { eval_time: 49m, alertname: FrameflowBucketFull, exp_alerts: [] }
       - { eval_time: 54m, alertname: FrameflowBucketFull, exp_alerts: [] }
