@@ -85,7 +85,7 @@ spec:
             - { name: game, containerPort: 2567 }
             - { name: metrics, containerPort: 9464 }
           resources:
-            requests: { cpu: 700m, memory: 384Mi }
+            requests: { cpu: '2', memory: 1Gi }
             limits: { cpu: '2', memory: 1Gi }
           env:
             - { name: NODE_OPTIONS, value: '--max-old-space-size=576' }
@@ -97,7 +97,7 @@ spec:
             - { name: NEXT_PUBLIC_GAME_VERSION, value: '1.0.2' }
             - { name: MAX_SNAKES, value: '100' }
             - { name: MAX_CONNECTED_GUESTS, value: '4' }
-            - { name: MAX_PUBLIC_ROOMS, value: '1' }
+            - { name: MAX_PUBLIC_ROOMS, value: '2' }
             - { name: BOT_TARGET, value: '2' }
             - { name: MAX_PARTIES, value: '1' }
             - { name: PARTY_CAPACITY, value: '4' }
