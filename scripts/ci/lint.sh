@@ -41,7 +41,7 @@ terraform_validate_all() {
   while read -r dir; do
     [[ -n "$dir" ]] || continue
     # -backend=false: CI holds no state and never talks to a cluster. Provider schemas are enough.
-    if ! terraform -chdir="$dir" init -backend=false -input=false -no-color >/dev/null ||
+    if ! terraform -chdir="$dir" init -backend=false -input=false -no-color -lockfile=readonly >/dev/null ||
       ! terraform -chdir="$dir" validate -no-color; then
       warn "terraform validate failed in $dir"
       status=1

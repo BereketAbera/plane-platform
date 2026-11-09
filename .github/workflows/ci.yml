@@ -38,6 +38,16 @@ jobs:
         with:
           path: .tools
           key: tools-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools.lock') }}
+      - name: Restore upstream archive inputs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .local/ci-release-dependencies/packages
+          key: verified-packages-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/verified-dependencies.py') }}
+      - name: Verify locked Terraform provider archives
+        run: |
+          python3 -B scripts/ci/test-verified-dependencies.py
+          python3 scripts/ci/verified-dependencies.py --scope providers --root "$PWD" --cache .local/ci-release-dependencies
+          echo "TF_CLI_CONFIG_FILE=$PWD/.local/ci-release-dependencies/terraform.tfrc" >> "$GITHUB_ENV"
       - name: Shellcheck, actionlint, zizmor, terraform, tflint, hadolint, policy tests
         run: ./scripts/ci/lint.sh
 
@@ -60,6 +70,15 @@ jobs:
         with:
           path: .tools
           key: tools-${{ github.job }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools.lock') }}
+      - name: Restore upstream archive inputs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .local/ci-release-dependencies/charts
+          key: verified-charts-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/ci/verified-dependencies.py') }}
+      - name: Verify pinned Helm release archives
+        run: |
+          python3 scripts/ci/verified-dependencies.py --scope charts --root "$PWD" --cache .local/ci-release-dependencies
+          printf 'HELM_VERIFIED_ARCHIVES=%s\n' "$(cat .local/ci-release-dependencies/helm-charts-dir)" >> "$GITHUB_ENV"
       - name: Render drift, kubeconform, conftest, promotion invariant
         run: ./scripts/ci/validate-manifests.sh
       - name: One owner per resource

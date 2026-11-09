@@ -339,6 +339,16 @@ render_chart() { # render_chart <output directory> <release> <namespace> <reposi
   # Argo CD names an OCI repository with no scheme, and Helm wants one and the chart in the same reference.
   local reference=("$chart" --repo "$repo")
   [[ "$repo" == http://* || "$repo" == https://* ]] || reference=("oci://${repo#oci://}/$chart")
+  # Protected CI verifies these exact upstream archives before rendering. Other repositories and
+  # versions (including the negative controls) continue to use the declared Argo source.
+  if [[ -n "${HELM_VERIFIED_ARCHIVES:-}" ]]; then
+    case "${repo%/}/$chart@$version" in
+      https://prometheus-community.github.io/helm-charts/kube-prometheus-stack@92.18.0|https://kubernetes-sigs.github.io/metrics-server/metrics-server@3.14.0)
+        if [[ -f "$HELM_VERIFIED_ARCHIVES/$chart-$version.tgz" ]]; then
+          reference=("$HELM_VERIFIED_ARCHIVES/$chart-$version.tgz")
+        fi ;;
+    esac
+  fi
   local args=("${reference[@]}" --version "$version" --kube-version "${CHART_KUBE_VERSION:-$K8S_VERSION}" --namespace "$namespace")
   for value in "$@"; do args+=(--values "$value"); done
   if ! helm template "$release" "${args[@]}" >"$out/$release.yaml" 2>"$out/$release.err"; then
