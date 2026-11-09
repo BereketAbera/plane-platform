@@ -26,6 +26,8 @@ password file, the Secret and the admin a running Grafana pod holds must agree a
 `scripts/hosted/target.sh` with no cluster: which environments it hands Infisical's bootstrap and Terraform, and that it leaves
 the apps' out for a restore of Infisical alone, refused anywhere else before it reaches for the cluster. `lint.sh` runs it.
 
+CI retrieves three Linux Terraform provider ZIPs and five Helm charts through their official GitHub release asset API when their exact pinned versions are in use. Provider ZIPs must match the Terraform Registry, publisher-signed checksums and the committed Terraform lock. Helm archives must match the publisher index and pinned SHA-256. Jobs reverify restored archives, then give Terraform and Helm fresh directories containing only those verified inputs. The five release-asset charts are Alloy, Argo CD, kube-prometheus-stack, Loki and metrics-server. The other active sources (Cloudsmith, Jetstack OCI and static Traefik Pages) use their declared repositories. Other versions also retain normal resolution. The protected runner has read-only permissions for these checks. Argo and operator-side Terraform keep their normal sources.
+
 `make scan-images` runs trivy over every image the platform runs, for `PLATFORM`, by default `linux/arm64`. It fails only on a
 CRITICAL finding with a fix in an image we build, on an image it could not scan, or on a result of another architecture, and reports
 everything else. After a digest bump dev runs `linux/amd64` digests under Rosetta, so a full scan on the laptop then needs

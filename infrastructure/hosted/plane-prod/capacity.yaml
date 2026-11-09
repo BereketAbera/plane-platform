@@ -131,7 +131,8 @@ quotas:
   # Stateless web and game pods, one concurrent solver or rollout, and a time-boxed capacity fixture.
   snakebrawl:
     # The public status pod requests 200m. A private Guaranteed 4-CPU stage can run while the arena is held at zero.
-    requests.cpu: 4250m
+    # Four game CPUs plus both 200m web replicas during a rolling update.
+    requests.cpu: 4400m
     limits.cpu: "6"
     requests.memory: 2560Mi
     limits.memory: 4Gi

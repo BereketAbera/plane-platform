@@ -26,7 +26,7 @@ kind: IngressRoute
 metadata:
   name: snakebrawl
   namespace: snakebrawl
-  # Switch the public landing page only after the web pod serves the prelaunch assets.
+  # Route to play after the candidate arena passes its readiness check.
   annotations: { argocd.argoproj.io/sync-wave: "1" }
 spec:
   entryPoints: [websecure]
@@ -34,7 +34,6 @@ spec:
   routes:
     - kind: Rule
       match: Host(`snakebrawl.io`)
-      middlewares: [{ name: prelaunch-page }]
       services: [{ name: snakebrawl-web, port: 3100 }]
     - kind: Rule
       match: Host(`www.snakebrawl.io`)
@@ -42,12 +41,8 @@ spec:
       services: [{ name: snakebrawl-web, port: 3100 }]
     - kind: Rule
       match: >-
-        Host(`snakebrawl.io`) &&
-        (PathRegexp(`^/(how-to-play|privacy|terms|support)/?$`) ||
-        Path(`/robots.txt`) || Path(`/sitemap.xml`) || Path(`/icon.svg`) || Path(`/social-preview`) ||
-        PathPrefix(`/_next/static/`) || Path(`/_next/image`) || PathPrefix(`/lobby/`))
-      services: [{ name: snakebrawl-web, port: 3100 }]
-    - kind: Rule
-      match: Host(`ws.snakebrawl.io`) && (Path(`/health`) || Path(`/`))
-      middlewares: [{ name: prelaunch-status }]
-      services: [{ name: snakebrawl-web, port: 3100 }]
+        Host(`ws.snakebrawl.io`) &&
+        (Path(`/health`) || Path(`/parties`) || Path(`/matchmake/joinOrCreate/garden`) ||
+        PathRegexp(`^/parties/[A-Za-z0-9]{6}$`) || PathRegexp(`^/matchmake/reconnect/[A-Za-z0-9_-]+$`) ||
+        (HeaderRegexp(`Upgrade`,`(?i)^websocket$`) && PathRegexp(`^/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$`)))
+      services: [{ name: snakebrawl-arena, port: 2567 }]

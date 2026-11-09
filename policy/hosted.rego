@@ -726,13 +726,11 @@ deny contains msg if {
 	msg := sprintf("%s: route %q must be limited to %s, with any other condition ANDed to it", [identity, match, data.plane.host_matcher(app.host)])
 }
 
-# Launch hold. Only the offline page, health document and existing informational web pages may be public.
-# To reopen, review both the gate and the 100-player VPS acceptance evidence in the same release.
+# The arena HTTP/WSS host permits only the game protocol, and public metrics stay private.
 snakebrawl_routes := {
-	{"kind": "Rule", "match": "Host(`snakebrawl.io`)", "middlewares": [{"name": "prelaunch-page"}], "services": [{"name": "snakebrawl-web", "port": 3100}]},
+	{"kind": "Rule", "match": "Host(`snakebrawl.io`)", "services": [{"name": "snakebrawl-web", "port": 3100}]},
 	{"kind": "Rule", "match": "Host(`www.snakebrawl.io`)", "middlewares": [{"name": "canonical"}], "services": [{"name": "snakebrawl-web", "port": 3100}]},
-	{"kind": "Rule", "match": "Host(`snakebrawl.io`) && (PathRegexp(`^/(how-to-play|privacy|terms|support)/?$`) || Path(`/robots.txt`) || Path(`/sitemap.xml`) || Path(`/icon.svg`) || Path(`/social-preview`) || PathPrefix(`/_next/static/`) || Path(`/_next/image`) || PathPrefix(`/lobby/`))", "services": [{"name": "snakebrawl-web", "port": 3100}]},
-	{"kind": "Rule", "match": "Host(`ws.snakebrawl.io`) && (Path(`/health`) || Path(`/`))", "middlewares": [{"name": "prelaunch-status"}], "services": [{"name": "snakebrawl-web", "port": 3100}]},
+	{"kind": "Rule", "match": "Host(`ws.snakebrawl.io`) && (Path(`/health`) || Path(`/parties`) || Path(`/matchmake/joinOrCreate/garden`) || PathRegexp(`^/parties/[A-Za-z0-9]{6}$`) || PathRegexp(`^/matchmake/reconnect/[A-Za-z0-9_-]+$`) || (HeaderRegexp(`Upgrade`,`(?i)^websocket$`) && PathRegexp(`^/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$`)))", "services": [{"name": "snakebrawl-arena", "port": 2567}]},
 }
 
 snakebrawl_middlewares := {
@@ -741,7 +739,7 @@ snakebrawl_middlewares := {
 	"prelaunch-status": {"replacePath":{"path":"/prelaunch.json"}},
 }
 
-snakebrawl_hold_routes if {
+snakebrawl_game_routes if {
 	input.metadata.name == "snakebrawl"
 	count(input.spec.routes) == count(snakebrawl_routes)
 	every wanted in snakebrawl_routes {
@@ -752,8 +750,8 @@ snakebrawl_hold_routes if {
 deny contains msg if {
 	input.kind == "IngressRoute"
 	this_namespace == "snakebrawl"
-	not snakebrawl_hold_routes
-	msg := sprintf("%s: public routes must keep the prelaunch page and health document in place, with no production gameplay route", [identity])
+	not snakebrawl_game_routes
+	msg := sprintf("%s: public routes must match the complete SnakeBrawl protocol and canonical hosts", [identity])
 }
 
 deny contains msg if {
@@ -763,12 +761,34 @@ deny contains msg if {
 	msg := sprintf("%s: SnakeBrawl may only redirect www or select one of the two prelaunch documents", [identity])
 }
 
+# Both room membership and socket admission are process-local. Require the characterized
+# topology and admission settings alongside the separate exact node-image allowlist.
+snakebrawl_arena_profile if {
+	input.spec.replicas == 1
+	input.spec.strategy.type == "Recreate"
+	some c in kube.containers(input)
+	c.name == "arena"
+	c.resources.requests == {"cpu": "4", "memory": "2Gi"}
+	c.resources.limits == c.resources.requests
+	c.command == ["node", "--v8-pool-size=1", "--single-threaded-gc", "--max-semi-space-size=32", "/arena/build/server/index.mjs"]
+	env := {e.name: e.value | some e in c.env; e.value}
+	env.NODE_OPTIONS == "--max-old-space-size=1200"
+	env.MAX_CONNECTED_GUESTS == "100"
+	env.MAX_SNAKES == "25"
+	env.MAX_PUBLIC_ROOMS == "5"
+	env.MAX_PARTIES == "1"
+	env.PARTY_CAPACITY == "4"
+	env.MAX_SPECTATORS == "12"
+	env.SNAPSHOT_SPREAD_AFTER == "3"
+	env.METRICS_ENABLED == "true"
+}
+
 deny contains msg if {
 	input.kind == "Deployment"
 	this_namespace == "snakebrawl"
 	input.metadata.name == "snakebrawl-arena"
-	object.get(input.spec, "replicas", 1) != 0
-	msg := sprintf("%s: production arena stays at zero replicas until a reviewed 100-player VPS acceptance run", [identity])
+	not snakebrawl_arena_profile
+	msg := sprintf("%s: expected the qualified single-process resource, socket-cap, snapshot and GC settings", [identity])
 }
 
 # The other direction: only an app's namespace may name its host, so a route anywhere else cannot take it, however it spells it. Grafana's
