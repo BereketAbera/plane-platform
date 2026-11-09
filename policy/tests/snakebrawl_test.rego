@@ -11,13 +11,13 @@ snakebrawl_edge(match, backend, port) := {
 	]},
 }
 
-test_snakebrawl_apex_web_allowed if {
-	count(hosted.deny) == 0 with input as snakebrawl_edge("Host(`snakebrawl.io`)", "snakebrawl-web", 3100)
+test_snakebrawl_apex_without_hold_rejected if {
+	count(hosted.deny) > 0 with input as snakebrawl_edge("Host(`snakebrawl.io`)", "snakebrawl-web", 3100)
 }
 
 test_snakebrawl_arena_requires_the_protocol_allowlist if {
 	some message in hosted.deny with input as snakebrawl_edge("Host(`ws.snakebrawl.io`)", "snakebrawl-arena", 2567)
-	contains(message, "public Colyseus protocol")
+	contains(message, "no production gameplay route")
 }
 
 test_snakebrawl_cannot_route_private_metrics if {
@@ -30,4 +30,14 @@ test_snakebrawl_cannot_redirect_to_another_host if {
 
 test_node_import_cannot_fall_back_to_a_registry if {
 	count(hosted.deny) > 0 with input as {"kind":"Deployment","metadata":{"name":"snakebrawl-arena","namespace":"snakebrawl"},"spec":{"template":{"spec":{"containers":[{"name":"arena","image":"docker.io/library/snake-production-arena@sha256:e86220faca6c3ee4b16e66508a6750589ec0dd9673a8574b2958e33fc98790c6","imagePullPolicy":"IfNotPresent"}]}}}}
+}
+
+
+test_unapproved_arena_replica_rejected if {
+	some message in hosted.deny with input as {"kind":"Deployment","metadata":{"name":"snakebrawl-arena","namespace":"snakebrawl"},"spec":{"replicas":1}}
+	contains(message, "100-player")
+}
+
+test_unapproved_hold_middleware_cannot_rewrite_paths if {
+	count(hosted.deny) > 0 with input as {"kind":"Middleware","metadata":{"name":"prelaunch-page","namespace":"snakebrawl"},"spec":{"replacePath":{"path":"/party"}}}
 }
