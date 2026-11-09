@@ -11,13 +11,13 @@ snakebrawl_edge(match, backend, port) := {
 	]},
 }
 
-test_snakebrawl_apex_without_hold_rejected if {
+test_snakebrawl_incomplete_route_set_rejected if {
 	count(hosted.deny) > 0 with input as snakebrawl_edge("Host(`snakebrawl.io`)", "snakebrawl-web", 3100)
 }
 
 test_snakebrawl_arena_requires_the_protocol_allowlist if {
 	some message in hosted.deny with input as snakebrawl_edge("Host(`ws.snakebrawl.io`)", "snakebrawl-arena", 2567)
-	contains(message, "no production gameplay route")
+	contains(message, "complete SnakeBrawl protocol")
 }
 
 test_snakebrawl_cannot_route_private_metrics if {
@@ -33,11 +33,18 @@ test_node_import_cannot_fall_back_to_a_registry if {
 }
 
 
-test_unapproved_arena_replica_rejected if {
+test_incomplete_single_process_profile_rejected if {
 	some message in hosted.deny with input as {"kind":"Deployment","metadata":{"name":"snakebrawl-arena","namespace":"snakebrawl"},"spec":{"replicas":1}}
-	contains(message, "100-player")
+	contains(message, "qualified single-process")
 }
 
 test_unapproved_hold_middleware_cannot_rewrite_paths if {
 	count(hosted.deny) > 0 with input as {"kind":"Middleware","metadata":{"name":"prelaunch-page","namespace":"snakebrawl"},"spec":{"replacePath":{"path":"/party"}}}
+}
+
+
+test_snakebrawl_exact_protocol_allowed if {
+	routes := [r | some r in hosted.snakebrawl_routes]
+	edge := object.union(snakebrawl_edge("", "snakebrawl-web", 3100), {"spec":{"entryPoints":["websecure"],"tls":{"secretName":"snakebrawl-tls"},"routes":routes}})
+	count(hosted.deny) == 0 with input as edge
 }

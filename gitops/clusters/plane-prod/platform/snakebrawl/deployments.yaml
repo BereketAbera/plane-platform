@@ -63,8 +63,8 @@ metadata:
   namespace: snakebrawl
 spec:
   # A room and its reconnect reservations belong to exactly one process.
-  # Public play is held until the VPS passes the 100-player acceptance test.
-  replicas: 0
+  # One measured process owns all live rooms and enforces the global guest cap.
+  replicas: 1
   revisionHistoryLimit: 2
   strategy: { type: Recreate }
   selector:
@@ -82,32 +82,36 @@ spec:
       securityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: arena
-          image: docker.io/library/snake-production-arena@sha256:363918f68913ff140b49e0779915442d3937205dc8746a17313727da2d95316f
+          # V8 GC flags are CLI arguments. NODE_OPTIONS accepts the heap limit.
+          command: [node, '--v8-pool-size=1', '--single-threaded-gc', '--max-semi-space-size=32', /arena/build/server/index.mjs]
+          image: docker.io/library/snake-production-arena@sha256:8109bd6f05bc6c56158ac15dba77650665141ee0de125b3ca05b64151e7fab79
           imagePullPolicy: Never
           securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
           ports:
             - { name: game, containerPort: 2567 }
             - { name: metrics, containerPort: 9464 }
           resources:
-            requests: { cpu: '2', memory: 1Gi }
-            limits: { cpu: '2', memory: 1Gi }
+            requests: { cpu: '4', memory: 2Gi }
+            limits: { cpu: '4', memory: 2Gi }
           env:
-            - { name: NODE_OPTIONS, value: '--max-old-space-size=576' }
+            - { name: NODE_OPTIONS, value: '--max-old-space-size=1200' }
             - { name: ARENA_ALLOWED_ORIGINS, value: 'https://snakebrawl.io' }
             - { name: ARENA_PUBLIC_ADDRESS, value: ws.snakebrawl.io }
             - { name: TRUST_PROXY_IP, value: 'true' }
             - { name: ARENA_INSTANCE, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
-            - { name: SENTRY_RELEASE, value: '1.0.2' }
-            - { name: NEXT_PUBLIC_GAME_VERSION, value: '1.0.2' }
+            - { name: SENTRY_RELEASE, value: '1.0.5' }
+            - { name: NEXT_PUBLIC_GAME_VERSION, value: '1.0.5' }
             - { name: MAX_SNAKES, value: '100' }
-            - { name: MAX_CONNECTED_GUESTS, value: '4' }
+            - { name: MAX_CONNECTED_GUESTS, value: '100' }
             - { name: MAX_PUBLIC_ROOMS, value: '2' }
+            - { name: SNAPSHOT_SPREAD_AFTER, value: '3' }
+            - { name: MAX_SPECTATORS, value: '12' }
             - { name: BOT_TARGET, value: '2' }
             - { name: MAX_PARTIES, value: '1' }
             - { name: PARTY_CAPACITY, value: '4' }
             - { name: METRICS_ENABLED, value: 'true' }
             - { name: METRICS_HOST, value: '0.0.0.0' }
-            - { name: ARENA_RSS_BUDGET_MIB, value: '1024' }
+            - { name: ARENA_RSS_BUDGET_MIB, value: '2048' }
           envFrom:
             - secretRef: { name: snakebrawl-arena-telemetry, optional: true }
           readinessProbe: { httpGet: { path: /health, port: game }, periodSeconds: 5, timeoutSeconds: 2 }
