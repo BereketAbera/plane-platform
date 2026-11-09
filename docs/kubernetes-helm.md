@@ -121,7 +121,7 @@ security settings before promotion ([smoke.txt](evidence/branding/smoke.txt)).
 | beat | `pgrep -f "celery -A plane beat"`, 5s x 60 | Same, 15s | Same, 30s |
 | postgres | `pg_isready -h 127.0.0.1`, 5s x 60 | Same, 10s | Same, 30s |
 | valkey | None | `valkey-cli ping`, 10s | Same, 30s |
-| rabbitmq | TCP 5672, 10s x 30 | TCP 5672, 10s | `rabbitmq-diagnostics -q ping`, 60s, timeout 30s, 3 failures |
+| rabbitmq | TCP 5672, 10s x 30 | TCP 5672, 10s | TCP 5672, 60s, timeout 10s, 3 failures |
 | silo | `GET /minio/health/live :9000`, 5s x 36 | `GET /minio/health/ready :9000`, 10s | `GET /minio/health/live :9000`, 30s |
 
 The reasons are the useful part:
