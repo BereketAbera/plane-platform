@@ -78,7 +78,7 @@ spec:
       securityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: arena
-          image: docker.io/library/snake-production-arena@sha256:363918f68913ff140b49e0779915442d3937205dc8746a17313727da2d95316f
+          image: docker.io/library/snake-production-arena@sha256:9c7ad136db44477ca2d0424a29e8dc2bf8578d66549d040dba57871d67b05c25
           imagePullPolicy: Never
           securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
           ports:
@@ -93,8 +93,8 @@ spec:
             - { name: ARENA_PUBLIC_ADDRESS, value: ws.snakebrawl.io }
             - { name: TRUST_PROXY_IP, value: 'true' }
             - { name: ARENA_INSTANCE, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
-            - { name: SENTRY_RELEASE, value: '1.0.2' }
-            - { name: NEXT_PUBLIC_GAME_VERSION, value: '1.0.2' }
+            - { name: SENTRY_RELEASE, value: '1.0.3' }
+            - { name: NEXT_PUBLIC_GAME_VERSION, value: '1.0.3' }
             - { name: MAX_SNAKES, value: '100' }
             - { name: MAX_CONNECTED_GUESTS, value: '4' }
             - { name: MAX_PUBLIC_ROOMS, value: '2' }

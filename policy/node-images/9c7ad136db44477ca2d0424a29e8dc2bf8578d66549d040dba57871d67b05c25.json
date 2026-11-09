@@ -1,0 +1,8 @@
+{
+  "image": "docker.io/library/snake-production-arena@sha256:9c7ad136db44477ca2d0424a29e8dc2bf8578d66549d040dba57871d67b05c25",
+  "config": "sha256:7d1c9234705730e950d6b1a4bf8cc8c66517695d76f91b0085b94eff50935d7f",
+  "platform": "linux/amd64",
+  "archive_sha256": "0d8b1461ffc282cd4009d8c29f737fe8b8a50c17fab59f4008e988b0ecc5a438",
+  "inventory_sha256": "4c27ae2b3a96e48056fa340d72c4a227ac93d945b2661ad788c7210ea844d6a4",
+  "game_release": "1.0.3"
+}
