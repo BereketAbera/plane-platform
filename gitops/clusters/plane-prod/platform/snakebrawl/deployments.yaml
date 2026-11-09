@@ -101,9 +101,9 @@ spec:
             - { name: ARENA_INSTANCE, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
             - { name: SENTRY_RELEASE, value: '1.0.5' }
             - { name: NEXT_PUBLIC_GAME_VERSION, value: '1.0.5' }
-            - { name: MAX_SNAKES, value: '100' }
+            - { name: MAX_SNAKES, value: '25' }
             - { name: MAX_CONNECTED_GUESTS, value: '100' }
-            - { name: MAX_PUBLIC_ROOMS, value: '2' }
+            - { name: MAX_PUBLIC_ROOMS, value: '5' }
             - { name: SNAPSHOT_SPREAD_AFTER, value: '3' }
             - { name: MAX_SPECTATORS, value: '12' }
             - { name: BOT_TARGET, value: '2' }

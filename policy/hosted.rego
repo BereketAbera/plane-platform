@@ -774,7 +774,11 @@ snakebrawl_arena_profile if {
 	env := {e.name: e.value | some e in c.env; e.value}
 	env.NODE_OPTIONS == "--max-old-space-size=1200"
 	env.MAX_CONNECTED_GUESTS == "100"
-	env.MAX_SNAKES == "100"
+	env.MAX_SNAKES == "25"
+	env.MAX_PUBLIC_ROOMS == "5"
+	env.MAX_PARTIES == "1"
+	env.PARTY_CAPACITY == "4"
+	env.MAX_SPECTATORS == "12"
 	env.SNAPSHOT_SPREAD_AFTER == "3"
 	env.METRICS_ENABLED == "true"
 }
