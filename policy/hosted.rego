@@ -726,33 +726,49 @@ deny contains msg if {
 	msg := sprintf("%s: route %q must be limited to %s, with any other condition ANDed to it", [identity, match, data.plane.host_matcher(app.host)])
 }
 
-# Restrict the websocket host to matchmaking, health, and room upgrades. /metrics and bare arena routes stay private.
+# Launch hold. Only the offline page, health document and existing informational web pages may be public.
+# To reopen, review both the gate and the 100-player VPS acceptance evidence in the same release.
 snakebrawl_routes := {
-	{"kind": "Rule", "match": "Host(`snakebrawl.io`)", "services": [{"name": "snakebrawl-web", "port": 3100}]},
+	{"kind": "Rule", "match": "Host(`snakebrawl.io`)", "middlewares": [{"name": "prelaunch-page"}], "services": [{"name": "snakebrawl-web", "port": 3100}]},
 	{"kind": "Rule", "match": "Host(`www.snakebrawl.io`)", "middlewares": [{"name": "canonical"}], "services": [{"name": "snakebrawl-web", "port": 3100}]},
-	{"kind": "Rule", "match": "Host(`ws.snakebrawl.io`) && (Path(`/health`) || Path(`/parties`) || Path(`/matchmake/joinOrCreate/garden`) || PathRegexp(`^/parties/[A-Za-z0-9]{6}$`) || PathRegexp(`^/matchmake/reconnect/[A-Za-z0-9_-]+$`) || (HeaderRegexp(`Upgrade`,`(?i)^websocket$`) && PathRegexp(`^/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$`)))", "services": [{"name": "snakebrawl-arena", "port": 2567}]},
+	{"kind": "Rule", "match": "Host(`snakebrawl.io`) && (PathRegexp(`^/(how-to-play|privacy|terms|support)/?$`) || Path(`/robots.txt`) || Path(`/sitemap.xml`) || Path(`/icon.svg`) || Path(`/social-preview`) || PathPrefix(`/_next/static/`) || Path(`/_next/image`) || PathPrefix(`/lobby/`))", "services": [{"name": "snakebrawl-web", "port": 3100}]},
+	{"kind": "Rule", "match": "Host(`ws.snakebrawl.io`) && (Path(`/health`) || Path(`/`))", "middlewares": [{"name": "prelaunch-status"}], "services": [{"name": "snakebrawl-web", "port": 3100}]},
 }
 
-snakebrawl_canonical := {"redirectRegex": {"regex": "^https://www\\.snakebrawl\\.io(.*)", "replacement": "https://snakebrawl.io${1}", "permanent": true}}
+snakebrawl_middlewares := {
+	"canonical": {"redirectRegex": {"regex": "^https://www\\.snakebrawl\\.io(.*)", "replacement": "https://snakebrawl.io${1}", "permanent": true}},
+	"prelaunch-page": {"replacePath":{"path":"/prelaunch.html"}},
+	"prelaunch-status": {"replacePath":{"path":"/prelaunch.json"}},
+}
+
+snakebrawl_hold_routes if {
+	input.metadata.name == "snakebrawl"
+	count(input.spec.routes) == count(snakebrawl_routes)
+	every wanted in snakebrawl_routes {
+		route_present(wanted)
+	}
+}
 
 deny contains msg if {
 	input.kind == "IngressRoute"
 	this_namespace == "snakebrawl"
-	some route in input.spec.routes
-	not snakebrawl_routes[route]
-	msg := sprintf("%s: SnakeBrawl route must match the canonical web, www redirect, or the public Colyseus protocol", [identity])
+	not snakebrawl_hold_routes
+	msg := sprintf("%s: public routes must keep the prelaunch page and health document in place, with no production gameplay route", [identity])
 }
 
 deny contains msg if {
 	input.kind == "Middleware"
 	this_namespace == "snakebrawl"
-	not snakebrawl_redirect
-	msg := sprintf("%s: only the canonical www redirect belongs to SnakeBrawl", [identity])
+	not input.spec == snakebrawl_middlewares[input.metadata.name]
+	msg := sprintf("%s: SnakeBrawl may only redirect www or select one of the two prelaunch documents", [identity])
 }
 
-snakebrawl_redirect if {
-	input.metadata.name == "canonical"
-	input.spec == snakebrawl_canonical
+deny contains msg if {
+	input.kind == "Deployment"
+	this_namespace == "snakebrawl"
+	input.metadata.name == "snakebrawl-arena"
+	object.get(input.spec, "replicas", 1) != 0
+	msg := sprintf("%s: production arena stays at zero replicas until a reviewed 100-player VPS acceptance run", [identity])
 }
 
 # The other direction: only an app's namespace may name its host, so a route anywhere else cannot take it, however it spells it. Grafana's

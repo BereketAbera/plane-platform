@@ -44,12 +44,15 @@ spec:
             - { name: SENTRY_RELEASE, value: '1.0.2' }
           envFrom:
             - secretRef: { name: snakebrawl-web-telemetry, optional: true }
-          readinessProbe: { tcpSocket: { port: http }, periodSeconds: 5 }
+          readinessProbe: { httpGet: { path: /prelaunch.json, port: http }, periodSeconds: 5, timeoutSeconds: 4 }
           livenessProbe: { httpGet: { path: '/', port: http }, periodSeconds: 20, timeoutSeconds: 4 }
           volumeMounts:
+            - { name: prelaunch, mountPath: /arena/apps/web/public/prelaunch.html, subPath: prelaunch.html, readOnly: true }
+            - { name: prelaunch, mountPath: /arena/apps/web/public/prelaunch.json, subPath: prelaunch.json, readOnly: true }
             - { name: tmp, mountPath: /tmp }
             - { name: cache, mountPath: /arena/apps/web/.next/cache }
       volumes:
+        - { name: prelaunch, configMap: { name: snakebrawl-prelaunch-v1 } }
         - { name: tmp, emptyDir: { sizeLimit: 32Mi } }
         - { name: cache, emptyDir: { sizeLimit: 64Mi } }
 ---
@@ -60,7 +63,8 @@ metadata:
   namespace: snakebrawl
 spec:
   # A room and its reconnect reservations belong to exactly one process.
-  replicas: 1
+  # Public play is held until the VPS passes the 100-player acceptance test.
+  replicas: 0
   revisionHistoryLimit: 2
   strategy: { type: Recreate }
   selector:
