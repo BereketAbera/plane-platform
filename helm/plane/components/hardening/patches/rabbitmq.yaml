@@ -16,7 +16,8 @@ spec:
           resources:
             requests: {cpu: 50m, memory: 128Mi}
             limits: {cpu: 500m, memory: 512Mi}
-          # TCP for startup and readiness: the CLI below boots an Erlang VM on every call.
+          # TCP for every probe: rabbitmq-diagnostics boots an Erlang VM on each call. On a CPU-starved node
+          # that took longer than its 30 s limit, so the liveness probe restarted a healthy broker in a loop.
           startupProbe:
             tcpSocket: {port: 5672}
             periodSeconds: 10
@@ -27,10 +28,9 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
           livenessProbe:
-            exec:
-              command: [rabbitmq-diagnostics, -q, ping]
+            tcpSocket: {port: 5672}
             periodSeconds: 60
-            timeoutSeconds: 30
+            timeoutSeconds: 10
             failureThreshold: 3
           # subPath, because mounting the directory would hide the image's 10-defaults.conf.
           volumeMounts:
