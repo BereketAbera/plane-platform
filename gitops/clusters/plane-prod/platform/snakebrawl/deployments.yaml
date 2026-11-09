@@ -20,6 +20,7 @@ spec:
     matchLabels: { app.kubernetes.io/name: snakebrawl-web }
   template:
     metadata:
+      annotations: { snakebrawl.io/telemetry-mode: gameplay }
       labels:
         app.kubernetes.io/name: snakebrawl-web
         app.kubernetes.io/component: web
