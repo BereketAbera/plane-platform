@@ -38,7 +38,9 @@ spec:
           labels: { severity: warning }
           annotations: { summary: 'Colyseus encountered a room exception' }
         - alert: SnakeBrawlUnavailable
-          expr: absent(up{namespace="snakebrawl",service="snakebrawl-arena"} == 1)
+          expr: >-
+            absent(up{namespace="snakebrawl",service="snakebrawl-arena"} == 1)
+            unless on() (kube_deployment_spec_replicas{namespace="snakebrawl",deployment="snakebrawl-arena"} == 0)
           for: 3m
           labels: { severity: critical }
           annotations: { summary: 'No healthy SnakeBrawl arena metrics target' }

@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: snakebrawl-prelaunch-v1
+  namespace: snakebrawl
+  annotations: { argocd.argoproj.io/sync-wave: "-1" }
+immutable: true
+data:
+  prelaunch.json: |
+    {"ok":true,"status":"prelaunch","acceptingPlayers":false}
+  prelaunch.html: |
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>SnakeBrawl — Multiplayer prelaunch</title>
+      <meta name="description" content="SnakeBrawl multiplayer is preparing for launch. Learn how to play while the arena undergoes capacity testing.">
+      <link rel="canonical" href="https://snakebrawl.io/">
+      <link rel="icon" href="/icon.svg">
+      <style>
+        * { box-sizing: border-box }
+        body { margin: 0; min-height: 100svh; color: #f3f6ed; background: #122429; font-family: system-ui, sans-serif }
+        main { max-width: 920px; margin: auto; padding: clamp(24px,7vw,76px); display: grid; align-items: center; min-height: 100svh }
+        section { max-width: 520px }
+        h1 { margin: 0; font-size: clamp(44px,10vw,88px); line-height: 1; letter-spacing: -.05em }
+        p { color: #d2e1d9; font-size: clamp(18px,2.7vw,23px); line-height: 1.55 }
+        nav { display: flex; flex-wrap: wrap; gap: 12px 24px }
+        a { color: #d6f475; font-weight: 650; text-underline-offset: 4px }
+        a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px }
+        img { width: min(54vw,250px); height: auto }
+        @media (min-width: 700px) { main { grid-template-columns: 1fr auto; gap: 36px } img { order: 2 } }
+        @media (max-width: 699px) { main { align-content: center; gap: 22px } }
+      </style>
+    </head>
+    <body>
+      <main>
+        <img src="/lobby/dragon-ember.webp" alt="Ember dragon snake">
+        <section>
+          <h1>SnakeBrawl</h1>
+          <p>Public matches are paused while we test whether the arena can support 100 players. You can explore the controls before it opens.</p>
+          <nav aria-label="Game information">
+            <a href="/how-to-play">How to play</a><a href="/privacy">Privacy</a><a href="/support">Support</a>
+          </nav>
+        </section>
+      </main>
+    </body>
+    </html>
