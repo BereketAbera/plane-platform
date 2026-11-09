@@ -339,15 +339,13 @@ render_chart() { # render_chart <output directory> <release> <namespace> <reposi
   # Argo CD names an OCI repository with no scheme, and Helm wants one and the chart in the same reference.
   local reference=("$chart" --repo "$repo")
   [[ "$repo" == http://* || "$repo" == https://* ]] || reference=("oci://${repo#oci://}/$chart")
-  # Protected CI verifies these exact upstream archives before rendering. Other repositories and
-  # versions (including the negative controls) continue to use the declared Argo source.
+  # Only the verified source tuple from this run selects an archive. Other versions, origins
+  # and the operator's default path still resolve the exact repository declared by Argo/Terraform.
   if [[ -n "${HELM_VERIFIED_ARCHIVES:-}" ]]; then
-    case "${repo%/}/$chart@$version" in
-      https://prometheus-community.github.io/helm-charts/kube-prometheus-stack@92.18.0|https://kubernetes-sigs.github.io/metrics-server/metrics-server@3.14.0)
-        if [[ -f "$HELM_VERIFIED_ARCHIVES/$chart-$version.tgz" ]]; then
-          reference=("$HELM_VERIFIED_ARCHIVES/$chart-$version.tgz")
-        fi ;;
-    esac
+    local verified
+    verified="$(awk -F '\t' -v repo="${repo%/}" -v name="$chart" -v rev="$version" \
+      '$1 == repo && $2 == name && $3 == rev { print $4 }' "$HELM_VERIFIED_ARCHIVES/sources.tsv")" || return 1
+    if [[ -n "$verified" ]]; then reference=("$HELM_VERIFIED_ARCHIVES/$verified"); fi
   fi
   local args=("${reference[@]}" --version "$version" --kube-version "${CHART_KUBE_VERSION:-$K8S_VERSION}" --namespace "$namespace")
   for value in "$@"; do args+=(--values "$value"); done

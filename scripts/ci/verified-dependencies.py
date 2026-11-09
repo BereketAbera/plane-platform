@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Materialize just the five Linux CI dependencies that use GitHub release downloads."""
+"""Verify the pinned GitHub release dependencies used by protected Linux CI."""
 import argparse
 import base64
 import hashlib
@@ -24,6 +24,15 @@ PROVIDERS = {
                 479050127, 479050151, 479050154, "infrastructure/terraform/environments/prod-host"),
 }
 CHARTS = {
+    "alloy": ("grafana/helm-charts", "1.15.0", "alloy-1.15.0", 690025641,
+              "https://grafana.github.io/helm-charts",
+              "2ecc96c05004cc01a45ab23cb390194ad5259ec9d02b42bf148d4468d013aaa3"),
+    "loki": ("grafana-community/helm-charts", "20.4.1", "loki-20.4.1", 707532824,
+             "https://grafana-community.github.io/helm-charts",
+             "fcdc5fb4f1eba9355ce7c848129e40618bec4c9d8db241fafe0581e4e878744b"),
+    "argo-cd": ("argoproj/argo-helm", "10.11.7", "argo-cd-10.11.7", 705944956,
+                "https://argoproj.github.io/argo-helm",
+                "9f24a574ead97a1a68af447ab2678073c5e16a98ff9385aee766daf74361f04e"),
     "kube-prometheus-stack": ("prometheus-community/helm-charts", "92.18.0", "kube-prometheus-stack-92.18.0", 709492850,
                              "https://prometheus-community.github.io/helm-charts",
                              "58d901b4a4e914d17e656d7da4d03ed38220a1d724b9e5e86018e032d2fbb4bb"),
@@ -33,7 +42,7 @@ CHARTS = {
 }
 ALLOWED = {"api.github.com", "github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com",
            "github-releases.githubusercontent.com", "prometheus-community.github.io", "kubernetes-sigs.github.io",
-           "registry.terraform.io"}
+           "registry.terraform.io", "grafana-community.github.io", "argoproj.github.io", "grafana.github.io"}
 
 
 def trusted_url(url):
@@ -50,7 +59,7 @@ class RestrictedRedirect(HTTPRedirectHandler):
 
 def fetch(url, limit, accept):
     trusted_url(url)
-    # All five upstream releases are public. No API tokens are used on any host or redirect.
+    # These upstream releases are public. No API tokens are used on any host or redirect.
     request = Request(url, headers={"Accept": accept, "User-Agent": "platform-dependency-check"})
     try:
         with build_opener(RestrictedRedirect).open(request, timeout=25) as response:
@@ -190,6 +199,16 @@ def provider(root, cache, mirror, name):
 def wanted_chart(root, name, version, repo):
     # Only the checked-in Argo source tuple selects the optimization. Changed or
     # differently formatted sources continue using regular Helm resolution.
+    if name == "argo-cd":
+        # Local and hosted bootstraps install this chart from the same Terraform resource.
+        module = root / "infrastructure/terraform/modules/argocd/main.tf"
+        if not module.is_file():
+            return False
+        release = re.search(r'(?ms)^resource "helm_release" "argocd" \{(.*?)^\}', module.read_text())
+        if not release:
+            return False
+        return all(re.search(r'(?m)^\s*' + field + r'\s*=\s*"' + re.escape(value) + r'"\s*$', release[1])
+                   for field, value in [("repository", repo), ("chart", name), ("version", version)])
     sources = [root / "gitops" / "applications" / f"{name}.yaml"]
     sources.extend((root / "gitops" / "clusters").glob(f"*/applications/{name}.yaml"))
     for path in sources:
@@ -223,6 +242,7 @@ def chart(root, cache, usable, name):
                          lambda blob: verify_digest(blob, digest, filename))
     atomic(usable / filename, data)
     print(f"verified indexed {filename} {digest}")
+    return f"{charts}\t{name}\t{version}\t{filename}\n"
 
 
 def main():
@@ -240,8 +260,8 @@ def main():
     if args.scope == "charts":
         # Only archives verified in this invocation are visible to Helm. Restored bytes are untrusted input.
         usable = Path(tempfile.mkdtemp(prefix="helm-verified-", dir=os.environ.get("RUNNER_TEMP")))
-        for name in CHARTS:
-            chart(root, cache, usable, name)
+        resolved = [chart(root, cache, usable, name) for name in CHARTS]
+        atomic(usable / "sources.tsv", "".join(item for item in resolved if item).encode())
         atomic(cache / "helm-charts-dir", (str(usable) + "\n").encode())
         return
     # A newly built mirror cannot select unexpected files from a restored cache. Keep

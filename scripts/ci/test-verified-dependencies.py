@@ -46,6 +46,17 @@ class VerificationTest(unittest.TestCase):
             deps.chart(root, cache, root / "usable", "metrics-server")
             self.assertFalse(cache.exists())
 
+    def test_reads_the_terraform_argo_source_before_using_an_archive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "infrastructure/terraform/modules/argocd/main.tf"
+            path.parent.mkdir(parents=True)
+            path.write_text('resource "helm_release" "argocd" {\n  repository = "https://argoproj.github.io/argo-helm"\n'
+                            '  chart = "argo-cd"\n  version = "10.11.7"\n}\n')
+            self.assertTrue(deps.wanted_chart(root, "argo-cd", "10.11.7", "https://argoproj.github.io/argo-helm"))
+            self.assertFalse(deps.wanted_chart(root, "argo-cd", "10.11.8", "https://argoproj.github.io/argo-helm"))
+            self.assertFalse(deps.wanted_chart(root, "argo-cd", "10.11.7", "https://unrelated.invalid"))
+
     def test_different_versions_in_two_roots_keep_the_registry(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
