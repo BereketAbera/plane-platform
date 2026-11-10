@@ -1,0 +1,8 @@
+{
+  "image": "docker.io/library/snake-production-web@sha256:2590a3538a23fedeb0a1d766c4a28125b41d3977d736d189c14d16a06b80859b",
+  "config": "sha256:e6c7356aa1377905b5c1023cebe671a425463032abf7cd56b74c608abe662498",
+  "platform": "linux/amd64",
+  "archive_sha256": "ca7aa523a6c40e0d4d466d6712d736305a7e9c17cb3ffaff6a3cea6b5869635d",
+  "inventory_sha256": "640530eecbb898c1c6390bb3466a05b54ca770e06b04756451123efc47232f0d",
+  "game_release": "1.1.0"
+}
