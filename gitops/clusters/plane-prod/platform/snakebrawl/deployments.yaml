@@ -32,7 +32,7 @@ spec:
       securityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: web
-          image: docker.io/library/snake-production-web@sha256:2590a3538a23fedeb0a1d766c4a28125b41d3977d736d189c14d16a06b80859b
+          image: docker.io/library/snake-production-web@sha256:30e71fba54f6499b2a5813ddd7ba1a0272fef76af4009ab1cb3e49640f4756ee
           imagePullPolicy: Never
           securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
           ports:
@@ -42,7 +42,7 @@ spec:
             limits: { cpu: '1', memory: 512Mi }
           env:
             - { name: NODE_OPTIONS, value: '--max-old-space-size=288' }
-            - { name: SENTRY_RELEASE, value: '1.1.0' }
+            - { name: SENTRY_RELEASE, value: '1.1.1' }
           envFrom:
             - secretRef: { name: snakebrawl-web-telemetry, optional: true }
           readinessProbe: { httpGet: { path: /prelaunch.json, port: http }, periodSeconds: 5, timeoutSeconds: 4 }
@@ -85,7 +85,7 @@ spec:
         - name: arena
           # V8 GC flags are CLI arguments. NODE_OPTIONS accepts the heap limit.
           command: [node, '--v8-pool-size=1', '--single-threaded-gc', '--max-semi-space-size=32', /arena/build/server/index.mjs]
-          image: docker.io/library/snake-production-arena@sha256:c0d8a74d3897b1e1eae59e469801ef6b62d3b667add97e98ee69e844277c86ce
+          image: docker.io/library/snake-production-arena@sha256:7b2024fd97f9d1dfaef0edf1fe11d19a8b8f780d71bfacf2ff07fd9f01bdf37d
           imagePullPolicy: Never
           securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
           ports:
@@ -100,8 +100,8 @@ spec:
             - { name: ARENA_PUBLIC_ADDRESS, value: ws.snakebrawl.io }
             - { name: TRUST_PROXY_IP, value: 'true' }
             - { name: ARENA_INSTANCE, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
-            - { name: SENTRY_RELEASE, value: '1.1.0' }
-            - { name: NEXT_PUBLIC_GAME_VERSION, value: '1.1.0' }
+            - { name: SENTRY_RELEASE, value: '1.1.1' }
+            - { name: NEXT_PUBLIC_GAME_VERSION, value: '1.1.1' }
             - { name: MAX_SNAKES, value: '25' }
             - { name: MAX_CONNECTED_GUESTS, value: '100' }
             - { name: MAX_PUBLIC_ROOMS, value: '5' }
