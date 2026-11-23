@@ -69,7 +69,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: web
-          image: ghcr.io/bereketabera/frameflow/web:ad6584a40fb8@sha256:62371120a696ddded0a90818f0cfc90efeaca4aeeedbbe9cda69a187ae3d6e7c
+          image: ghcr.io/bereketabera/frameflow/web:5af049b83df6@sha256:e3e6910ce4fb25c082426bf93ff3a4c185570d34dd6bb797e0042661ef3a5e8e
           # The image sets both, and these are here because the container runtime sets HOSTNAME to the pod's name over the image's, and
           # Next.js would then listen on that name's address alone.
           env:
