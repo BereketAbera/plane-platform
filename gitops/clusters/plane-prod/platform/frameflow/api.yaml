@@ -95,7 +95,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: ghcr.io/bereketabera/frameflow/backend:83f693d81006@sha256:15eb8058f40ebae5d2b2f2a97b67264e80f1c7f3cd858b6b97cca94370f92688
+          image: ghcr.io/bereketabera/frameflow/backend:5af049b83df6@sha256:cd7a8fb6d5eb3f28d83a267ae0b2b9a3c02086082f3deae356fe98f37c715b53
           # args and no command, so the image's tini stays in front and passes SIGTERM on, as Frameflow's README asks of every role. The
           # image's own default, written out, so that each role here says what it runs.
           args: [node, --import, tsx, src/api/server.ts]
